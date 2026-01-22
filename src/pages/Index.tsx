@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Clock, ChevronRight, ChevronLeft, Users, Search, X } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
+import { Slider, type SliderMarker } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,6 +42,22 @@ const Index = () => {
       return matchesSearch && inTimeRange;
     });
   }, [scholars, searchTerm, timeRange]);
+
+  // Create markers from historical events for the timeline slider
+  const eventMarkers: SliderMarker[] = useMemo(() => {
+    const importanceColors: Record<string, string> = {
+      critical: 'bg-red-500',
+      major: 'bg-amber-500',
+      foundational: 'bg-accent',
+      scholarly: 'bg-blue-500',
+    };
+    
+    return historicalEvents.map(event => ({
+      position: event.year,
+      color: importanceColors[event.importance] || 'bg-blue-500',
+      label: `${event.year}: ${event.name}`,
+    }));
+  }, [historicalEvents]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
@@ -182,6 +198,7 @@ const Index = () => {
               className="flex-1"
               showTooltip
               formatValue={(val) => `${val} CE`}
+              markers={eventMarkers}
             />
             <span className="text-sm text-accent font-medium w-20 text-right">{timeRange[1]} CE</span>
           </div>
