@@ -592,21 +592,36 @@ export function LeafletMap({
         icon: L.divIcon({
           className: 'city-label',
           html: `<div style="
-            background: #0c1a2e;
-            color: #60a5fa;
-            padding: ${isMajor ? '4px 10px' : '3px 8px'};
-            border-radius: 3px;
-            font-size: ${isMajor ? '12px' : '10px'};
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
-            box-shadow: 0 1px 6px rgba(0,0,0,0.7);
-            border: 1.5px solid #3b82f6;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
             text-align: center;
+            white-space: nowrap;
+            pointer-events: none;
           ">
-            <div style="direction: rtl; font-family: 'David Libre', serif;">${city.hebrew}</div>
-            <div style="font-family: 'Crimson Text', serif; font-size: ${isMajor ? '10px' : '8px'}; opacity: 0.85; margin-top: 1px;">${city.name}</div>
+            <div style="
+              font-family: 'David Libre', 'Times New Roman', serif;
+              font-size: ${isMajor ? '16px' : '13px'};
+              font-weight: 600;
+              color: #fff;
+              text-shadow: 
+                -1px -1px 0 #1a1a1a,
+                1px -1px 0 #1a1a1a,
+                -1px 1px 0 #1a1a1a,
+                1px 1px 0 #1a1a1a,
+                0 0 4px rgba(0,0,0,0.8);
+              direction: rtl;
+            ">${city.hebrew}</div>
+            <div style="
+              font-family: 'Crimson Text', Georgia, serif;
+              font-size: ${isMajor ? '14px' : '11px'};
+              font-weight: ${isMajor ? '600' : '500'};
+              color: #fff;
+              text-shadow: 
+                -1px -1px 0 #1a1a1a,
+                1px -1px 0 #1a1a1a,
+                -1px 1px 0 #1a1a1a,
+                1px 1px 0 #1a1a1a,
+                0 0 4px rgba(0,0,0,0.8);
+              margin-top: -2px;
+            ">${city.name}</div>
           </div>`,
           iconSize: [0, 0],
           iconAnchor: [0, -8],
