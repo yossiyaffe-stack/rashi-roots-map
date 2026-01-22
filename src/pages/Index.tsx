@@ -130,14 +130,6 @@ const Index = () => {
               </div>
             </ScrollArea>
           </div>
-
-          {/* Toggle Tab - attached to panel edge */}
-          <button
-            onClick={() => setScholarsOverlayOpen(!scholarsOverlayOpen)}
-            className="self-center -mr-8 bg-sidebar/95 backdrop-blur-md border border-l-0 border-white/10 rounded-r-lg p-2 hover:bg-accent/20 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 text-accent" />
-          </button>
         </div>
 
 
