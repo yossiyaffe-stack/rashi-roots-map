@@ -957,6 +957,213 @@ export function LeafletMap({
     });
   }, [showMigrations]);
 
+  // Draw scholar journey route lines when viewing their journey
+  useEffect(() => {
+    if (!leafletMap.current) return;
+
+    // Clear existing journey markers
+    journeyMarkersRef.current.forEach(item => item.remove());
+    journeyMarkersRef.current = [];
+
+    // Only draw journey if: markers are enabled, a scholar is selected, and we have locations
+    if (!showJourneyMarkers || !selectedScholar || locations.length === 0) return;
+
+    // Get locations for the selected scholar
+    const scholarLocations = locations.filter(loc => loc.scholar_id === selectedScholar.id);
+    
+    // Filter by journey reason filter if any are selected
+    const filteredLocations = journeyReasonFilter.length > 0 
+      ? scholarLocations.filter(loc => loc.reason && journeyReasonFilter.includes(loc.reason))
+      : scholarLocations;
+
+    // Sort locations chronologically by start_year, then by reason order (birth first, death last)
+    const reasonOrder: Record<LocationReason, number> = {
+      birth: 0,
+      study: 1,
+      rabbinate: 2,
+      travel: 3,
+      exile: 4,
+      refuge: 5,
+      death: 6,
+    };
+
+    const sortedLocations = [...filteredLocations].sort((a, b) => {
+      const yearA = a.start_year ?? 0;
+      const yearB = b.start_year ?? 0;
+      if (yearA !== yearB) return yearA - yearB;
+      // If same year, use reason order
+      const orderA = a.reason ? reasonOrder[a.reason] : 3;
+      const orderB = b.reason ? reasonOrder[b.reason] : 3;
+      return orderA - orderB;
+    });
+
+    if (sortedLocations.length < 2) return;
+
+    // Get scholar's color for the route
+    const scholarColor = getScholarColor(selectedScholar);
+
+    // Draw journey markers at each location
+    sortedLocations.forEach((loc, index) => {
+      const config = loc.reason ? LOCATION_REASON_CONFIG[loc.reason] : { icon: '📍', color: '#6b7280' };
+      const isFirst = index === 0;
+      const isLast = index === sortedLocations.length - 1;
+      
+      const markerIcon = L.divIcon({
+        className: 'journey-marker',
+        html: `<div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        ">
+          <div style="
+            width: ${isFirst || isLast ? 28 : 22}px;
+            height: ${isFirst || isLast ? 28 : 22}px;
+            background: ${config.color};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: ${isFirst || isLast ? 14 : 12}px;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 2px ${config.color}40;
+            position: relative;
+          ">
+            ${config.icon}
+            <div style="
+              position: absolute;
+              top: -8px;
+              right: -8px;
+              background: #1a1408;
+              color: #ffd700;
+              font-size: 9px;
+              font-weight: bold;
+              min-width: 16px;
+              height: 16px;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: 1px solid #ffd700;
+            ">${index + 1}</div>
+          </div>
+          <div style="
+            background: #1a1408;
+            color: #ffd700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid ${config.color};
+          ">${loc.location_name}${loc.start_year ? ` (${loc.start_year})` : ''}</div>
+        </div>`,
+        iconSize: [isFirst || isLast ? 100 : 80, 50],
+        iconAnchor: [isFirst || isLast ? 50 : 40, 14],
+      });
+
+      const marker = L.marker([loc.latitude, loc.longitude], { 
+        icon: markerIcon,
+        zIndexOffset: 1000 + index,
+      });
+
+      // Add tooltip with full journey info
+      marker.bindTooltip(
+        `<div style="font-family: 'Crimson Text', Georgia, serif;">
+          <strong>${config.icon} ${loc.reason ? loc.reason.charAt(0).toUpperCase() + loc.reason.slice(1) : 'Location'}</strong><br/>
+          <span style="font-size: 14px; font-weight: 600;">${loc.location_name}</span><br/>
+          ${loc.start_year ? `<span style="opacity: 0.8;">Year: ${loc.start_year}${loc.end_year ? ` – ${loc.end_year}` : ''}</span><br/>` : ''}
+          ${loc.historical_context ? `<span style="font-size: 11px; opacity: 0.7; font-style: italic;">${loc.historical_context}</span>` : ''}
+        </div>`,
+        { className: 'historical-tooltip', direction: 'top', offset: [0, -10] }
+      );
+
+      marker.addTo(leafletMap.current!);
+      journeyMarkersRef.current.push(marker);
+    });
+
+    // Draw connecting lines between journey locations
+    for (let i = 0; i < sortedLocations.length - 1; i++) {
+      const from = sortedLocations[i];
+      const to = sortedLocations[i + 1];
+      
+      const fromLatLng: L.LatLngExpression = [from.latitude, from.longitude];
+      const toLatLng: L.LatLngExpression = [to.latitude, to.longitude];
+      
+      // Calculate a smooth curved path
+      const midLat = (from.latitude + to.latitude) / 2;
+      const midLng = (from.longitude + to.longitude) / 2;
+      const dx = to.longitude - from.longitude;
+      const dy = to.latitude - from.latitude;
+      
+      // Add some curve offset perpendicular to the line
+      const curveOffset = Math.sqrt(dx * dx + dy * dy) * 0.15;
+      const curvedPath: L.LatLngExpression[] = [
+        fromLatLng,
+        [midLat + (dx * 0.1), midLng - (dy * 0.1)],
+        toLatLng
+      ];
+
+      // Draw glow/shadow line
+      const glowLine = L.polyline(curvedPath, {
+        color: scholarColor,
+        weight: 10,
+        opacity: 0.25,
+        lineCap: 'round',
+        lineJoin: 'round',
+        smoothFactor: 1,
+      });
+      glowLine.addTo(leafletMap.current!);
+      journeyMarkersRef.current.push(glowLine);
+
+      // Draw main animated line
+      const line = L.polyline(curvedPath, {
+        color: scholarColor,
+        weight: 4,
+        opacity: 0.85,
+        lineCap: 'round',
+        lineJoin: 'round',
+        smoothFactor: 1,
+        dashArray: '8, 12',
+        className: 'journey-route-animated',
+      });
+
+      // Tooltip shows the transition
+      const fromReason = from.reason ? LOCATION_REASON_CONFIG[from.reason] : { icon: '📍' };
+      const toReason = to.reason ? LOCATION_REASON_CONFIG[to.reason] : { icon: '📍' };
+      
+      line.bindTooltip(
+        `${fromReason.icon} ${from.location_name} → ${toReason.icon} ${to.location_name}`,
+        { className: 'historical-tooltip', sticky: true }
+      );
+
+      line.addTo(leafletMap.current!);
+      journeyMarkersRef.current.push(line);
+
+      // Add direction arrow at midpoint
+      const arrowAngle = Math.atan2(to.latitude - from.latitude, to.longitude - from.longitude) * 180 / Math.PI;
+      const arrowIcon = L.divIcon({
+        className: 'journey-arrow',
+        html: `<div style="
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-bottom: 12px solid ${scholarColor};
+          filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+          transform: rotate(${arrowAngle - 90}deg);
+        "></div>`,
+        iconSize: [16, 12],
+        iconAnchor: [8, 6],
+      });
+
+      const arrow = L.marker([midLat, midLng], { icon: arrowIcon, interactive: false });
+      arrow.addTo(leafletMap.current!);
+      journeyMarkersRef.current.push(arrow);
+    }
+
+  }, [showJourneyMarkers, selectedScholar, locations, journeyReasonFilter]);
+
   // Draw relationship lines (legacy + biographical + textual)
   useEffect(() => {
     if (!leafletMap.current) return;
