@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { ScholarsOverlayProvider } from "@/contexts/ScholarsOverlayContext";
 import { MapControlsProvider } from "@/contexts/MapControlsContext";
 import { RelationshipFilterProvider } from "@/contexts/RelationshipFilterContext";
+import { CircleFilterProvider } from "@/contexts/CircleFilterContext";
 import Index from "./pages/Index";
 import Scholars from "./pages/Scholars";
 import Timeline from "./pages/Timeline";
@@ -23,22 +24,24 @@ const App = () => (
       <ScholarsOverlayProvider>
         <MapControlsProvider>
           <RelationshipFilterProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/scholars" element={<Scholars />} />
-                  <Route path="/timeline" element={<Timeline />} />
-                  <Route path="/network" element={<Network />} />
-                  <Route path="/works" element={<WorksNetwork />} />
-                  <Route path="/context" element={<HistoricalContext />} />
-                </Route>
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+            <CircleFilterProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route element={<AppLayout />}>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/scholars" element={<Scholars />} />
+                    <Route path="/timeline" element={<Timeline />} />
+                    <Route path="/network" element={<Network />} />
+                    <Route path="/works" element={<WorksNetwork />} />
+                    <Route path="/context" element={<HistoricalContext />} />
+                  </Route>
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </CircleFilterProvider>
           </RelationshipFilterProvider>
         </MapControlsProvider>
       </ScholarsOverlayProvider>
