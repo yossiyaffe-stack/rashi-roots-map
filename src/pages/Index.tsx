@@ -33,6 +33,8 @@ const Index = () => {
     showPlaceNamesHebrew,
     showScholarNamesEnglish,
     showScholarNamesHebrew,
+    cityFilter,
+    showOnlyScholarCities,
   } = useMapControls();
 
   const { data: scholars = [], isLoading } = useScholars();
@@ -96,6 +98,8 @@ const Index = () => {
           showPlaceNamesHebrew={showPlaceNamesHebrew}
           showScholarNamesEnglish={showScholarNamesEnglish}
           showScholarNamesHebrew={showScholarNamesHebrew}
+          cityFilter={cityFilter}
+          showOnlyScholarCities={showOnlyScholarCities}
           mapRef={mapRef}
         />
 

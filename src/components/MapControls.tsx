@@ -4,6 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import type { CityFilter } from '@/contexts/MapControlsContext';
 
 interface MapControlsProps {
   showBoundaries: boolean;
@@ -20,7 +21,17 @@ interface MapControlsProps {
   onShowScholarNamesEnglishChange: (show: boolean) => void;
   showScholarNamesHebrew: boolean;
   onShowScholarNamesHebrewChange: (show: boolean) => void;
+  cityFilter: CityFilter;
+  onCityFilterChange: (filter: CityFilter) => void;
+  showOnlyScholarCities: boolean;
+  onShowOnlyScholarCitiesChange: (show: boolean) => void;
 }
+
+const CITY_FILTER_OPTIONS: { value: CityFilter; label: string; description: string }[] = [
+  { value: 'all', label: 'All Cities', description: 'Show all cities' },
+  { value: 'major', label: 'Major Only', description: 'Importance ≥ 8' },
+  { value: 'minor', label: 'Minor & Major', description: 'Importance ≥ 5' },
+];
 
 export function MapControls({
   showBoundaries,
@@ -37,6 +48,10 @@ export function MapControls({
   onShowScholarNamesEnglishChange,
   showScholarNamesHebrew,
   onShowScholarNamesHebrewChange,
+  cityFilter,
+  onCityFilterChange,
+  showOnlyScholarCities,
+  onShowOnlyScholarCitiesChange,
 }: MapControlsProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -65,8 +80,8 @@ export function MapControls({
           ? "opacity-100 translate-x-0 scale-x-100" 
           : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
       )}>
-        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[220px] max-w-[280px]">
-          <ScrollArea className="max-h-80">
+        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[260px] max-w-[300px]">
+          <ScrollArea className="max-h-[70vh]">
             <div className="space-y-4 pr-2">
               {/* Layers Section */}
               <div>
@@ -112,12 +127,48 @@ export function MapControls({
                 </div>
               </div>
 
-              {/* Labels Section */}
+              {/* City Labels Section */}
               <div className="pt-3 border-t border-white/10">
                 <div className="text-sm font-semibold text-foreground/80 mb-3">
-                  Labels
+                  City Labels
                 </div>
                 <div className="space-y-3">
+                  {/* Show Only Scholar Cities Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-scholar-cities" className="text-sm text-muted-foreground cursor-pointer">
+                      Scholar Cities Only
+                    </Label>
+                    <Switch
+                      id="show-scholar-cities"
+                      checked={showOnlyScholarCities}
+                      onCheckedChange={onShowOnlyScholarCitiesChange}
+                    />
+                  </div>
+
+                  {/* City Importance Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground/70 uppercase tracking-wide">
+                      City Importance
+                    </Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CITY_FILTER_OPTIONS.map(option => (
+                        <button
+                          key={option.value}
+                          onClick={() => onCityFilterChange(option.value)}
+                          className={cn(
+                            "px-2 py-1 rounded text-[10px] uppercase tracking-wide transition-colors border",
+                            cityFilter === option.value
+                              ? 'bg-accent/20 border-accent/50 text-accent' 
+                              : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
+                          )}
+                          title={option.description}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Show Place Names English Toggle */}
                   <div className="flex items-center justify-between">
                     <Label htmlFor="show-place-english" className="text-sm text-muted-foreground cursor-pointer">
@@ -141,7 +192,15 @@ export function MapControls({
                       onCheckedChange={onShowPlaceNamesHebrewChange}
                     />
                   </div>
+                </div>
+              </div>
 
+              {/* Scholar Labels Section */}
+              <div className="pt-3 border-t border-white/10">
+                <div className="text-sm font-semibold text-foreground/80 mb-3">
+                  Scholar Labels
+                </div>
+                <div className="space-y-3">
                   {/* Show Scholar Names English Toggle */}
                   <div className="flex items-center justify-between">
                     <Label htmlFor="show-scholar-english" className="text-sm text-muted-foreground cursor-pointer">

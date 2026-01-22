@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DbScholar, DbRelationship, DbPlace, DbLocationName } from '@/hooks/useScholars';
+import type { CityFilter } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
@@ -21,6 +22,8 @@ interface LeafletMapProps {
   showPlaceNamesHebrew: boolean;
   showScholarNamesEnglish: boolean;
   showScholarNamesHebrew: boolean;
+  cityFilter: CityFilter;
+  showOnlyScholarCities: boolean;
   mapRef?: React.MutableRefObject<L.Map | null>;
 }
 
@@ -399,6 +402,8 @@ export function LeafletMap({
   showPlaceNamesHebrew,
   showScholarNamesEnglish,
   showScholarNamesHebrew,
+  cityFilter,
+  showOnlyScholarCities,
   mapRef: externalMapRef,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -632,6 +637,27 @@ export function LeafletMap({
     });
   }, [showBoundaries, selectedRegion, timeRange]);
 
+  // Get set of cities where scholars are located
+  const scholarCityCoords = useMemo(() => {
+    const coords = new Set<string>();
+    scholars.forEach(s => {
+      if (s.latitude && s.longitude) {
+        // Create a key that matches places within ~0.1 degrees (about 11km)
+        const latKey = Math.round(s.latitude * 10) / 10;
+        const lngKey = Math.round(s.longitude * 10) / 10;
+        coords.add(`${latKey},${lngKey}`);
+      }
+    });
+    return coords;
+  }, [scholars]);
+
+  // Check if a place has scholars
+  const hasScholar = (place: DbPlace): boolean => {
+    const latKey = Math.round(place.latitude * 10) / 10;
+    const lngKey = Math.round(place.longitude * 10) / 10;
+    return scholarCityCoords.has(`${latKey},${lngKey}`);
+  };
+
   // Draw custom city labels from database (crisp HTML text)
   useEffect(() => {
     if (!leafletMap.current) return;
@@ -649,12 +675,33 @@ export function LeafletMap({
     const shadowColor = isLightMap ? 'rgba(255,255,255,0.9)' : '#1a1a1a';
     const glowColor = isLightMap ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)';
 
-    // Filter places by importance based on zoom level
-    const minImportanceForZoom = zoomLevel < 5 ? 9 : zoomLevel < 6 ? 7 : zoomLevel < 7 ? 5 : 0;
-    const visiblePlaces = places.filter(p => (p.importance ?? 5) >= minImportanceForZoom);
+    // Determine min importance based on cityFilter and zoom level
+    let minImportance: number;
+    switch (cityFilter) {
+      case 'major':
+        minImportance = 8;
+        break;
+      case 'minor':
+        minImportance = 5;
+        break;
+      case 'all':
+      default:
+        // Use zoom-based filtering for 'all' mode
+        minImportance = zoomLevel < 5 ? 9 : zoomLevel < 6 ? 7 : zoomLevel < 7 ? 5 : 0;
+        break;
+    }
+
+    // Filter places by importance and optionally by scholar presence
+    let visiblePlaces = places.filter(p => (p.importance ?? 5) >= minImportance);
+    
+    // If scholar-only filter is enabled, further filter to only cities with scholars
+    if (showOnlyScholarCities) {
+      visiblePlaces = visiblePlaces.filter(p => hasScholar(p));
+    }
 
     visiblePlaces.forEach(place => {
       const isMajor = (place.importance ?? 5) >= 8;
+      const isScholarCity = hasScholar(place);
       
       // Get historical names for this time period
       const hebrewName = getHistoricalName(place.id, 'hebrew', place.name_hebrew);
@@ -666,12 +713,15 @@ export function LeafletMap({
         ? `${latinName}` 
         : englishName;
       
+      // Scholar cities get a subtle accent color
+      const cityTextColor = isScholarCity ? (isLightMap ? '#6d28d9' : '#c4b5fd') : textColor;
+      
       // Build HTML based on which languages are enabled
       const hebrewHtml = showPlaceNamesHebrew && hebrewName ? `<div style="
         font-family: 'David Libre', 'Times New Roman', serif;
         font-size: ${isMajor ? '16px' : '13px'};
         font-weight: 600;
-        color: ${textColor};
+        color: ${cityTextColor};
         text-shadow: 
           -1px -1px 0 ${shadowColor},
           1px -1px 0 ${shadowColor},
@@ -685,7 +735,7 @@ export function LeafletMap({
         font-family: 'Crimson Text', Georgia, serif;
         font-size: ${isMajor ? '14px' : '11px'};
         font-weight: ${isMajor ? '600' : '500'};
-        color: ${textColor};
+        color: ${cityTextColor};
         text-shadow: 
           -1px -1px 0 ${shadowColor},
           1px -1px 0 ${shadowColor},
@@ -716,7 +766,7 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       cityLabelsRef.current.push(label);
     });
-  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew, places, zoomLevel, getHistoricalName]);
+  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew, places, zoomLevel, getHistoricalName, cityFilter, showOnlyScholarCities, scholarCityCoords]);
 
   // Draw migration paths
   useEffect(() => {
