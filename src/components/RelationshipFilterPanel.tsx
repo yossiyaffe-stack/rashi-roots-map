@@ -58,7 +58,9 @@ function FilterSection({
   onToggleCategory,
   labels 
 }: FilterSectionProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  // Start collapsed so the parent panel can show the 3 domains first,
+  // and users can expand each domain on demand.
+  const [isOpen, setIsOpen] = useState(false);
   const colors = DOMAIN_COLORS[domain];
   const Icon = colors.icon;
   
@@ -117,6 +119,7 @@ function FilterSection({
 }
 
 export function RelationshipFilterPanel() {
+  const [panelOpen, setPanelOpen] = useState(false);
   const {
     filters,
     toggleDomain,
@@ -129,84 +132,105 @@ export function RelationshipFilterPanel() {
   } = useRelationshipFilters();
 
   return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-accent" />
-          <span className="text-xs uppercase tracking-widest text-accent font-bold">Relationships</span>
-          {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="text-[10px] px-1.5">
-              {activeFilterCount} filtered
-            </Badge>
-          )}
-        </div>
-        {activeFilterCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={resetFilters}
-            className="h-6 px-2 text-xs text-white/50 hover:text-white"
-          >
-            <RotateCcw className="w-3 h-3 mr-1" />
-            Reset
-          </Button>
-        )}
-      </div>
-
-      {/* Domain Sections */}
-      <div className="space-y-2">
-        <FilterSection
-          title="Biographical"
-          domain="biographical"
-          isEnabled={filters.domains.biographical}
-          onToggleDomain={() => toggleDomain('biographical')}
-          categories={filters.biographical.categories}
-          onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
-          labels={CATEGORY_LABELS.biographical}
-        />
-        
-        <FilterSection
-          title="Textual"
-          domain="textual"
-          isEnabled={filters.domains.textual}
-          onToggleDomain={() => toggleDomain('textual')}
-          categories={filters.textual.categories}
-          onToggleCategory={(cat) => toggleTextualCategory(cat as keyof RelationshipFilters['textual']['categories'])}
-          labels={CATEGORY_LABELS.textual}
-        />
-        
-        <FilterSection
-          title="Intellectual"
-          domain="intellectual"
-          isEnabled={filters.domains.intellectual}
-          onToggleDomain={() => toggleDomain('intellectual')}
-          categories={filters.intellectual.categories}
-          onToggleCategory={(cat) => toggleIntellectualCategory(cat as keyof RelationshipFilters['intellectual']['categories'])}
-          labels={CATEGORY_LABELS.intellectual}
-        />
-      </div>
-
-      {/* Certainty Filter */}
-      <div className="pt-2 border-t border-white/10">
-        <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Certainty Level</div>
-        <div className="flex flex-wrap gap-1.5">
-          {Object.entries(filters.certainty).map(([level, enabled]) => (
+    <Collapsible open={panelOpen} onOpenChange={setPanelOpen}>
+      <div className="space-y-3">
+        {/* Header (collapsible) */}
+        <div className="flex items-center justify-between gap-2">
+          <CollapsibleTrigger asChild>
             <button
-              key={level}
-              onClick={() => toggleCertainty(level as keyof RelationshipFilters['certainty'])}
+              type="button"
               className={cn(
-                "px-2 py-1 rounded text-[10px] uppercase tracking-wide transition-colors border",
-                enabled 
-                  ? 'bg-white/10 border-white/30 text-white' 
-                  : 'bg-transparent border-white/10 text-white/40'
+                "flex flex-1 items-center gap-2 text-left",
+                "rounded-md px-1 py-1",
+                "hover:bg-white/5 transition-colors"
               )}
             >
-              {level}
+              <Filter className="w-4 h-4 text-accent" />
+              <span className="text-xs uppercase tracking-widest text-accent font-bold">Relationships</span>
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5">
+                  {activeFilterCount} filtered
+                </Badge>
+              )}
+              <span className="ml-auto text-white/40">
+                {panelOpen ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
+              </span>
             </button>
-          ))}
+          </CollapsibleTrigger>
+
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="h-7 px-2 text-xs text-white/50 hover:text-white"
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Reset
+            </Button>
+          )}
         </div>
+
+        <CollapsibleContent className="space-y-3">
+          {/* Domain Sections */}
+          <div className="space-y-2">
+            <FilterSection
+              title="Biographical"
+              domain="biographical"
+              isEnabled={filters.domains.biographical}
+              onToggleDomain={() => toggleDomain('biographical')}
+              categories={filters.biographical.categories}
+              onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
+              labels={CATEGORY_LABELS.biographical}
+            />
+            
+            <FilterSection
+              title="Textual"
+              domain="textual"
+              isEnabled={filters.domains.textual}
+              onToggleDomain={() => toggleDomain('textual')}
+              categories={filters.textual.categories}
+              onToggleCategory={(cat) => toggleTextualCategory(cat as keyof RelationshipFilters['textual']['categories'])}
+              labels={CATEGORY_LABELS.textual}
+            />
+            
+            <FilterSection
+              title="Intellectual"
+              domain="intellectual"
+              isEnabled={filters.domains.intellectual}
+              onToggleDomain={() => toggleDomain('intellectual')}
+              categories={filters.intellectual.categories}
+              onToggleCategory={(cat) => toggleIntellectualCategory(cat as keyof RelationshipFilters['intellectual']['categories'])}
+              labels={CATEGORY_LABELS.intellectual}
+            />
+          </div>
+
+          {/* Certainty Filter */}
+          <div className="pt-2 border-t border-white/10">
+            <div className="text-[10px] uppercase tracking-wider text-white/40 mb-2">Certainty Level</div>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(filters.certainty).map(([level, enabled]) => (
+                <button
+                  key={level}
+                  onClick={() => toggleCertainty(level as keyof RelationshipFilters['certainty'])}
+                  className={cn(
+                    "px-2 py-1 rounded text-[10px] uppercase tracking-wide transition-colors border",
+                    enabled 
+                      ? 'bg-white/10 border-white/30 text-white' 
+                      : 'bg-transparent border-white/10 text-white/40'
+                  )}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   );
 }
