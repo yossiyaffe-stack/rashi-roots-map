@@ -137,11 +137,11 @@ export const TimelineLayout = ({
             />
             <text
               x={timelineX - 18}
-              y={y + 5}
+              y={y + 6}
               textAnchor="end"
-              fill="hsl(var(--muted-foreground))"
-              fontSize={14}
-              fontWeight={600}
+              fill="hsl(var(--foreground))"
+              fontSize={18}
+              fontWeight={800}
             >
               {year}
             </text>
