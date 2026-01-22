@@ -12,7 +12,7 @@ import { NetworkView } from '@/components/NetworkView';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { MapLegend } from '@/components/MapLegend';
 import { HistoricalEventsList } from '@/components/HistoricalEventsList';
-import { ManuscriptLinks } from '@/components/ManuscriptLinks';
+
 import { useScholars, useHistoricalEvents, useRelationships, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
@@ -148,11 +148,10 @@ const Index = () => {
             </ScrollArea>
           </div>
 
-          {/* Legend, Events & Resources */}
+          {/* Legend & Events */}
           <div className="space-y-4 pt-4 border-t border-white/10">
             <MapLegend />
             <HistoricalEventsList events={historicalEvents} timeRange={timeRange} />
-            <ManuscriptLinks />
           </div>
         </div>
 
