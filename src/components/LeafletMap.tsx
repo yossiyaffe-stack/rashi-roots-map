@@ -454,10 +454,11 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
-      // Add Esri's reference labels designed for satellite imagery (white text with black halos)
-      labelsLayerRef.current = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© Esri',
+      // Add clean light labels overlay
+      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        attribution: '© CARTO',
         pane: 'overlayPane',
+        opacity: 0.9,
       }).addTo(leafletMap.current);
     } else if (viewMode === 'historical') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.topo, {
@@ -469,10 +470,11 @@ export function LeafletMap({
         opacity: 0.9,
       }).addTo(leafletMap.current);
       // Add clear reference labels on top
-      labelsLayerRef.current = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© Esri',
+      // Add clean light labels overlay
+      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        attribution: '© CARTO',
         pane: 'overlayPane',
-        opacity: 0.6,
+        opacity: 0.8,
       }).addTo(leafletMap.current);
     }
   }, [viewMode]);
