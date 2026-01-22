@@ -38,7 +38,7 @@ export const WorksNetworkView = ({
 }: WorksNetworkViewProps) => {
   const [showOnlyConnected, setShowOnlyConnected] = useState(true);
   const [highlightSelected, setHighlightSelected] = useState(true);
-  const [zoom, setZoom] = useState(1.2);
+  const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -123,6 +123,10 @@ export const WorksNetworkView = ({
     return depths;
   }, [sortedWorks, relationships]);
 
+  // Fixed viewport dimensions - like Scholars Network
+  const viewWidth = 1600;
+  const viewHeight = 900;
+
   // Position works in a hierarchical tree layout by depth level
   const workPositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number; depth: number }> = {};
@@ -141,10 +145,23 @@ export const WorksNetworkView = ({
     });
 
     const depthLevels = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
-    const depthSpacing = 350; // Vertical spacing between depth levels
-    const nodeSpacing = 280; // Horizontal spacing between nodes
+    const numDepths = depthLevels.length || 1;
     
-    let currentY = 100;
+    // Dynamic spacing based on viewport - like Scholars Network
+    const depthSpacing = Math.min(180, (viewHeight - 100) / (numDepths + 1));
+    
+    // Find max works in any depth level for horizontal spacing
+    let maxWorksInLevel = 1;
+    depthLevels.forEach(depth => {
+      const erasInDepth = depthGroups[depth];
+      let count = 0;
+      Object.values(erasInDepth).forEach(works => count += works.length);
+      if (count > maxWorksInLevel) maxWorksInLevel = count;
+    });
+    
+    const nodeSpacing = Math.min(180, (viewWidth - 100) / (maxWorksInLevel + 1));
+    
+    let currentY = 80;
     
     depthLevels.forEach((depth) => {
       const erasInDepth = depthGroups[depth];
@@ -156,8 +173,8 @@ export const WorksNetworkView = ({
         totalWorks += erasInDepth[era].length;
       });
       
-      const totalWidth = totalWorks * nodeSpacing;
-      let currentX = -totalWidth / 2 + nodeSpacing / 2;
+      const centerX = viewWidth / 2;
+      let currentX = centerX - ((totalWorks - 1) * nodeSpacing) / 2;
       
       eras.forEach((era) => {
         const worksInEra = erasInDepth[era];
@@ -176,19 +193,13 @@ export const WorksNetworkView = ({
     });
 
     return positions;
-  }, [sortedWorks, workDepthLevels]);
-
-  // SVG dimensions
-  const svgDimensions = useMemo(() => ({
-    width: 5000,
-    height: Math.max(3000, Object.keys(workPositions).length * 80),
-  }), [workPositions]);
+  }, [sortedWorks, workDepthLevels, viewWidth, viewHeight]);
 
   // Zoom handlers
-  const handleZoomIn = () => setZoom(z => Math.min(z + 0.2, 3));
-  const handleZoomOut = () => setZoom(z => Math.max(z - 0.2, 0.5));
+  const handleZoomIn = () => setZoom(z => Math.min(z * 1.25, 4));
+  const handleZoomOut = () => setZoom(z => Math.max(z / 1.25, 0.25));
   const handleResetView = () => {
-    setZoom(1.2);
+    setZoom(1);
     setPan({ x: 0, y: 0 });
   };
 
@@ -259,10 +270,12 @@ export const WorksNetworkView = ({
       <svg
         width="100%"
         height="100%"
-        viewBox={`${-svgDimensions.width / 2} 0 ${svgDimensions.width} ${svgDimensions.height}`}
+        viewBox={`0 0 ${viewWidth} ${viewHeight}`}
+        preserveAspectRatio="xMidYMid meet"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: 'center center',
+          transition: isPanning ? 'none' : 'transform 0.1s ease-out'
         }}
       >
         <defs>
@@ -339,37 +352,53 @@ export const WorksNetworkView = ({
               style={{ cursor: 'pointer' }}
               filter={isSelected ? 'url(#work-glow)' : undefined}
             >
+              {/* Glow effect for selected */}
+              {isSelected && (
+                <rect
+                  x={-78}
+                  y={-33}
+                  width={156}
+                  height={66}
+                  rx={10}
+                  fill="none"
+                  stroke="#fbbf24"
+                  strokeWidth="3"
+                  opacity="0.5"
+                  filter="url(#work-glow)"
+                />
+              )}
+              
               {/* Background rectangle */}
               <rect
-                x={-100}
-                y={-40}
-                width={200}
-                height={80}
-                rx={10}
+                x={-75}
+                y={-30}
+                width={150}
+                height={60}
+                rx={8}
                 fill={isSelected ? color : 'hsl(var(--card))'}
                 stroke={color}
-                strokeWidth={isSelected ? 4 : 2}
+                strokeWidth={isSelected ? 3 : 1.5}
                 opacity={dimmed ? 0.3 : 1}
               />
               
               {/* Work title */}
               <text
                 textAnchor="middle"
-                dy={-8}
+                dy={-5}
                 fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--foreground))'}
-                fontSize={16}
+                fontSize={12}
                 fontWeight={600}
                 opacity={dimmed ? 0.3 : 1}
               >
-                {work.title.length > 22 ? work.title.slice(0, 20) + '...' : work.title}
+                {work.title.length > 18 ? work.title.slice(0, 16) + '...' : work.title}
               </text>
               
               {/* Author name */}
               <text
                 textAnchor="middle"
-                dy={14}
+                dy={12}
                 fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--muted-foreground))'}
-                fontSize={13}
+                fontSize={10}
                 opacity={dimmed ? 0.3 : 0.8}
               >
                 {work.author_name}
