@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DbScholar, DbRelationship, DbPlace, DbLocationName, DbBiographicalRelationship, DbTextualRelationship } from '@/hooks/useScholars';
 import type { CityFilter } from '@/contexts/MapControlsContext';
+import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
@@ -431,6 +432,9 @@ export function LeafletMap({
   const [viewMode, setViewMode] = useState<ViewMode>('satellite');
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
   const [zoomLevel, setZoomLevel] = useState(6);
+
+  // Get relationship filters
+  const { shouldShowRelationship } = useRelationshipFilters();
 
   // Alias for internal use
   const showLines = showConnections;
@@ -1000,6 +1004,16 @@ export function LeafletMap({
 
     // 1. Draw legacy relationships (from 'relationships' table)
     relationships.forEach(rel => {
+      // Map legacy relationship types to domains
+      const domain = rel.type === 'family' || rel.type === 'educational' 
+        ? 'biographical' 
+        : rel.type === 'literary' 
+          ? 'textual' 
+          : 'biographical';
+      
+      // Check if this relationship should be shown based on filters
+      if (!shouldShowRelationship(domain, rel.type, null, null)) return;
+      
       const fromCoords = rel.from_scholar_id ? scholarCoords.get(rel.from_scholar_id) : null;
       const toCoords = rel.to_scholar_id ? scholarCoords.get(rel.to_scholar_id) : null;
 
@@ -1011,6 +1025,9 @@ export function LeafletMap({
 
     // 2. Draw biographical relationships (family, educational, etc.)
     biographicalRelationships.forEach(rel => {
+      // Check if this relationship should be shown based on filters
+      if (!shouldShowRelationship('biographical', rel.relationship_category, rel.relationship_type, rel.certainty)) return;
+      
       const fromCoords = scholarCoords.get(rel.scholar_id);
       const toCoords = scholarCoords.get(rel.related_scholar_id);
 
@@ -1018,10 +1035,15 @@ export function LeafletMap({
         // Color based on category
         let color = '#8b5cf6'; // default purple
         let label = rel.relationship_category;
+        let dashed = false;
         
         if (rel.relationship_category === 'family') {
           color = '#f59e0b'; // amber
           label = `Family: ${rel.relationship_type}`;
+          // In-law relationships shown as dashed
+          if (rel.relationship_type?.includes('in_law') || rel.relationship_type?.includes('in-law')) {
+            dashed = true;
+          }
         } else if (rel.relationship_category === 'educational' || rel.relationship_category === 'pedagogical') {
           color = '#22c55e'; // green
           label = `Educational: ${rel.relationship_type}`;
@@ -1033,12 +1055,15 @@ export function LeafletMap({
           label = `Social: ${rel.relationship_type}`;
         }
         
-        drawLine(fromCoords, toCoords, color, label);
+        drawLine(fromCoords, toCoords, color, label, dashed);
       }
     });
 
     // 3. Draw textual relationships (work-to-work mapped to scholar-to-scholar)
     textualRelationships.forEach(rel => {
+      // Check if this relationship should be shown based on filters
+      if (!shouldShowRelationship('textual', rel.relationship_category, rel.relationship_type, rel.certainty)) return;
+      
       if (!rel.from_scholar_id || !rel.to_scholar_id) return;
       
       const fromCoords = scholarCoords.get(rel.from_scholar_id);
@@ -1051,7 +1076,7 @@ export function LeafletMap({
       }
     });
 
-  }, [showLines, relationships, biographicalRelationships, textualRelationships, scholars]);
+  }, [showLines, relationships, biographicalRelationships, textualRelationships, scholars, shouldShowRelationship]);
 
   // Update markers when scholars or time range or region filter changes
   useEffect(() => {
