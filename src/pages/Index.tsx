@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
+import L from 'leaflet';
 import { Clock, ChevronRight, ChevronLeft, Users, Search, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider, type SliderMarker } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -7,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
+import { PlaceSearch } from '@/components/PlaceSearch';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
 import { useScholars, useRelationships, useHistoricalEvents, usePlaces, type DbScholar } from '@/hooks/useScholars';
@@ -20,6 +22,7 @@ const Index = () => {
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [timelineFullscreen, setTimelineFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const mapRef = useRef<L.Map | null>(null);
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
   const { 
@@ -66,6 +69,13 @@ const Index = () => {
     }));
   }, [historicalEvents]);
 
+  // Handle place selection from search
+  const handlePlaceSelect = (latitude: number, longitude: number, placeName: string) => {
+    if (mapRef.current) {
+      mapRef.current.flyTo([latitude, longitude], 10, { duration: 1.5 });
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
       {/* Map Content - Full screen behind overlays */}
@@ -84,7 +94,13 @@ const Index = () => {
           showPlaceNamesHebrew={showPlaceNamesHebrew}
           showScholarNamesEnglish={showScholarNamesEnglish}
           showScholarNamesHebrew={showScholarNamesHebrew}
+          mapRef={mapRef}
         />
+
+        {/* Place Search - Top Right */}
+        <div className="absolute top-6 right-24 z-[1000]">
+          <PlaceSearch onPlaceSelect={handlePlaceSelect} />
+        </div>
 
         {/* Scholars Overlay Panel - Left side */}
         <div className={cn(
