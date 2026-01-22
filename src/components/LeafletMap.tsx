@@ -709,26 +709,52 @@ export function LeafletMap({
       const isSelected = selectedScholar?.id === scholar.id;
       const isDimmed = selectedRegion && !inSelectedRegion;
       
+      // Get a shorter display name (acronym or first part)
+      const shortName = scholar.name.split(' - ')[0].split(' (')[0];
+      
       const icon = L.divIcon({
         className: 'historical-marker',
         html: `
-          <div 
-            class="marker-dot ${isRashi ? 'marker-rashi-dot' : ''}" 
-            style="
-              background: ${color}; 
-              width: ${isRashi ? '22px' : '14px'};
-              height: ${isRashi ? '22px' : '14px'};
-              border-radius: 50%;
-              border: ${isRashi ? '3px solid #fbbf24' : '2px solid #fff'};
-              box-shadow: 0 0 ${isSelected ? '20px' : '10px'} ${color}, 0 2px 6px rgba(0,0,0,0.4);
-              transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-              ${isSelected ? 'transform: scale(1.4);' : ''}
-              ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
-            "
-          ></div>
+          <div class="marker-container" style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+          ">
+            <div 
+              class="marker-dot ${isRashi ? 'marker-rashi-dot' : ''}" 
+              style="
+                background: ${color}; 
+                width: ${isRashi ? '22px' : '14px'};
+                height: ${isRashi ? '22px' : '14px'};
+                border-radius: 50%;
+                border: ${isRashi ? '3px solid #fbbf24' : '2px solid #fff'};
+                box-shadow: 0 0 ${isSelected ? '20px' : '10px'} ${color}, 0 2px 6px rgba(0,0,0,0.4);
+                transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+                ${isSelected ? 'transform: scale(1.4);' : ''}
+                ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
+              "
+            ></div>
+            <div class="marker-label" style="
+              background: rgba(0, 0, 0, 0.85);
+              color: #fff;
+              padding: 3px 8px;
+              border-radius: 4px;
+              font-size: ${isRashi ? '12px' : '10px'};
+              font-weight: ${isRashi ? '700' : '600'};
+              white-space: nowrap;
+              max-width: 120px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+              border: 1px solid rgba(255,255,255,0.2);
+              ${isDimmed ? 'opacity: 0.4;' : ''}
+              ${isRashi ? 'background: linear-gradient(135deg, #c9a961, #b8963e); color: #1a1a2e;' : ''}
+            ">${shortName}</div>
+          </div>
         `,
-        iconSize: isRashi ? [22, 22] : [14, 14],
-        iconAnchor: isRashi ? [11, 11] : [7, 7],
+        iconSize: isRashi ? [120, 60] : [100, 50],
+        iconAnchor: isRashi ? [60, 11] : [50, 7],
       });
 
       const marker = L.marker([scholar.latitude!, scholar.longitude!], { 

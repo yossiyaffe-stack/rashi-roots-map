@@ -169,6 +169,20 @@
     transform: scale(1.3) !important;
   }
 
+  .historical-marker:hover .marker-label {
+    background: rgba(0, 0, 0, 0.95) !important;
+    transform: scale(1.05);
+  }
+
+  .marker-container {
+    pointer-events: auto;
+  }
+
+  .marker-label {
+    transition: all 0.2s ease;
+    pointer-events: none;
+  }
+
   .marker-dot {
     cursor: pointer;
   }
