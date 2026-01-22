@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
 import { MapControls } from '@/components/MapControls';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useMapControls } from '@/contexts/MapControlsContext';
@@ -136,23 +137,25 @@ export function AppLayout() {
           })}
         </nav>
 
-        {/* Spacer */}
-        <div className="flex-1" />
+        {/* Spacer - only when not showing legends */}
+        {(!isMapPage || !sidebarOpen) && <div className="flex-1" />}
 
         {/* Legends & Controls - Only on Map page */}
         {isMapPage && sidebarOpen && (
-          <div className="p-3 border-t border-white/10 space-y-4">
-            <MapControls
-              showBoundaries={showBoundaries}
-              onShowBoundariesChange={setShowBoundaries}
-              showMigrations={showMigrations}
-              onShowMigrationsChange={setShowMigrations}
-              showConnections={showConnections}
-              onShowConnectionsChange={setShowConnections}
-            />
-            <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
-            <KingdomsLegend />
-          </div>
+          <ScrollArea className="flex-1 border-t border-white/10">
+            <div className="p-3 space-y-4">
+              <MapControls
+                showBoundaries={showBoundaries}
+                onShowBoundariesChange={setShowBoundaries}
+                showMigrations={showMigrations}
+                onShowMigrationsChange={setShowMigrations}
+                showConnections={showConnections}
+                onShowConnectionsChange={setShowConnections}
+              />
+              <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
+              <KingdomsLegend />
+            </div>
+          </ScrollArea>
         )}
 
         {/* Footer */}
