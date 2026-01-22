@@ -429,6 +429,7 @@ export function LeafletMap({
   
   const [viewMode, setViewMode] = useState<ViewMode>('satellite');
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(6);
 
   // Alias for internal use
   const showLines = showConnections;
@@ -449,6 +450,11 @@ export function LeafletMap({
     // Create custom pane for city labels with higher z-index (above markers)
     map.createPane('cityLabelsPane');
     map.getPane('cityLabelsPane')!.style.zIndex = '650';
+
+    // Track zoom level changes
+    map.on('zoomend', () => {
+      setZoomLevel(map.getZoom());
+    });
 
     // Add initial base layer
     baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
@@ -900,33 +906,68 @@ export function LeafletMap({
       return s.birth_year >= timeRange[0] && s.birth_year <= timeRange[1];
     });
 
+    // Zoom-based visibility thresholds
+    // Zoom < 5: Only show importance >= 90 (major figures)
+    // Zoom 5-6: Show importance >= 70
+    // Zoom 6-7: Show importance >= 50
+    // Zoom 7-8: Show all markers, labels only for importance >= 60
+    // Zoom >= 8: Show all markers with labels
+    const getMinImportanceForMarker = (zoom: number) => {
+      if (zoom < 5) return 90;
+      if (zoom < 6) return 70;
+      if (zoom < 7) return 50;
+      return 0; // Show all
+    };
+    
+    const getMinImportanceForLabel = (zoom: number) => {
+      if (zoom < 6) return 100; // Only Rashi
+      if (zoom < 7) return 80;
+      if (zoom < 8) return 60;
+      return 0; // Show all labels
+    };
+
+    const minImportanceForMarker = getMinImportanceForMarker(zoomLevel);
+    const minImportanceForLabel = getMinImportanceForLabel(zoomLevel);
+
+    // Scale marker sizes based on zoom
+    const zoomScale = Math.max(0.6, Math.min(1.2, zoomLevel / 8));
+
     // Add markers
     visibleScholars.forEach(scholar => {
+      const importance = scholar.importance ?? 50;
+      const isRashi = scholar.name === 'Rashi';
+      
+      // Skip low-importance scholars when zoomed out (unless selected)
+      const isSelected = selectedScholar?.id === scholar.id;
+      if (!isRashi && !isSelected && importance < minImportanceForMarker) {
+        return;
+      }
+
       // Check if scholar is in selected region
       const inSelectedRegion = !selectedRegion || 
         isPointInPolygon(scholar.latitude!, scholar.longitude!, HISTORICAL_BOUNDARIES[selectedRegion].coordinates);
       
       const color = getScholarColor(scholar);
-      const isRashi = scholar.name === 'Rashi';
-      const isSelected = selectedScholar?.id === scholar.id;
       const isDimmed = selectedRegion && !inSelectedRegion;
       
-      // Calculate size based on importance (0-100 scale, default 50)
-      // Min size: 8px, Max size: 24px for Rashi/highest importance
-      const importance = scholar.importance ?? 50;
-      const baseSize = isRashi 
+      // Calculate size based on importance and zoom level
+      const rawSize = isRashi 
         ? 24 
         : Math.max(8, Math.min(20, 8 + (importance / 100) * 12));
+      const baseSize = Math.round(rawSize * zoomScale);
       const borderWidth = baseSize > 14 ? 2.5 : baseSize > 10 ? 2 : 1.5;
       const fontSize = baseSize > 14 ? 11 : baseSize > 10 ? 10 : 9;
+      
+      // Determine if label should be shown based on zoom level
+      const shouldShowLabel = isRashi || isSelected || importance >= minImportanceForLabel;
       
       // Get a shorter display name (acronym or first part)
       const shortName = scholar.name.split(' - ')[0].split(' (')[0];
       const hebrewName = scholar.hebrew_name || '';
       
-      // Build label content based on visibility settings
-      const showEnglish = showScholarNamesEnglish;
-      const showHebrew = showScholarNamesHebrew && hebrewName;
+      // Build label content based on visibility settings AND zoom level
+      const showEnglish = showScholarNamesEnglish && shouldShowLabel;
+      const showHebrew = showScholarNamesHebrew && hebrewName && shouldShowLabel;
       const showAnyLabel = showEnglish || showHebrew;
       
       // Build the display text
@@ -1018,7 +1059,7 @@ export function LeafletMap({
     });
 
     // Note: Removed auto-pan to selected scholar - map only moves on user interaction
-  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew]);
+  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew, zoomLevel]);
 
   return (
     <div className="relative w-full h-full">
