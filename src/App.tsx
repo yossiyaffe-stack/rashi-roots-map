@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import Index from "./pages/Index";
 import Timeline from "./pages/Timeline";
-import HistoricalContext from "./pages/HistoricalContext";
 import Network from "./pages/Network";
 import NotFound from "./pages/NotFound";
 
@@ -22,7 +21,6 @@ const App = () => (
           <Route element={<AppLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/timeline" element={<Timeline />} />
-            <Route path="/history" element={<HistoricalContext />} />
             <Route path="/network" element={<Network />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
