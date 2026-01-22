@@ -117,9 +117,9 @@ export const RadialLayout = ({
     });
     rings.set(3, ring3);
 
-    // Position each ring
-    const baseRadius = 140;
-    const ringSpacing = 160;
+    // Position each ring - much larger spacing
+    const baseRadius = 220;
+    const ringSpacing = 240;
     
     rings.forEach((ringWorks, ringNum) => {
       const radius = baseRadius + (ringNum - 1) * ringSpacing;
@@ -182,11 +182,11 @@ export const RadialLayout = ({
           key={ring}
           cx={centerX}
           cy={centerY}
-          r={140 + (ring - 1) * 160}
+          r={220 + (ring - 1) * 240}
           fill="none"
           stroke="hsl(var(--border))"
-          strokeWidth={0.5}
-          strokeDasharray="4,8"
+          strokeWidth={1}
+          strokeDasharray="6,12"
           opacity={0.3}
         />
       ))}
@@ -235,9 +235,9 @@ export const RadialLayout = ({
         const color = getWorkColor(work);
         const dimmed = highlightSelected && selectedWork && !selectedWorkConnections.has(work.id);
 
-        // Center node is larger
-        const nodeWidth = isCenter ? 180 : 140;
-        const nodeHeight = isCenter ? 60 : 46;
+        // Center node is larger - all nodes much bigger now
+        const nodeWidth = isCenter ? 260 : 200;
+        const nodeHeight = isCenter ? 90 : 70;
 
         return (
           <g
@@ -267,14 +267,14 @@ export const RadialLayout = ({
             {/* Selection glow */}
             {isSelected && !isCenter && (
               <rect
-                x={-nodeWidth / 2 - 4}
-                y={-nodeHeight / 2 - 4}
-                width={nodeWidth + 8}
-                height={nodeHeight + 8}
-                rx={12}
+                x={-nodeWidth / 2 - 5}
+                y={-nodeHeight / 2 - 5}
+                width={nodeWidth + 10}
+                height={nodeHeight + 10}
+                rx={14}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth="2.5"
+                strokeWidth="3"
                 opacity="0.6"
               />
             )}
@@ -285,22 +285,22 @@ export const RadialLayout = ({
               y={-nodeHeight / 2}
               width={nodeWidth}
               height={nodeHeight}
-              rx={isCenter ? 12 : 8}
+              rx={isCenter ? 14 : 10}
               fill={isSelected || isCenter ? color : 'hsl(var(--card))'}
               stroke={color}
-              strokeWidth={isCenter ? 3 : isSelected ? 2.5 : 1.5}
+              strokeWidth={isCenter ? 4 : isSelected ? 3 : 2}
               opacity={dimmed ? 0.25 : 1}
               className="transition-all duration-200"
             />
 
             {/* Manuscript indicator */}
             {work.manuscript_url && !dimmed && (
-              <g transform={`translate(${nodeWidth / 2 - 15}, ${-nodeHeight / 2 + 5})`}>
-                <circle r={7} fill="hsl(var(--card))" stroke={color} strokeWidth={1} />
+              <g transform={`translate(${nodeWidth / 2 - 18}, ${-nodeHeight / 2 + 8})`}>
+                <circle r={10} fill="hsl(var(--card))" stroke={color} strokeWidth={1.5} />
                 <text
                   textAnchor="middle"
-                  dy={3}
-                  fontSize={8}
+                  dy={4}
+                  fontSize={12}
                   fill={color}
                 >
                   📜
@@ -308,25 +308,25 @@ export const RadialLayout = ({
               </g>
             )}
             
-            {/* Work title */}
+            {/* Work title - larger fonts */}
             <text
               textAnchor="middle"
-              dy={isCenter ? -6 : -2}
+              dy={isCenter ? -10 : -6}
               fill={isSelected || isCenter ? 'hsl(var(--card))' : 'hsl(var(--foreground))'}
-              fontSize={isCenter ? 14 : 11}
-              fontWeight={600}
+              fontSize={isCenter ? 18 : 15}
+              fontWeight={700}
               opacity={dimmed ? 0.25 : 1}
             >
-              {work.title.length > (isCenter ? 22 : 16) ? work.title.slice(0, isCenter ? 20 : 14) + '...' : work.title}
+              {work.title.length > (isCenter ? 24 : 20) ? work.title.slice(0, isCenter ? 22 : 18) + '...' : work.title}
             </text>
             
-            {/* Author & year */}
+            {/* Author & year - larger fonts */}
             <text
               textAnchor="middle"
-              dy={isCenter ? 12 : 10}
+              dy={isCenter ? 14 : 12}
               fill={isSelected || isCenter ? 'hsl(var(--card))' : 'hsl(var(--muted-foreground))'}
-              fontSize={isCenter ? 11 : 9}
-              opacity={dimmed ? 0.25 : 0.8}
+              fontSize={isCenter ? 14 : 12}
+              opacity={dimmed ? 0.25 : 0.85}
             >
               {work.author_name} {work.year_written ? `(${work.year_written})` : ''}
             </text>
