@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DbScholar, DbRelationship } from '@/hooks/useScholars';
+import type { DbScholar, DbRelationship, DbPlace } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
@@ -9,6 +9,7 @@ type ViewMode = 'modern' | 'historical' | 'satellite';
 interface LeafletMapProps {
   scholars: DbScholar[];
   relationships: DbRelationship[];
+  places: DbPlace[];
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
   timeRange: [number, number];
@@ -348,27 +349,7 @@ const MIGRATION_PATHS: MigrationPath[] = [
   }
 ];
 
-// Key medieval Jewish centers for custom labels
-const CITY_LABELS: { name: string; hebrew: string; lat: number; lng: number; importance: 'major' | 'minor' }[] = [
-  { name: 'Troyes', hebrew: 'טרויש', lat: 48.2973, lng: 4.0744, importance: 'major' },
-  { name: 'Mainz', hebrew: 'מגנצא', lat: 49.9929, lng: 8.2473, importance: 'major' },
-  { name: 'Worms', hebrew: 'ורמייזא', lat: 49.6341, lng: 8.3507, importance: 'major' },
-  { name: 'Speyer', hebrew: 'שפירא', lat: 49.3173, lng: 8.4311, importance: 'major' },
-  { name: 'Paris', hebrew: 'פריז', lat: 48.8566, lng: 2.3522, importance: 'major' },
-  { name: 'Prague', hebrew: 'פראג', lat: 50.0755, lng: 14.4378, importance: 'major' },
-  { name: 'Vienna', hebrew: 'וינה', lat: 48.2082, lng: 16.3738, importance: 'major' },
-  { name: 'Constantinople', hebrew: 'קושטא', lat: 41.0082, lng: 28.9784, importance: 'major' },
-  { name: 'Toledo', hebrew: 'טולדו', lat: 39.8628, lng: -4.0273, importance: 'major' },
-  { name: 'Girona', hebrew: 'גירונה', lat: 41.9794, lng: 2.8214, importance: 'minor' },
-  { name: 'Narbonne', hebrew: 'נרבונה', lat: 43.1842, lng: 3.0037, importance: 'minor' },
-  { name: 'Cologne', hebrew: 'קלן', lat: 50.9375, lng: 6.9603, importance: 'minor' },
-  { name: 'Ramerupt', hebrew: 'ראמרו', lat: 48.4637, lng: 3.5669, importance: 'minor' },
-  { name: 'Dampierre', hebrew: 'דמפייר', lat: 48.0833, lng: 4.5333, importance: 'minor' },
-  { name: 'Venice', hebrew: 'ונציה', lat: 45.4408, lng: 12.3155, importance: 'minor' },
-  { name: 'Bologna', hebrew: 'בולוניה', lat: 44.4949, lng: 11.3426, importance: 'minor' },
-  { name: 'Vilna', hebrew: 'ווילנא', lat: 54.6872, lng: 25.2797, importance: 'minor' },
-  { name: 'Lublin', hebrew: 'לובלין', lat: 51.2465, lng: 22.5684, importance: 'minor' },
-];
+// City labels are now loaded from the database via places prop
 const isPointInPolygon = (lat: number, lng: number, polygon: [number, number][]): boolean => {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -404,6 +385,7 @@ const getRelationshipColor = (type: string): string => {
 export function LeafletMap({ 
   scholars, 
   relationships,
+  places,
   selectedScholar, 
   onSelectScholar, 
   timeRange,
@@ -593,7 +575,7 @@ export function LeafletMap({
     });
   }, [showBoundaries, selectedRegion, timeRange]);
 
-  // Draw custom city labels (crisp HTML text)
+  // Draw custom city labels from database (crisp HTML text)
   useEffect(() => {
     if (!leafletMap.current) return;
 
@@ -601,8 +583,8 @@ export function LeafletMap({
     cityLabelsRef.current.forEach(label => label.remove());
     cityLabelsRef.current = [];
     
-    // Don't render if both languages are hidden
-    if (!showPlaceNamesEnglish && !showPlaceNamesHebrew) return;
+    // Don't render if both languages are hidden or no places loaded
+    if ((!showPlaceNamesEnglish && !showPlaceNamesHebrew) || places.length === 0) return;
 
     // Adjust text styling based on map mode (modern map is lighter)
     const isLightMap = viewMode === 'modern';
@@ -610,11 +592,15 @@ export function LeafletMap({
     const shadowColor = isLightMap ? 'rgba(255,255,255,0.9)' : '#1a1a1a';
     const glowColor = isLightMap ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)';
 
-    CITY_LABELS.forEach(city => {
-      const isMajor = city.importance === 'major';
+    // Filter places by importance based on zoom level
+    const minImportanceForZoom = zoomLevel < 5 ? 9 : zoomLevel < 6 ? 7 : zoomLevel < 7 ? 5 : 0;
+    const visiblePlaces = places.filter(p => (p.importance ?? 5) >= minImportanceForZoom);
+
+    visiblePlaces.forEach(place => {
+      const isMajor = (place.importance ?? 5) >= 8;
       
       // Build HTML based on which languages are enabled
-      const hebrewHtml = showPlaceNamesHebrew ? `<div style="
+      const hebrewHtml = showPlaceNamesHebrew && place.name_hebrew ? `<div style="
         font-family: 'David Libre', 'Times New Roman', serif;
         font-size: ${isMajor ? '16px' : '13px'};
         font-weight: 600;
@@ -626,7 +612,7 @@ export function LeafletMap({
           1px 1px 0 ${shadowColor},
           0 0 4px ${glowColor};
         direction: rtl;
-      ">${city.hebrew}</div>` : '';
+      ">${place.name_hebrew}</div>` : '';
       
       const englishHtml = showPlaceNamesEnglish ? `<div style="
         font-family: 'Crimson Text', Georgia, serif;
@@ -639,10 +625,10 @@ export function LeafletMap({
           -1px 1px 0 ${shadowColor},
           1px 1px 0 ${shadowColor},
           0 0 4px ${glowColor};
-        margin-top: ${showPlaceNamesHebrew ? '-2px' : '0'};
-      ">${city.name}</div>` : '';
+        margin-top: ${showPlaceNamesHebrew && place.name_hebrew ? '-2px' : '0'};
+      ">${place.name_english}</div>` : '';
       
-      const label = L.marker([city.lat, city.lng], {
+      const label = L.marker([place.latitude, place.longitude], {
         icon: L.divIcon({
           className: 'city-label',
           html: `<div style="
@@ -663,7 +649,7 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       cityLabelsRef.current.push(label);
     });
-  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew]);
+  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew, places, zoomLevel]);
 
   // Draw migration paths
   useEffect(() => {
