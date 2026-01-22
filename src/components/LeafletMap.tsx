@@ -1,17 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DbScholar } from '@/hooks/useScholars';
 
-// Fix Leaflet default marker icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-type MapStyle = 'dark' | 'light' | 'terrain';
+type MapStyle = 'dark' | 'manuscript' | 'satellite';
 
 interface LeafletMapProps {
   scholars: DbScholar[];
@@ -21,16 +13,24 @@ interface LeafletMapProps {
   timeRange: [number, number];
 }
 
-const TILE_LAYERS: Record<MapStyle, string> = {
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-  terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+const TILE_LAYERS: Record<MapStyle, { url: string; options?: L.TileLayerOptions }> = {
+  dark: { 
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+  },
+  manuscript: { 
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    options: { opacity: 0.7 }
+  },
+  satellite: { 
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' 
+  },
 };
 
-const IMPORTANCE_COLORS: Record<string, string> = {
-  foundational_commentator: '#e11d48',
-  supercommentator: '#3b82f6',
-  default: '#fbbf24',
+const getScholarColor = (scholar: DbScholar): string => {
+  if (scholar.name === 'Rashi') return '#e11d48';
+  if (scholar.relationship_type === 'supercommentator') return '#3b82f6';
+  if (scholar.period === 'Rishonim') return '#f59e0b';
+  return '#8b5cf6';
 };
 
 export function LeafletMap({ 
@@ -43,14 +43,14 @@ export function LeafletMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const markersRef = useRef<L.CircleMarker[]>([]);
+  const markersRef = useRef<L.Marker[]>([]);
 
   // Initialize map
   useEffect(() => {
     if (!mapRef.current || leafletMap.current) return;
 
     const map = L.map(mapRef.current, {
-      center: [47.0, 15.0],
+      center: [48.5, 12.0],
       zoom: 5,
       zoomControl: false,
     });
@@ -59,7 +59,8 @@ export function LeafletMap({
     leafletMap.current = map;
 
     // Set initial tile layer
-    tileLayerRef.current = L.tileLayer(TILE_LAYERS[mapStyle]).addTo(map);
+    const layer = TILE_LAYERS[mapStyle];
+    tileLayerRef.current = L.tileLayer(layer.url, layer.options).addTo(map);
 
     return () => {
       if (leafletMap.current) {
@@ -76,7 +77,8 @@ export function LeafletMap({
     if (tileLayerRef.current) {
       leafletMap.current.removeLayer(tileLayerRef.current);
     }
-    tileLayerRef.current = L.tileLayer(TILE_LAYERS[mapStyle]).addTo(leafletMap.current);
+    const layer = TILE_LAYERS[mapStyle];
+    tileLayerRef.current = L.tileLayer(layer.url, layer.options).addTo(leafletMap.current);
   }, [mapStyle]);
 
   // Update markers when scholars or time range changes
@@ -96,24 +98,41 @@ export function LeafletMap({
 
     // Add markers
     visibleScholars.forEach(scholar => {
-      const color = IMPORTANCE_COLORS[scholar.relationship_type || ''] || IMPORTANCE_COLORS.default;
-      const radius = Math.max(6, Math.min(15, (scholar.importance || 50) / 10));
+      const color = getScholarColor(scholar);
+      const isRashi = scholar.name === 'Rashi';
+      const isSelected = selectedScholar?.id === scholar.id;
       
-      const marker = L.circleMarker([scholar.latitude!, scholar.longitude!], {
-        radius,
-        fillColor: color,
-        fillOpacity: selectedScholar?.id === scholar.id ? 1 : 0.7,
-        color: selectedScholar?.id === scholar.id ? '#fff' : color,
-        weight: selectedScholar?.id === scholar.id ? 3 : 1,
+      // Create custom pulsing marker
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `
+          <div 
+            class="marker-pulse ${isRashi ? 'marker-rashi' : ''}" 
+            style="
+              background: ${color}; 
+              box-shadow: 0 0 15px ${color}${isSelected ? ', 0 0 30px ' + color : ''};
+              ${isSelected ? 'transform: scale(1.3);' : ''}
+              ${isRashi ? 'width: 28px; height: 28px; border: 3px solid #fbbf24;' : ''}
+            "
+          ></div>
+        `,
+        iconSize: isRashi ? [28, 28] : [20, 20],
+        iconAnchor: isRashi ? [14, 14] : [10, 10],
       });
 
+      const marker = L.marker([scholar.latitude!, scholar.longitude!], { icon });
+
       marker.bindTooltip(
-        `<div class="font-sans">
-          <strong>${scholar.name}</strong>
-          ${scholar.hebrew_name ? `<br/><span class="text-amber-400">${scholar.hebrew_name}</span>` : ''}
-          ${scholar.birth_year ? `<br/><span class="text-gray-400">${scholar.birth_year}–${scholar.death_year || '?'}</span>` : ''}
+        `<div style="text-align: center;">
+          <strong style="font-size: 14px;">${scholar.name}</strong>
+          ${scholar.hebrew_name ? `<br/><span style="color: #fbbf24; font-size: 16px;">${scholar.hebrew_name}</span>` : ''}
+          ${scholar.birth_year ? `<br/><span style="color: #94a3b8; font-size: 12px;">${scholar.birth_place || ''} • ${scholar.birth_year}–${scholar.death_year || '?'}</span>` : ''}
         </div>`,
-        { className: 'scholar-tooltip' }
+        { 
+          className: 'scholar-tooltip',
+          direction: 'top',
+          offset: [0, -10]
+        }
       );
 
       marker.on('click', () => onSelectScholar(scholar));
