@@ -142,10 +142,11 @@ const Index = () => {
         {!scholarsOverlayOpen && (
           <button
             onClick={() => setScholarsOverlayOpen(true)}
-            className="absolute top-1/2 -translate-y-1/2 left-0 z-[1000] bg-sidebar/95 backdrop-blur-md border border-l-0 border-white/10 rounded-r-lg p-2 hover:bg-accent/20 transition-colors group"
+            className="absolute top-1/2 -translate-y-1/2 left-0 z-[1000] bg-sidebar/95 backdrop-blur-md border border-l-0 border-white/10 rounded-r-lg px-2 py-3 hover:bg-accent/20 transition-colors group"
           >
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-accent" />
+              <span className="text-xs uppercase tracking-widest text-accent font-bold">Scholars</span>
               <ChevronRight className="w-4 h-4 text-accent group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
