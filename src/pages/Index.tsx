@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Clock, ChevronDown, ChevronUp, Users, Search, X, ChevronRight } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Users, Search, X } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -161,9 +161,9 @@ const Index = () => {
             </span>
           </div>
           {timelineExpanded ? (
-            <ChevronDown className="w-4 h-4 text-white/40" />
+            <ChevronLeft className="w-4 h-4 text-white/40" />
           ) : (
-            <ChevronUp className="w-4 h-4 text-white/40" />
+            <ChevronRight className="w-4 h-4 text-white/40" />
           )}
         </button>
         
