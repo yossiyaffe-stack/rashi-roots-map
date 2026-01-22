@@ -25,7 +25,11 @@ const Index = () => {
   const { 
     showBoundaries, setShowBoundaries,
     showMigrations, setShowMigrations,
-    showConnections, setShowConnections 
+    showConnections, setShowConnections,
+    showPlaceNamesEnglish,
+    showPlaceNamesHebrew,
+    showScholarNamesEnglish,
+    showScholarNamesHebrew,
   } = useMapControls();
 
   const { data: scholars = [], isLoading } = useScholars();
@@ -74,6 +78,10 @@ const Index = () => {
           showConnections={showConnections}
           showMigrations={showMigrations}
           showBoundaries={showBoundaries}
+          showPlaceNamesEnglish={showPlaceNamesEnglish}
+          showPlaceNamesHebrew={showPlaceNamesHebrew}
+          showScholarNamesEnglish={showScholarNamesEnglish}
+          showScholarNamesHebrew={showScholarNamesHebrew}
         />
 
         {/* Scholars Overlay Panel - Left side */}
