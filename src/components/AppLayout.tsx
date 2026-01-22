@@ -232,8 +232,8 @@ export function AppLayout() {
                   <>
                     <span className="font-medium text-sm flex-1 text-left">Scholars</span>
                     <ChevronRight className={cn(
-                      "w-4 h-4 transition-transform",
-                      (location.pathname === '/scholars' || (isMapPage && isOverlayOpen)) && "rotate-90 text-accent"
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      location.pathname === '/scholars' ? "rotate-90 text-accent" : "text-white/50"
                     )} />
                   </>
                 )}
