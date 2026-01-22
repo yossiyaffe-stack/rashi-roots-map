@@ -230,7 +230,7 @@ export function LeafletMap({
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
-            <span>Modern</span>
+            <span>Satellite</span>
             <span>{Math.round(overlayOpacity * 100)}%</span>
             <span>17th C.</span>
           </div>
