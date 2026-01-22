@@ -17,6 +17,7 @@ export const RadialLayout = ({
   viewWidth,
   viewHeight,
   centerWork,
+  onHoverWork,
 }: RadialLayoutProps) => {
   const centerX = viewWidth / 2;
   const centerY = viewHeight / 2;
@@ -246,6 +247,8 @@ export const RadialLayout = ({
               e.stopPropagation();
               onSelectWork(isSelected ? null : work);
             }}
+            onMouseEnter={() => work.manuscript_url && onHoverWork?.({ work, position: pos })}
+            onMouseLeave={() => onHoverWork?.(null)}
             style={{ cursor: 'pointer' }}
             className="transition-opacity duration-200"
           >
@@ -289,6 +292,21 @@ export const RadialLayout = ({
               opacity={dimmed ? 0.25 : 1}
               className="transition-all duration-200"
             />
+
+            {/* Manuscript indicator */}
+            {work.manuscript_url && !dimmed && (
+              <g transform={`translate(${nodeWidth / 2 - 15}, ${-nodeHeight / 2 + 5})`}>
+                <circle r={7} fill="hsl(var(--card))" stroke={color} strokeWidth={1} />
+                <text
+                  textAnchor="middle"
+                  dy={3}
+                  fontSize={8}
+                  fill={color}
+                >
+                  📜
+                </text>
+              </g>
+            )}
             
             {/* Work title */}
             <text

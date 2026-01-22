@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { WorkWithAuthor, TextualRelationshipWithWorks } from '@/hooks/useWorks';
 import { WorksLayoutProps, DEPTH_COLORS, CATEGORY_COLORS } from './types';
 
-interface TimelineLayoutProps extends WorksLayoutProps {}
+
 
 export const TimelineLayout = ({
   works,
@@ -14,7 +14,8 @@ export const TimelineLayout = ({
   highlightSelected,
   viewWidth,
   viewHeight,
-}: TimelineLayoutProps) => {
+  onHoverWork,
+}: WorksLayoutProps) => {
   // Sort works by year
   const sortedWorks = useMemo(() => {
     return [...works].sort((a, b) => {
@@ -210,6 +211,8 @@ export const TimelineLayout = ({
               e.stopPropagation();
               onSelectWork(isSelected ? null : work);
             }}
+            onMouseEnter={() => work.manuscript_url && onHoverWork?.({ work, position: pos })}
+            onMouseLeave={() => onHoverWork?.(null)}
             style={{ cursor: 'pointer' }}
             className="transition-opacity duration-200"
           >
@@ -242,6 +245,21 @@ export const TimelineLayout = ({
               opacity={dimmed ? 0.25 : 1}
               className="transition-all duration-200"
             />
+
+            {/* Manuscript indicator */}
+            {work.manuscript_url && !dimmed && (
+              <g transform="translate(60, -20)">
+                <circle r={8} fill="hsl(var(--card))" stroke={color} strokeWidth={1} />
+                <text
+                  textAnchor="middle"
+                  dy={4}
+                  fontSize={10}
+                  fill={color}
+                >
+                  📜
+                </text>
+              </g>
+            )}
             
             {/* Work title */}
             <text

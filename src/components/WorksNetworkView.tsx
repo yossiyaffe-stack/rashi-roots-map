@@ -1,8 +1,8 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkWithAuthor, TextualRelationshipWithWorks } from '@/hooks/useWorks';
-import { LayoutMode } from './works-network/types';
+import { LayoutMode, HoveredWork } from './works-network/types';
 import { TimelineLayout } from './works-network/TimelineLayout';
 import { RadialLayout } from './works-network/RadialLayout';
 import { WorksLegend } from './works-network/WorksLegend';
@@ -15,6 +15,18 @@ interface WorksNetworkViewProps {
   selectedWork: WorkWithAuthor | null;
   onSelectWork: (work: WorkWithAuthor | null) => void;
 }
+
+// Parse manuscript URL for source info
+const parseManuscriptUrl = (url: string): { source: string; id: string | null } => {
+  if (url.includes('hebrewbooks.org')) {
+    const match = url.match(/hebrewbooks\.org\/(\d+)/);
+    return { source: 'HebrewBooks', id: match ? match[1] : null };
+  }
+  if (url.includes('sefaria.org')) {
+    return { source: 'Sefaria', id: null };
+  }
+  return { source: 'Digital Edition', id: null };
+};
 
 export const WorksNetworkView = ({
   works,
@@ -30,6 +42,8 @@ export const WorksNetworkView = ({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [hoveredWork, setHoveredWork] = useState<HoveredWork | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Get all connected work IDs
@@ -157,6 +171,15 @@ export const WorksNetworkView = ({
     }
   }, [layoutMode, centerWork, displayedWorks]);
 
+  // Reset image loaded state when hover changes
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [hoveredWork?.work.id]);
+
+  const handleHoverWork = useCallback((hovered: HoveredWork | null) => {
+    setHoveredWork(hovered);
+  }, []);
+
   const layoutProps = {
     works: displayedWorks,
     relationships,
@@ -167,6 +190,7 @@ export const WorksNetworkView = ({
     highlightSelected,
     viewWidth,
     viewHeight,
+    onHoverWork: handleHoverWork,
   };
 
   return (
@@ -275,6 +299,21 @@ export const WorksNetworkView = ({
         </button>
       </div>
 
+      {/* Manuscript preview tooltip */}
+      {hoveredWork && hoveredWork.work.manuscript_url && (
+        <ManuscriptPreviewTooltip
+          work={hoveredWork.work}
+          position={hoveredWork.position}
+          zoom={zoom}
+          pan={pan}
+          viewWidth={viewWidth}
+          viewHeight={viewHeight}
+          containerRef={containerRef}
+          imageLoaded={imageLoaded}
+          onImageLoad={() => setImageLoaded(true)}
+        />
+      )}
+
       {/* Selected work info */}
       {selectedWork && (
         <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur p-4 rounded-lg border border-border max-w-xs shadow-lg animate-fade-in">
@@ -301,6 +340,139 @@ export const WorksNetworkView = ({
 
       {/* Legend */}
       <WorksLegend layoutMode={layoutMode} />
+    </div>
+  );
+};
+
+// Inline tooltip component to avoid complex positioning issues
+interface ManuscriptPreviewTooltipProps {
+  work: WorkWithAuthor;
+  position: { x: number; y: number };
+  zoom: number;
+  pan: { x: number; y: number };
+  viewWidth: number;
+  viewHeight: number;
+  containerRef: React.RefObject<HTMLDivElement>;
+  imageLoaded: boolean;
+  onImageLoad: () => void;
+}
+
+const ManuscriptPreviewTooltip = ({
+  work,
+  position,
+  zoom,
+  pan,
+  viewWidth,
+  viewHeight,
+  containerRef,
+  imageLoaded,
+  onImageLoad,
+}: ManuscriptPreviewTooltipProps) => {
+  const container = containerRef.current;
+  if (!container || !work.manuscript_url) return null;
+
+  const { source, id } = parseManuscriptUrl(work.manuscript_url);
+  const isHebrewBooks = source === 'HebrewBooks' && id;
+  const isSefaria = source === 'Sefaria';
+  const coverImageUrl = isHebrewBooks ? `https://hebrewbooks.org/reader/cover.aspx?req=${id}` : null;
+
+  // Calculate tooltip position
+  const rect = container.getBoundingClientRect();
+  const svgCenterX = rect.width / 2;
+  const svgCenterY = rect.height / 2;
+
+  // Scale from viewBox to container coordinates
+  const scaleX = rect.width / viewWidth;
+  const scaleY = rect.height / viewHeight;
+
+  // Apply zoom and pan transformations
+  const screenX = svgCenterX + (position.x - viewWidth / 2) * scaleX * zoom + pan.x;
+  const screenY = svgCenterY + (position.y - viewHeight / 2) * scaleY * zoom + pan.y;
+
+  // Position tooltip to the right of the node
+  const tooltipX = Math.min(screenX + 90, rect.width - 260);
+  const tooltipY = Math.max(20, Math.min(screenY - 60, rect.height - 280));
+
+  return (
+    <div 
+      className="absolute z-50 w-56 rounded-lg border border-border bg-card shadow-xl overflow-hidden animate-scale-in pointer-events-auto"
+      style={{
+        left: tooltipX,
+        top: tooltipY,
+      }}
+      onMouseEnter={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="px-3 py-1.5 border-b border-border bg-muted/40 flex items-center gap-2">
+        {isSefaria ? (
+          <Scroll className="w-3.5 h-3.5 text-emerald-400" />
+        ) : (
+          <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+        )}
+        <span className="text-xs font-medium text-muted-foreground">{source}</span>
+      </div>
+
+      {/* Cover image */}
+      {coverImageUrl && (
+        <div className="relative h-36 bg-muted/30 overflow-hidden">
+          {!imageLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-pulse text-muted-foreground text-xs">Loading...</div>
+            </div>
+          )}
+          <img
+            src={coverImageUrl}
+            alt={`Cover of ${work.title}`}
+            className={cn(
+              "w-full h-full object-contain transition-opacity duration-300",
+              imageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={onImageLoad}
+          />
+        </div>
+      )}
+
+      {/* Sefaria placeholder */}
+      {isSefaria && (
+        <div className="h-28 bg-gradient-to-br from-emerald-950/30 to-background flex items-center justify-center p-3">
+          <div className="text-center">
+            <Scroll className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+            <p className="text-xs text-emerald-400 font-hebrew">
+              {work.hebrew_title || 'ספריא'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback */}
+      {!coverImageUrl && !isSefaria && (
+        <div className="h-20 bg-gradient-to-br from-amber-950/20 to-background flex items-center justify-center">
+          <BookOpen className="w-5 h-5 text-amber-400" />
+        </div>
+      )}
+
+      {/* Info */}
+      <div className="p-2 space-y-0.5">
+        <h4 className="font-semibold text-xs text-foreground truncate">{work.title}</h4>
+        {work.hebrew_title && (
+          <p className="text-xs text-muted-foreground font-hebrew truncate">{work.hebrew_title}</p>
+        )}
+        <p className="text-[10px] text-muted-foreground truncate">
+          {work.author_name} {work.year_written && `(${work.year_written})`}
+        </p>
+      </div>
+
+      {/* Link */}
+      <a
+        href={work.manuscript_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-1.5 px-2 py-1.5 bg-accent/10 hover:bg-accent/20 text-accent text-xs font-medium transition-colors border-t border-border"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span>Open</span>
+        <ExternalLink className="w-3 h-3" />
+      </a>
     </div>
   );
 };

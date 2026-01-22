@@ -3,4 +3,5 @@ export { RadialLayout } from './RadialLayout';
 export { WorksLegend } from './WorksLegend';
 export { LayoutModeSelector } from './LayoutModeSelector';
 export { CenterWorkSelector } from './CenterWorkSelector';
+export { ManuscriptTooltip } from './ManuscriptTooltip';
 export * from './types';

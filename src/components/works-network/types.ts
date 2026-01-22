@@ -10,6 +10,11 @@ export interface WorkPosition {
   radius?: number;
 }
 
+export interface HoveredWork {
+  work: WorkWithAuthor;
+  position: { x: number; y: number };
+}
+
 export interface WorksLayoutProps {
   works: WorkWithAuthor[];
   relationships: TextualRelationshipWithWorks[];
@@ -21,6 +26,7 @@ export interface WorksLayoutProps {
   viewWidth: number;
   viewHeight: number;
   centerWork?: WorkWithAuthor | null;
+  onHoverWork?: (hovered: HoveredWork | null) => void;
 }
 
 export const DEPTH_COLORS: Record<number, string> = {
