@@ -4,6 +4,7 @@ import { useScholarLocations, LOCATION_REASON_CONFIG, type LocationReason } from
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useMapControls } from '@/contexts/MapControlsContext';
 
 interface ScholarJourneyProps {
   scholarId: string;
@@ -13,6 +14,7 @@ interface ScholarJourneyProps {
 
 export function ScholarJourney({ scholarId, scholarName, onLocationClick }: ScholarJourneyProps) {
   const { data: locations = [], isLoading } = useScholarLocations(scholarId);
+  const { showJourneyMarkers, setShowJourneyMarkers } = useMapControls();
   
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,6 +23,14 @@ export function ScholarJourney({ scholarId, scholarName, onLocationClick }: Scho
   const [controlsOpen, setControlsOpen] = useState(false);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   const stepDuration = 3000; // 3 seconds per location
+
+  // Enable journey markers on the map when this component mounts (scholar selected)
+  useEffect(() => {
+    setShowJourneyMarkers(true);
+    return () => {
+      // Optionally disable when scholar panel closes - but keep it on for now
+    };
+  }, [setShowJourneyMarkers]);
 
   // Clear animation on unmount or scholar change
   useEffect(() => {
