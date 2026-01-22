@@ -1,14 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, Grape, Map as MapIcon, History, Users, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LeafletMap } from '@/components/LeafletMap';
-import { TimelineView } from '@/components/TimelineView';
-import { NetworkView } from '@/components/NetworkView';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { MapLegend } from '@/components/MapLegend';
 import { HistoricalEventsList } from '@/components/HistoricalEventsList';
@@ -16,13 +12,10 @@ import { HistoricalEventsList } from '@/components/HistoricalEventsList';
 import { useScholars, useHistoricalEvents, useRelationships, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'map' | 'timeline' | 'network';
-
 const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('map');
 
   const { data: scholars = [], isLoading: scholarsLoading } = useScholars();
   const { data: historicalEvents = [], isLoading: eventsLoading } = useHistoricalEvents();
@@ -44,53 +37,11 @@ const Index = () => {
   const isLoading = scholarsLoading || eventsLoading;
 
   return (
-    <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
-      {/* Sidebar */}
-      <aside className="w-96 flex flex-col z-[1001] bg-sidebar border-r border-white/10 shadow-2xl">
-        {/* Header */}
-        <header className="p-6 bg-gradient-to-b from-[hsl(245_50%_28%)] to-sidebar">
-          <div className="flex items-center gap-3 mb-3">
-            <Grape className="w-6 h-6 text-accent" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-accent/80 font-bold">
-              The Vine of Wisdom
-            </span>
-          </div>
-          <h1 className="text-2xl font-black leading-tight italic">
-            Rashi <span className="text-accent">Map</span>
-          </h1>
-        </header>
-
-        {/* View Mode Tabs */}
-        <div className="px-6 py-3 border-b border-white/10">
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-            <TabsList className="w-full bg-white/5 border border-white/10">
-              <TabsTrigger 
-                value="map" 
-                className="flex-1 gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
-              >
-                <MapIcon className="w-3.5 h-3.5" />
-                Map
-              </TabsTrigger>
-              <TabsTrigger 
-                value="timeline" 
-                className="flex-1 gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
-              >
-                <History className="w-3.5 h-3.5" />
-                Timeline
-              </TabsTrigger>
-              <TabsTrigger 
-                value="network" 
-                className="flex-1 gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
-              >
-                <Users className="w-3.5 h-3.5" />
-                Network
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
+    <div className="w-full h-full flex overflow-hidden">
+      {/* Scholar Sidebar */}
+      <aside className="w-80 flex flex-col bg-sidebar border-r border-white/10">
         {/* Search & Content */}
-        <div className="p-6 flex-1 overflow-hidden flex flex-col">
+        <div className="p-4 flex-1 overflow-hidden flex flex-col">
           {/* Search */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
@@ -172,36 +123,15 @@ const Index = () => {
         </footer>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 relative bg-background">
-        {viewMode === 'map' && (
-          <LeafletMap
-            scholars={filteredScholars}
-            relationships={relationships}
-            selectedScholar={selectedScholar}
-            onSelectScholar={setSelectedScholar}
-            timeRange={timeRange}
-          />
-        )}
-        
-        {viewMode === 'timeline' && (
-          <TimelineView
-            scholars={filteredScholars}
-            selectedScholar={selectedScholar}
-            onSelectScholar={setSelectedScholar}
-            historicalEvents={historicalEvents}
-            timeRange={timeRange}
-          />
-        )}
-        
-        {viewMode === 'network' && (
-          <NetworkView
-            scholars={filteredScholars}
-            relationships={relationships}
-            selectedScholar={selectedScholar}
-            onSelectScholar={setSelectedScholar}
-          />
-        )}
+      {/* Map Content */}
+      <div className="flex-1 relative">
+        <LeafletMap
+          scholars={filteredScholars}
+          relationships={relationships}
+          selectedScholar={selectedScholar}
+          onSelectScholar={setSelectedScholar}
+          timeRange={timeRange}
+        />
 
         {/* Scholar Detail Panel */}
         {selectedScholar && (
@@ -210,7 +140,7 @@ const Index = () => {
             onClose={() => setSelectedScholar(null)}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 };
