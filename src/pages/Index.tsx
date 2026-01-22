@@ -152,7 +152,7 @@ const Index = () => {
             <Clock className="w-4 h-4 text-accent" />
             <span className="text-xs uppercase tracking-widest text-accent font-bold">Timeline Filter</span>
             <span className="text-xs text-muted-foreground ml-2">
-              {timeRange[0]} – {timeRange[1]} CE
+              Up to {timeRange[1]} CE
             </span>
           </div>
           {timelineExpanded ? (
@@ -167,13 +167,13 @@ const Index = () => {
           timelineExpanded ? "max-h-20 px-4 pb-4" : "max-h-0"
         )}>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-white/50 w-20">{timeRange[0]} CE</span>
+            <span className="text-sm text-white/50 w-20">1000 CE</span>
             <Slider
-              value={[timeRange[0], timeRange[1]]}
+              value={[timeRange[1]]}
               min={1000}
               max={1800}
               step={10}
-              onValueChange={([start, end]) => setTimeRange([start, end])}
+              onValueChange={([end]) => setTimeRange([1000, end])}
               className="flex-1"
               showTooltip
               formatValue={(val) => `${val} CE`}
