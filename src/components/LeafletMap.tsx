@@ -454,7 +454,11 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
-      // No labels overlay - scholar labels are the focus
+      // Add Esri's reference labels designed for satellite imagery (white text with black halos)
+      labelsLayerRef.current = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© Esri',
+        pane: 'overlayPane',
+      }).addTo(leafletMap.current);
     } else if (viewMode === 'historical') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.topo, {
         attribution: '© OpenTopoMap',
