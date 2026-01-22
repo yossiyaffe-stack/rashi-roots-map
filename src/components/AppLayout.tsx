@@ -55,7 +55,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "flex flex-col z-[1001] bg-sidebar border-r border-white/10 shadow-2xl transition-all duration-300",
+          "flex flex-col z-[1001] bg-sidebar border-r border-white/10 shadow-2xl transition-all duration-300 overflow-visible",
           sidebarOpen ? "w-64" : "w-16"
         )}
       >
@@ -142,8 +142,8 @@ export function AppLayout() {
 
         {/* Legends & Controls - Only on Map page */}
         {isMapPage && sidebarOpen && (
-          <ScrollArea className="flex-1 border-t border-white/10">
-            <div className="p-3 space-y-4">
+          <div className="flex-1 border-t border-white/10 overflow-visible">
+            <div className="p-3 space-y-4 overflow-visible">
               <MapControls
                 showBoundaries={showBoundaries}
                 onShowBoundariesChange={setShowBoundaries}
@@ -152,10 +152,14 @@ export function AppLayout() {
                 showConnections={showConnections}
                 onShowConnectionsChange={setShowConnections}
               />
-              <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
-              <KingdomsLegend />
+              <div className="overflow-visible">
+                <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
+              </div>
+              <div className="overflow-visible">
+                <KingdomsLegend />
+              </div>
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Footer */}
