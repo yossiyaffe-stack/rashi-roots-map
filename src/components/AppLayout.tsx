@@ -34,6 +34,7 @@ export function AppLayout() {
     showOnlyScholarCities, setShowOnlyScholarCities,
     showJourneyMarkers, setShowJourneyMarkers,
     journeyReasonFilter, setJourneyReasonFilter,
+    showBoundaryShading, setShowBoundaryShading,
   } = useMapControls();
   
   const isMapPage = location.pathname === '/';
@@ -366,6 +367,8 @@ export function AppLayout() {
             <MapControlsPanel
               showBoundaries={showBoundaries}
               onShowBoundariesChange={setShowBoundaries}
+              showBoundaryShading={showBoundaryShading}
+              onShowBoundaryShadingChange={setShowBoundaryShading}
               showMigrations={showMigrations}
               onShowMigrationsChange={setShowMigrations}
               showConnections={showConnections}

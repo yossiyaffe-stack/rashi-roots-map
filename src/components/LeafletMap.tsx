@@ -29,6 +29,7 @@ interface LeafletMapProps {
   showConnections: boolean;
   showMigrations: boolean;
   showBoundaries: boolean;
+  showBoundaryShading?: boolean;
   showPlaceNamesEnglish: boolean;
   showPlaceNamesHebrew: boolean;
   showScholarNamesEnglish: boolean;
@@ -414,6 +415,7 @@ export function LeafletMap({
   showConnections,
   showMigrations,
   showBoundaries,
+  showBoundaryShading = true,
   showPlaceNamesEnglish,
   showPlaceNamesHebrew,
   showScholarNamesEnglish,
@@ -595,12 +597,17 @@ export function LeafletMap({
       if (!existedDuringPeriod) return; // Skip regions that didn't exist yet or have ended
 
       const isSelected = selectedRegion === key;
+      
+      // Calculate fill opacity based on shading setting
+      const baseFillOpacity = showBoundaryShading ? (isSelected ? 0.25 : 0.1) : 0;
+      const hoverFillOpacity = showBoundaryShading ? 0.2 : 0;
+      
       const polygon = L.polygon(region.coordinates, {
         color: region.color,
         weight: isSelected ? 4 : 2,
         opacity: isSelected ? 1 : 0.7,
         fillColor: region.color,
-        fillOpacity: isSelected ? 0.25 : 0.1,
+        fillOpacity: baseFillOpacity,
         dashArray: isSelected ? undefined : '5, 5',
       });
 
@@ -619,13 +626,13 @@ export function LeafletMap({
 
       polygon.on('mouseover', () => {
         if (!isSelected) {
-          polygon.setStyle({ fillOpacity: 0.2, weight: 3 });
+          polygon.setStyle({ fillOpacity: hoverFillOpacity, weight: 3 });
         }
       });
 
       polygon.on('mouseout', () => {
         if (!isSelected) {
-          polygon.setStyle({ fillOpacity: 0.1, weight: 2 });
+          polygon.setStyle({ fillOpacity: baseFillOpacity, weight: 2 });
         }
       });
 
@@ -657,7 +664,7 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       boundaryLabelsRef.current.push(label);
     });
-  }, [showBoundaries, selectedRegion, timeRange]);
+  }, [showBoundaries, showBoundaryShading, selectedRegion, timeRange]);
 
   // Get set of cities where scholars are located
   const scholarCityCoords = useMemo(() => {

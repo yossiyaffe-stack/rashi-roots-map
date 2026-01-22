@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapPin, Play, Pause, SkipForward, SkipBack, RotateCcw } from 'lucide-react';
+import { MapPin, Play, Pause, SkipForward, SkipBack, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useScholarLocations, LOCATION_REASON_CONFIG, type LocationReason } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ScholarJourneyProps {
   scholarId: string;
@@ -17,6 +18,7 @@ export function ScholarJourney({ scholarId, scholarName, onLocationClick }: Scho
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(-1);
   const [displayYear, setDisplayYear] = useState<number | null>(null);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   const stepDuration = 3000; // 3 seconds per location
 
@@ -127,99 +129,117 @@ export function ScholarJourney({ scholarId, scholarName, onLocationClick }: Scho
         Life Journey ({locations.length} locations)
       </h3>
 
-      {/* Animation Controls */}
+      {/* Animation Controls - Collapsible */}
       {locations.length > 1 && (
-        <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-accent/10 to-primary/5 border border-accent/20">
-          {/* Year Display */}
-          {displayYear !== null && (
-            <div className="text-center mb-3">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider">Year</div>
-              <div className="text-3xl font-bold text-accent animate-fade-in">
-                {displayYear}
-              </div>
-              {currentStep >= 0 && locations[currentStep] && (
-                <div className="text-sm text-foreground/80 mt-1 animate-fade-in">
-                  {LOCATION_REASON_CONFIG[(locations[currentStep].reason as LocationReason) || 'travel'].icon}{' '}
-                  {locations[currentStep].location_name}
+        <Collapsible open={controlsOpen || isPlaying} onOpenChange={setControlsOpen}>
+          <CollapsibleTrigger className="w-full mb-2 p-2 rounded-lg bg-gradient-to-r from-accent/10 to-primary/5 border border-accent/20 flex items-center justify-between hover:bg-accent/15 transition-colors">
+            <div className="flex items-center gap-2">
+              <Play className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium text-accent">
+                {isPlaying ? 'Playing...' : 'Play Journey Animation'}
+              </span>
+            </div>
+            {controlsOpen || isPlaying ? (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            )}
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-accent/10 to-primary/5 border border-accent/20">
+              {/* Year Display */}
+              {displayYear !== null && (
+                <div className="text-center mb-3">
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Year</div>
+                  <div className="text-3xl font-bold text-accent animate-fade-in">
+                    {displayYear}
+                  </div>
+                  {currentStep >= 0 && locations[currentStep] && (
+                    <div className="text-sm text-foreground/80 mt-1 animate-fade-in">
+                      {LOCATION_REASON_CONFIG[(locations[currentStep].reason as LocationReason) || 'travel'].icon}{' '}
+                      {locations[currentStep].location_name}
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Progress indicator */}
+              <div className="flex items-center gap-1 mb-3">
+                {locations.map((_, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex-1 h-1.5 rounded-full transition-all duration-300",
+                      index < currentStep ? "bg-accent" :
+                      index === currentStep ? "bg-accent animate-pulse" :
+                      "bg-white/20"
+                    )}
+                  />
+                ))}
+              </div>
+
+              {/* Control buttons */}
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetJourney}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-accent"
+                  title="Reset"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToPrevious}
+                  disabled={currentStep <= 0}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-accent disabled:opacity-30"
+                  title="Previous"
+                >
+                  <SkipBack className="w-4 h-4" />
+                </Button>
+                
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={togglePlay}
+                  className={cn(
+                    "h-10 w-10 p-0 rounded-full",
+                    isPlaying ? "bg-accent/80 hover:bg-accent" : "bg-accent hover:bg-accent/90"
+                  )}
+                  title={isPlaying ? "Pause" : "Play Journey"}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5 ml-0.5" />
+                  )}
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={goToNext}
+                  disabled={currentStep >= locations.length - 1}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-accent disabled:opacity-30"
+                  title="Next"
+                >
+                  <SkipForward className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Instructions */}
+              {currentStep < 0 && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  Press play to animate {scholarName ? `${scholarName}'s` : "the scholar's"} journey
+                </p>
+              )}
             </div>
-          )}
-
-          {/* Progress indicator */}
-          <div className="flex items-center gap-1 mb-3">
-            {locations.map((_, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "flex-1 h-1.5 rounded-full transition-all duration-300",
-                  index < currentStep ? "bg-accent" :
-                  index === currentStep ? "bg-accent animate-pulse" :
-                  "bg-white/20"
-                )}
-              />
-            ))}
-          </div>
-
-          {/* Control buttons */}
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetJourney}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-accent"
-              title="Reset"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={goToPrevious}
-              disabled={currentStep <= 0}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-accent disabled:opacity-30"
-              title="Previous"
-            >
-              <SkipBack className="w-4 h-4" />
-            </Button>
-            
-            <Button
-              variant="default"
-              size="sm"
-              onClick={togglePlay}
-              className={cn(
-                "h-10 w-10 p-0 rounded-full",
-                isPlaying ? "bg-accent/80 hover:bg-accent" : "bg-accent hover:bg-accent/90"
-              )}
-              title={isPlaying ? "Pause" : "Play Journey"}
-            >
-              {isPlaying ? (
-                <Pause className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5 ml-0.5" />
-              )}
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={goToNext}
-              disabled={currentStep >= locations.length - 1}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-accent disabled:opacity-30"
-              title="Next"
-            >
-              <SkipForward className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Instructions */}
-          {currentStep < 0 && (
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              Press play to animate {scholarName ? `${scholarName}'s` : "the scholar's"} journey
-            </p>
-          )}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       <div className="relative">

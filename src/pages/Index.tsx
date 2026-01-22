@@ -34,6 +34,7 @@ const Index = () => {
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
   const { 
     showBoundaries, setShowBoundaries,
+    showBoundaryShading,
     showMigrations, setShowMigrations,
     showConnections, setShowConnections,
     showPlaceNamesEnglish,
@@ -108,6 +109,7 @@ const Index = () => {
           showConnections={showConnections}
           showMigrations={showMigrations}
           showBoundaries={showBoundaries}
+          showBoundaryShading={showBoundaryShading}
           showPlaceNamesEnglish={showPlaceNamesEnglish}
           showPlaceNamesHebrew={showPlaceNamesHebrew}
           showScholarNamesEnglish={showScholarNamesEnglish}
