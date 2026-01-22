@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Clock, ChevronRight, ChevronLeft, Users, Search, X } from 'lucide-react';
+import { Clock, ChevronRight, ChevronLeft, Users, Search, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider, type SliderMarker } from '@/components/ui/slider';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +18,7 @@ const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
+  const [timelineFullscreen, setTimelineFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
@@ -165,23 +167,34 @@ const Index = () => {
 
       {/* Timeline Footer - Bottom of Map */}
       <footer className="bg-sidebar/95 backdrop-blur-md border-t border-white/10 z-[1000]">
-        <button
-          onClick={() => setTimelineExpanded(!timelineExpanded)}
-          className="w-full px-4 py-2 flex items-center justify-between hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-accent" />
-            <span className="text-xs uppercase tracking-widest text-accent font-bold">Timeline Filter</span>
-            <span className="text-xs text-muted-foreground ml-2">
-              {timeRange[0]} – {timeRange[1]} CE
-            </span>
-          </div>
-          {timelineExpanded ? (
-            <ChevronLeft className="w-4 h-4 text-white/40" />
-          ) : (
-            <ChevronRight className="w-4 h-4 text-white/40" />
-          )}
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={() => setTimelineExpanded(!timelineExpanded)}
+            className="flex-1 px-4 py-2 flex items-center justify-between hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-accent" />
+              <span className="text-xs uppercase tracking-widest text-accent font-bold">Timeline Filter</span>
+              <span className="text-xs text-muted-foreground ml-2">
+                {timeRange[0]} – {timeRange[1]} CE
+              </span>
+            </div>
+            {timelineExpanded ? (
+              <ChevronLeft className="w-4 h-4 text-white/40" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-white/40" />
+            )}
+          </button>
+          
+          {/* Expand to full view button */}
+          <button
+            onClick={() => setTimelineFullscreen(true)}
+            className="px-3 py-2 hover:bg-white/5 transition-colors text-white/40 hover:text-white"
+            title="Expand timeline"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+        </div>
         
         <div className={cn(
           "transition-all duration-200 overflow-hidden",
@@ -207,6 +220,79 @@ const Index = () => {
           <TimelineEvents events={historicalEvents} timeRange={timeRange} />
         </div>
       </footer>
+
+      {/* Fullscreen Timeline Sheet */}
+      <Sheet open={timelineFullscreen} onOpenChange={setTimelineFullscreen}>
+        <SheetContent side="bottom" className="h-[60vh] bg-sidebar border-t border-white/10">
+          <SheetHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="flex items-center gap-2 text-accent">
+                <Clock className="w-5 h-5" />
+                Historical Timeline
+              </SheetTitle>
+              <button
+                onClick={() => setTimelineFullscreen(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/60 hover:text-white"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </button>
+            </div>
+          </SheetHeader>
+          
+          <div className="space-y-6 h-full overflow-hidden flex flex-col">
+            {/* Large Slider */}
+            <div className="flex items-center gap-4">
+              <span className="text-lg text-white/50 w-24">{timeRange[0]} CE</span>
+              <Slider
+                value={timeRange}
+                min={1000}
+                max={1800}
+                step={10}
+                onValueChange={([start, end]) => setTimeRange([start, end])}
+                className="flex-1"
+                showTooltip
+                formatValue={(val) => `${val} CE`}
+                markers={eventMarkers}
+              />
+              <span className="text-lg text-accent font-medium w-24 text-right">{timeRange[1]} CE</span>
+            </div>
+            
+            {/* Expanded Events Grid */}
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-4">
+                  {historicalEvents
+                    .filter(e => e.year >= timeRange[0] && e.year <= timeRange[1])
+                    .sort((a, b) => a.year - b.year)
+                    .map((event) => {
+                      const importanceColors: Record<string, string> = {
+                        critical: 'bg-red-500',
+                        major: 'bg-amber-500',
+                        foundational: 'bg-accent',
+                        scholarly: 'bg-blue-500',
+                      };
+                      return (
+                        <div
+                          key={event.id}
+                          className="p-3 rounded-lg border bg-white/5 border-white/10 hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className={cn("w-2.5 h-2.5 rounded-full", importanceColors[event.importance] || 'bg-blue-500')} />
+                            <span className="text-sm font-semibold text-white">{event.year} CE</span>
+                          </div>
+                          <h4 className="text-sm font-medium text-white/90 mb-1">{event.name}</h4>
+                          {event.description && (
+                            <p className="text-xs text-white/50 line-clamp-3">{event.description}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
