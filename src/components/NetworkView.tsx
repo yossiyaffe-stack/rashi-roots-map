@@ -37,11 +37,12 @@ export const NetworkView = ({
     );
   }, [biographicalRelationships, filters, shouldShowRelationship]);
 
-  // Filter textual relationships - note: these connect works, not scholars directly
+  // Filter textual relationships - these now include scholar IDs resolved from works
   const filteredTextual = useMemo(() => {
     if (!filters.domains.textual) return [];
     return textualRelationships.filter(rel => 
-      shouldShowRelationship('textual', rel.relationship_category, rel.certainty)
+      shouldShowRelationship('textual', rel.relationship_category, rel.certainty) &&
+      (rel as any).from_scholar_id && (rel as any).to_scholar_id
     );
   }, [textualRelationships, filters, shouldShowRelationship]);
 
@@ -141,11 +142,39 @@ export const NetworkView = ({
           );
         })}
 
-        {/* Draw intellectual connections (scholar-to-work, shown as scholar connections) */}
+        {/* Draw textual connections (work-to-work mapped to scholar-to-scholar) */}
+        {filteredTextual.map((conn, idx) => {
+          const fromScholarId = (conn as any).from_scholar_id;
+          const toScholarId = (conn as any).to_scholar_id;
+          const fromPos = scholarPositions[fromScholarId];
+          const toPos = scholarPositions[toScholarId];
+          
+          if (!fromPos || !toPos || fromScholarId === toScholarId) return null;
+          
+          // Offset lines to prevent overlap with biographical
+          const offset = -3 - (idx % 3);
+          
+          return (
+            <line
+              key={`text-${conn.id}`}
+              x1={fromPos.x}
+              y1={fromPos.y + offset}
+              x2={toPos.x}
+              y2={toPos.y + offset}
+              stroke={DOMAIN_COLORS.textual}
+              strokeWidth="2"
+              strokeDasharray="6,3"
+              markerEnd="url(#arrowhead-text)"
+              opacity="0.6"
+              className="transition-opacity hover:opacity-100"
+            />
+          );
+        })}
+
+        {/* Draw intellectual connections (scholar-to-work, shown as self-loops/arcs) */}
         {filteredIntellectual.map((conn, idx) => {
           const fromPos = scholarPositions[conn.scholar_id];
           
-          // For intellectual relationships, we show them as self-loops or connect to related scholars
           if (!fromPos) return null;
           
           // Draw as a small arc indicating intellectual activity

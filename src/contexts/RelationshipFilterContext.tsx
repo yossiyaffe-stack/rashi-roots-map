@@ -12,18 +12,19 @@ export interface RelationshipFilters {
     intellectual: boolean;
   };
   
-  // Biographical filters
+  // Biographical filters - aligned with actual database categories
   biographical: {
     categories: {
       family: boolean;
-      pedagogical: boolean;
+      educational: boolean;  // teacher-student in DB
+      pedagogical: boolean;  // also used in DB
       professional: boolean;
       social: boolean;
       institutional: boolean;
     };
   };
   
-  // Textual filters
+  // Textual filters - aligned with actual database categories
   textual: {
     categories: {
       commentary: boolean;
@@ -34,12 +35,13 @@ export interface RelationshipFilters {
     };
   };
   
-  // Intellectual filters
+  // Intellectual filters - aligned with actual database categories
   intellectual: {
     categories: {
+      methodology: boolean;
+      influence: boolean;
       authorship: boolean;
       study: boolean;
-      methodology: boolean;
       school: boolean;
       transmission: boolean;
     };
@@ -63,6 +65,7 @@ const DEFAULT_FILTERS: RelationshipFilters = {
   biographical: {
     categories: {
       family: true,
+      educational: true,
       pedagogical: true,
       professional: true,
       social: true,
@@ -80,9 +83,10 @@ const DEFAULT_FILTERS: RelationshipFilters = {
   },
   intellectual: {
     categories: {
+      methodology: true,
+      influence: true,
       authorship: true,
       study: true,
-      methodology: true,
       school: true,
       transmission: true,
     },
