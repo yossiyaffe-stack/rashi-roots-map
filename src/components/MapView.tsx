@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Layers, GitBranch, Map as MapIcon, X } from 'lucide-react';
+import { Layers, GitBranch, Map as MapIcon, X, Route } from 'lucide-react';
 import type { Scholar } from '@/data/scholars';
 import { scholars as allScholars } from '@/data/scholars';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,122 @@ interface MapViewProps {
 }
 
 type RegionKey = keyof typeof historicalBoundaries;
+
+// Migration paths data - showing historical movements of scholars/communities
+interface MigrationPath {
+  id: string;
+  name: string;
+  description: string;
+  year: number;
+  cause: 'expulsion' | 'persecution' | 'opportunity' | 'flight';
+  from: { lat: number; lng: number; name: string };
+  to: { lat: number; lng: number; name: string };
+  color: string;
+  scholarIds?: number[]; // Optional: specific scholars who made this journey
+}
+
+const migrationPaths: MigrationPath[] = [
+  {
+    id: 'france-savoy-1394',
+    name: 'French Expulsion to Savoy',
+    description: 'After the 1394 final expulsion from France, many scholars fled to Savoy and northern Italy',
+    year: 1394,
+    cause: 'expulsion',
+    from: { lat: 48.8566, lng: 2.3522, name: 'Paris' },
+    to: { lat: 45.5667, lng: 5.9167, name: 'Chambéry (Savoy)' },
+    color: '#3b82f6',
+    scholarIds: [21] // Mahariq
+  },
+  {
+    id: 'france-rhineland-1306',
+    name: 'French Expulsion to Rhineland',
+    description: 'The 1306 expulsion drove French Jews eastward to the Rhineland and German territories',
+    year: 1306,
+    cause: 'expulsion',
+    from: { lat: 48.8566, lng: 2.3522, name: 'Paris' },
+    to: { lat: 49.4521, lng: 8.2428, name: 'Mainz (Rhineland)' },
+    color: '#3b82f6'
+  },
+  {
+    id: 'bulgaria-vienna-1396',
+    name: 'Flight from Bulgaria to Vienna',
+    description: 'Dosa "the Greek" fled Bulgaria after the Ottoman conquest in 1396',
+    year: 1396,
+    cause: 'flight',
+    from: { lat: 43.8563, lng: 22.8731, name: 'Vidin (Bulgaria)' },
+    to: { lat: 48.2082, lng: 16.3738, name: 'Vienna' },
+    color: '#16a34a',
+    scholarIds: [14] // Dosa the Greek
+  },
+  {
+    id: 'rhineland-austria-1348',
+    name: 'Black Death Flight to Austria',
+    description: 'After the Black Death massacres (1348-1349), surviving scholars fled to Austria',
+    year: 1348,
+    cause: 'persecution',
+    from: { lat: 49.4521, lng: 8.2428, name: 'Mainz (Rhineland)' },
+    to: { lat: 47.8133, lng: 16.2431, name: 'Wiener-Neustadt' },
+    color: '#ef4444'
+  },
+  {
+    id: 'rhineland-italy-training',
+    name: 'Rhineland to Italy (Training)',
+    description: 'Isaiah di Trani trained in the Rhineland before returning to southern Italy',
+    year: 1220,
+    cause: 'opportunity',
+    from: { lat: 49.4521, lng: 8.2428, name: 'Rhineland' },
+    to: { lat: 40.6643, lng: 17.9418, name: 'Trani (Italy)' },
+    color: '#f59e0b',
+    scholarIds: [13] // Isaiah di Trani
+  },
+  {
+    id: 'austria-moravia',
+    name: 'Austrian Scholars to Moravia',
+    description: 'Students of Isserlein spread his teachings to Moravia and Bohemia',
+    year: 1460,
+    cause: 'opportunity',
+    from: { lat: 47.8133, lng: 16.2431, name: 'Wiener-Neustadt' },
+    to: { lat: 49.1951, lng: 16.6068, name: 'Brünn (Brno)' },
+    color: '#9333ea',
+    scholarIds: [19] // Israel of Brünn
+  },
+  {
+    id: 'champagne-spread',
+    name: "Rashi's Students Spread",
+    description: "Rashi's grandchildren and students spread his teachings throughout Champagne",
+    year: 1110,
+    cause: 'opportunity',
+    from: { lat: 48.2973, lng: 4.0744, name: 'Troyes' },
+    to: { lat: 48.4637, lng: 3.5669, name: 'Ramerupt' },
+    color: '#c9a961',
+    scholarIds: [3] // Rabbenu Tam
+  },
+  {
+    id: 'france-constantinople',
+    name: 'Western Scholarship to Ottoman Empire',
+    description: 'Jewish scholars brought Ashkenazic learning traditions to Constantinople',
+    year: 1492,
+    cause: 'opportunity',
+    from: { lat: 48.8566, lng: 2.3522, name: 'Western Europe' },
+    to: { lat: 41.0082, lng: 28.9784, name: 'Constantinople' },
+    color: '#16a34a',
+    scholarIds: [7] // Mizrachi
+  }
+];
+
+// Get migration cause icon/label
+const getMigrationCauseStyle = (cause: MigrationPath['cause']) => {
+  switch (cause) {
+    case 'expulsion':
+      return { icon: '⚠️', label: 'Expulsion', dashArray: '10, 5' };
+    case 'persecution':
+      return { icon: '🔥', label: 'Persecution', dashArray: '15, 5, 5, 5' };
+    case 'flight':
+      return { icon: '🏃', label: 'Flight', dashArray: '8, 4' };
+    case 'opportunity':
+      return { icon: '📚', label: 'Scholarly Movement', dashArray: '4, 4' };
+  }
+};
 
 // Historical boundaries (simplified GeoJSON-like coordinates for medieval period ~1200-1500)
 const historicalBoundaries = {
@@ -179,6 +295,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: number]: L.Marker }>({});
   const linesRef = useRef<L.Polyline[]>([]);
+  const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
   const boundariesRef = useRef<{ [key: string]: L.Polygon }>({});
   const labelsRef = useRef<L.Marker[]>([]);
   const layersRef = useRef<{ modern?: L.TileLayer; historical?: L.TileLayer }>({});
@@ -186,6 +303,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
   const [mapStyle, setMapStyle] = useState<'modern' | 'historical'>('modern');
   const [showConnections, setShowConnections] = useState(true);
   const [showBoundaries, setShowBoundaries] = useState(true);
+  const [showMigrations, setShowMigrations] = useState(true);
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
 
   // Filter scholars based on selected region
@@ -338,6 +456,147 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
       labelsRef.current.push(label);
     });
   }, [showBoundaries, selectedRegion, handleRegionClick]);
+
+  // Draw migration paths
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing migration paths
+    migrationLinesRef.current.forEach(item => {
+      mapRef.current?.removeLayer(item);
+    });
+    migrationLinesRef.current = [];
+
+    if (!showMigrations) return;
+
+    migrationPaths.forEach(migration => {
+      const causeStyle = getMigrationCauseStyle(migration.cause);
+      
+      // Calculate curved path
+      const fromLatLng: L.LatLngExpression = [migration.from.lat, migration.from.lng];
+      const toLatLng: L.LatLngExpression = [migration.to.lat, migration.to.lng];
+      
+      const midLat = (migration.from.lat + migration.to.lat) / 2;
+      const midLng = (migration.from.lng + migration.to.lng) / 2;
+      const dx = migration.to.lng - migration.from.lng;
+      const dy = migration.to.lat - migration.from.lat;
+      
+      // Create a nice curve offset
+      const curveOffset = Math.sqrt(dx * dx + dy * dy) * 0.2;
+      const curvedMidLat = midLat - (dx * 0.15);
+      const curvedMidLng = midLng + (dy * 0.15);
+      
+      const curvedPath: L.LatLngExpression[] = [
+        fromLatLng,
+        [curvedMidLat, curvedMidLng],
+        toLatLng
+      ];
+
+      // Draw the migration path
+      const migrationLine = L.polyline(curvedPath, {
+        color: migration.color,
+        weight: 4,
+        opacity: 0.7,
+        smoothFactor: 1,
+        dashArray: causeStyle.dashArray,
+        className: 'migration-path'
+      });
+
+      // Rich tooltip content
+      const tooltipContent = `
+        <div style="font-family: 'Crimson Text', serif; min-width: 200px;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span style="font-size: 16px;">${causeStyle.icon}</span>
+            <strong style="font-size: 14px; color: ${migration.color};">${migration.name}</strong>
+          </div>
+          <div style="font-size: 12px; color: #666; margin-bottom: 4px;">
+            ${migration.year} • ${causeStyle.label}
+          </div>
+          <div style="font-size: 12px; margin-bottom: 6px;">
+            ${migration.from.name} → ${migration.to.name}
+          </div>
+          <div style="font-size: 11px; color: #555; line-height: 1.4;">
+            ${migration.description}
+          </div>
+        </div>
+      `;
+
+      migrationLine.bindTooltip(tooltipContent, {
+        sticky: true,
+        className: 'migration-tooltip',
+        direction: 'top'
+      });
+
+      migrationLine.addTo(mapRef.current!);
+      migrationLinesRef.current.push(migrationLine);
+
+      // Add animated arrow at destination
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+      const arrowIcon = L.divIcon({
+        className: 'migration-arrow',
+        html: `
+          <div style="
+            width: 0;
+            height: 0;
+            border-left: 10px solid ${migration.color};
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            transform: rotate(${angle}deg);
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+          "></div>
+        `,
+        iconSize: [10, 12],
+        iconAnchor: [5, 6]
+      });
+
+      // Position arrow slightly before destination
+      const arrowLat = migration.to.lat - dy * 0.08;
+      const arrowLng = migration.to.lng - dx * 0.08;
+      const arrow = L.marker([arrowLat, arrowLng], { icon: arrowIcon, interactive: false });
+      arrow.addTo(mapRef.current!);
+      migrationLinesRef.current.push(arrow);
+
+      // Add origin marker (small dot)
+      const originIcon = L.divIcon({
+        className: 'migration-origin',
+        html: `
+          <div style="
+            width: 8px;
+            height: 8px;
+            background: ${migration.color};
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          "></div>
+        `,
+        iconSize: [8, 8],
+        iconAnchor: [4, 4]
+      });
+      const originMarker = L.marker(fromLatLng, { icon: originIcon, interactive: false });
+      originMarker.addTo(mapRef.current!);
+      migrationLinesRef.current.push(originMarker);
+
+      // Add destination marker (slightly larger)
+      const destIcon = L.divIcon({
+        className: 'migration-dest',
+        html: `
+          <div style="
+            width: 12px;
+            height: 12px;
+            background: ${migration.color};
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          "></div>
+        `,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6]
+      });
+      const destMarker = L.marker(toLatLng, { icon: destIcon, interactive: false });
+      destMarker.addTo(mapRef.current!);
+      migrationLinesRef.current.push(destMarker);
+    });
+  }, [showMigrations]);
 
   // Update connection lines
   useEffect(() => {
@@ -595,6 +854,35 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
           font-family: 'Playfair Display', serif !important;
           font-weight: 600 !important;
         }
+        
+        @keyframes migration-flow {
+          0% {
+            stroke-dashoffset: 30;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
+        }
+        
+        .migration-path {
+          animation: migration-flow 2s linear infinite;
+          cursor: pointer;
+        }
+        
+        .migration-path:hover {
+          stroke-opacity: 1 !important;
+          stroke-width: 6 !important;
+        }
+        
+        .migration-tooltip {
+          background: hsl(35 25% 15%) !important;
+          color: hsl(40 30% 90%) !important;
+          border: none !important;
+          border-radius: 8px !important;
+          padding: 10px 12px !important;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+          max-width: 280px !important;
+        }
       `}</style>
 
       {/* Active Region Filter Banner */}
@@ -663,6 +951,16 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         
         <label className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-card cursor-pointer">
           <Checkbox
+            checked={showMigrations}
+            onCheckedChange={(checked) => setShowMigrations(checked as boolean)}
+            className="border-secondary data-[state=checked]:bg-secondary"
+          />
+          <Route className="w-4 h-4 text-secondary" />
+          <span className="text-sm font-medium text-foreground">Migrations</span>
+        </label>
+        
+        <label className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-card cursor-pointer">
+          <Checkbox
             checked={showConnections}
             onCheckedChange={(checked) => setShowConnections(checked as boolean)}
             className="border-secondary data-[state=checked]:bg-secondary"
@@ -725,6 +1023,32 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
                   </span>
                 </button>
               ))}
+            </div>
+          </>
+        )}
+        
+        {showMigrations && (
+          <>
+            <h4 className="text-sm font-semibold text-foreground mt-4 mb-2 pt-2 border-t border-primary/20">
+              Migration Paths
+            </h4>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">⚠️</span>
+                <span className="text-muted-foreground">Expulsion</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🔥</span>
+                <span className="text-muted-foreground">Persecution</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🏃</span>
+                <span className="text-muted-foreground">Flight</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">📚</span>
+                <span className="text-muted-foreground">Scholarly Movement</span>
+              </div>
             </div>
           </>
         )}
