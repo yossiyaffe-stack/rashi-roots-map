@@ -204,17 +204,17 @@ export const NetworkView = ({
     });
   }, [displayedScholars]);
 
-  // Compact layout - fit all scholars in viewport
+  // Vertical family tree layout - top to bottom by generation/era
   const scholarPositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number }> = {};
     const count = sortedScholars.length;
     if (count === 0) return positions;
     
-    // Calculate optimal grid to fit in viewport (roughly 800x500 usable area)
+    // Viewport dimensions for vertical layout
     const viewWidth = 900;
-    const viewHeight = 500;
+    const viewHeight = 600;
     
-    // Group scholars by approximate era (every 50 years for more compact grouping)
+    // Group scholars by approximate era (every 50 years = one generation/row)
     const eras: Record<number, DbScholar[]> = {};
     sortedScholars.forEach(s => {
       const year = s.birth_year ?? 1100;
@@ -224,22 +224,22 @@ export const NetworkView = ({
     });
     
     const eraKeys = Object.keys(eras).map(Number).sort((a, b) => a - b);
-    const numCols = eraKeys.length;
-    const maxPerCol = Math.max(...eraKeys.map(k => eras[k].length));
+    const numRows = eraKeys.length;
+    const maxPerRow = Math.max(...eraKeys.map(k => eras[k].length));
     
-    // Dynamic spacing based on content
-    const colSpacing = Math.min(150, viewWidth / (numCols + 1));
-    const rowSpacing = Math.min(80, viewHeight / (maxPerCol + 1));
+    // Dynamic spacing - vertical layout (rows = generations, columns = scholars in same era)
+    const rowSpacing = Math.min(100, (viewHeight - 80) / (numRows + 1));
+    const colSpacing = Math.min(120, viewWidth / (maxPerRow + 1));
     
-    eraKeys.forEach((era, colIdx) => {
+    eraKeys.forEach((era, rowIdx) => {
       const scholarsInEra = eras[era];
-      const centerY = viewHeight / 2;
-      const startY = centerY - ((scholarsInEra.length - 1) * rowSpacing) / 2;
+      const centerX = viewWidth / 2;
+      const startX = centerX - ((scholarsInEra.length - 1) * colSpacing) / 2;
       
-      scholarsInEra.forEach((s, rowIdx) => {
+      scholarsInEra.forEach((s, colIdx) => {
         positions[s.id] = {
-          x: 80 + colIdx * colSpacing,
-          y: startY + rowIdx * rowSpacing
+          x: startX + colIdx * colSpacing,
+          y: 60 + rowIdx * rowSpacing  // Start from top, go down
         };
       });
     });
@@ -309,17 +309,22 @@ export const NetworkView = ({
           if (!fromPos || !toPos) return null;
           
           const isHighlighted = isRelationshipHighlighted(conn.scholar_id, conn.related_scholar_id);
-          const offset = idx * 0.5;
+          const offset = (idx % 3) * 2;
+          
+          // Check if this is an in-law relationship (use dotted line)
+          const relType = conn.relationship_type?.toLowerCase() || '';
+          const isInLaw = relType.includes('in_law') || relType.includes('in-law');
           
           return (
             <line
               key={`bio-${conn.id}`}
-              x1={fromPos.x}
-              y1={fromPos.y + offset}
-              x2={toPos.x}
-              y2={toPos.y + offset}
+              x1={fromPos.x + offset}
+              y1={fromPos.y}
+              x2={toPos.x + offset}
+              y2={toPos.y}
               stroke={DOMAIN_COLORS.biographical}
               strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
+              strokeDasharray={isInLaw ? "4,4" : undefined}
               markerEnd="url(#arrowhead-bio)"
               opacity={isHighlighted ? 0.8 : 0.15}
               className="transition-all duration-200"
@@ -342,10 +347,10 @@ export const NetworkView = ({
           return (
             <line
               key={`text-${conn.id}`}
-              x1={fromPos.x}
-              y1={fromPos.y + offset}
-              x2={toPos.x}
-              y2={toPos.y + offset}
+              x1={fromPos.x + offset}
+              y1={fromPos.y}
+              x2={toPos.x + offset}
+              y2={toPos.y}
               stroke={DOMAIN_COLORS.textual}
               strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
               strokeDasharray="6,3"

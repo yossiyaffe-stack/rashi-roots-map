@@ -1,9 +1,11 @@
-import { RotateCcw, Users, FileText, Lightbulb, Heart } from 'lucide-react';
+import { useState } from 'react';
+import { RotateCcw, Users, FileText, Lightbulb, ChevronDown, ChevronRight } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 // Domain colors for visual identification
@@ -40,16 +42,12 @@ const CATEGORY_LABELS = {
   },
 };
 
-// Family type labels
-const FAMILY_TYPE_LABELS: Record<string, string> = {
-  son: 'Son',
-  son_in_law: 'Son-in-Law',
-  daughter: 'Daughter',
-  daughter_in_law: 'Daughter-in-Law',
-  grandchild: 'Grandchild',
-  grandfather: 'Grandfather',
-  sibling: 'Sibling',
-  spouse: 'Spouse',
+// Family type labels (simplified)
+const FAMILY_TYPE_LABELS: Record<string, { label: string; isDotted?: boolean }> = {
+  son: { label: 'Son' },
+  son_in_law: { label: 'Son-in-Law', isDotted: true },
+  daughter: { label: 'Daughter' },
+  daughter_in_law: { label: 'Daughter-in-Law', isDotted: true },
 };
 
 interface DomainSectionProps {
@@ -60,6 +58,7 @@ interface DomainSectionProps {
   categories: Record<string, boolean>;
   onToggleCategory: (category: string) => void;
   labels: Record<string, string>;
+  children?: React.ReactNode;
 }
 
 function DomainSection({ 
@@ -69,8 +68,10 @@ function DomainSection({
   onToggleDomain, 
   categories, 
   onToggleCategory,
-  labels 
+  labels,
+  children
 }: DomainSectionProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const colors = DOMAIN_COLORS[domain];
   const Icon = colors.icon;
   
@@ -78,7 +79,7 @@ function DomainSection({
   const totalCount = Object.keys(categories).length;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {/* Domain header with toggle */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -94,28 +95,37 @@ function DomainSection({
         />
       </div>
       
-      {/* Category checkboxes */}
+      {/* Collapsible category section */}
       {isEnabled && (
-        <div className="pl-6 space-y-1">
-          {Object.entries(categories).map(([key, enabled]) => (
-            <div
-              key={key}
-              onClick={() => onToggleCategory(key)}
-              className={cn(
-                "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
-                "hover:bg-white/5"
-              )}
-            >
-              <span className="text-xs text-muted-foreground">{labels[key]}</span>
-              <div className={cn(
-                "w-3 h-3 rounded-sm border transition-colors",
-                enabled ? `${colors.bg} ${colors.border}` : 'border-white/30'
-              )}>
-                {enabled && <div className={cn("w-full h-full rounded-sm", colors.bg.replace('/20', '/60'))} />}
-              </div>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger className="flex items-center gap-1 pl-6 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
+            {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            <span>Categories</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="pl-6 space-y-1">
+              {Object.entries(categories).map(([key, enabled]) => (
+                <div
+                  key={key}
+                  onClick={() => onToggleCategory(key)}
+                  className={cn(
+                    "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
+                    "hover:bg-white/5"
+                  )}
+                >
+                  <span className="text-xs text-muted-foreground">{labels[key]}</span>
+                  <div className={cn(
+                    "w-3 h-3 rounded-sm border transition-colors",
+                    enabled ? `${colors.bg} ${colors.border}` : 'border-white/30'
+                  )}>
+                    {enabled && <div className={cn("w-full h-full rounded-sm", colors.bg.replace('/20', '/60'))} />}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+            {children}
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
@@ -156,7 +166,7 @@ export function RelationshipFilterPanel() {
 
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-3">
           {/* Biographical Section */}
           <DomainSection
             title="Biographical"
@@ -166,35 +176,40 @@ export function RelationshipFilterPanel() {
             categories={filters.biographical.categories}
             onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
             labels={CATEGORY_LABELS.biographical}
-          />
-          
-          {/* Family Types Sub-section */}
-          {filters.domains.biographical && filters.biographical.categories.family && (
-            <div className="pl-4 space-y-1 border-l-2 border-rose-500/30 ml-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Heart className="w-3 h-3 text-rose-400" />
-                <span className="text-xs font-medium text-rose-400">Family Types</span>
+          >
+            {/* Family Types Sub-section */}
+            {filters.biographical.categories.family && (
+              <div className="pl-2 mt-2 space-y-1 border-l-2 border-rose-500/30 ml-4">
+                <span className="text-[10px] font-medium text-rose-400 uppercase tracking-wide">Family Types</span>
+                {Object.entries(filters.biographical.familyTypes).map(([key, enabled]) => {
+                  const typeInfo = FAMILY_TYPE_LABELS[key];
+                  return (
+                    <div
+                      key={key}
+                      onClick={() => toggleFamilyType(key as keyof RelationshipFilters['biographical']['familyTypes'])}
+                      className={cn(
+                        "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
+                        "hover:bg-white/5"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">{typeInfo?.label || key}</span>
+                        {typeInfo?.isDotted && (
+                          <span className="text-[9px] text-white/30 border border-dashed border-white/30 px-1 rounded">in-law</span>
+                        )}
+                      </div>
+                      <div className={cn(
+                        "w-3 h-3 rounded-sm border transition-colors",
+                        enabled ? 'bg-rose-500/20 border-rose-500' : 'border-white/30'
+                      )}>
+                        {enabled && <div className="w-full h-full rounded-sm bg-rose-500/60" />}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              {Object.entries(filters.biographical.familyTypes).map(([key, enabled]) => (
-                <div
-                  key={key}
-                  onClick={() => toggleFamilyType(key as keyof RelationshipFilters['biographical']['familyTypes'])}
-                  className={cn(
-                    "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
-                    "hover:bg-white/5"
-                  )}
-                >
-                  <span className="text-xs text-muted-foreground">{FAMILY_TYPE_LABELS[key] || key}</span>
-                  <div className={cn(
-                    "w-3 h-3 rounded-sm border transition-colors",
-                    enabled ? 'bg-rose-500/20 border-rose-500' : 'border-white/30'
-                  )}>
-                    {enabled && <div className="w-full h-full rounded-sm bg-rose-500/60" />}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            )}
+          </DomainSection>
 
           <div className="border-t border-white/10" />
 
