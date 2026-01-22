@@ -2,17 +2,20 @@ import { Info } from 'lucide-react';
 
 export function MapLegend() {
   const legendItems = [
-    { color: 'bg-rose-500', label: 'Rashi (Foundational)' },
-    { color: 'bg-amber-500', label: 'Rishonim Period' },
-    { color: 'bg-blue-500', label: 'Supercommentators' },
-    { color: 'bg-violet-500', label: 'Later Scholars' },
+    { color: 'bg-[#c9a961]', label: 'Rashi (Foundational)' },
+    { color: 'bg-[#ea580c]', label: 'Grandsons' },
+    { color: 'bg-[#facc15]', label: 'Direct Students' },
+    { color: 'bg-[#f59e0b]', label: 'Rishonim Period' },
+    { color: 'bg-[#22c55e]', label: 'Acharonim Period' },
+    { color: 'bg-[#6366f1]', label: 'Supercommentators' },
+    { color: 'bg-[#8b7355]', label: 'Other Scholars' },
   ];
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent font-bold">
         <Info className="w-3.5 h-3.5" />
-        Legend
+        Scholar Types
       </div>
       <div className="space-y-2">
         {legendItems.map((item) => (
