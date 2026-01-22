@@ -45,8 +45,12 @@ export function AppLayout() {
 
   const handleScholarsClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Always navigate directly to scholars page
-    navigate('/scholars');
+    // Toggle: if on scholars page, go back to map; otherwise go to scholars
+    if (location.pathname === '/scholars') {
+      navigate('/');
+    } else {
+      navigate('/scholars');
+    }
   };
 
   return (
