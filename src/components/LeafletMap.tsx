@@ -472,6 +472,7 @@ export function LeafletMap({
       labelsLayerRef.current = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
         attribution: '© Esri',
         pane: 'overlayPane',
+        opacity: 0.6,
       }).addTo(leafletMap.current);
     }
   }, [viewMode]);
