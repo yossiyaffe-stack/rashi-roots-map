@@ -15,6 +15,10 @@ interface LeafletMapProps {
   showConnections: boolean;
   showMigrations: boolean;
   showBoundaries: boolean;
+  showPlaceNamesEnglish: boolean;
+  showPlaceNamesHebrew: boolean;
+  showScholarNamesEnglish: boolean;
+  showScholarNamesHebrew: boolean;
 }
 
 // Tile layer definitions
@@ -406,6 +410,10 @@ export function LeafletMap({
   showConnections,
   showMigrations,
   showBoundaries,
+  showPlaceNamesEnglish,
+  showPlaceNamesHebrew,
+  showScholarNamesEnglish,
+  showScholarNamesHebrew,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -589,9 +597,42 @@ export function LeafletMap({
 
     // Only show city labels on satellite and historical views
     if (viewMode === 'modern') return;
+    
+    // Don't render if both languages are hidden
+    if (!showPlaceNamesEnglish && !showPlaceNamesHebrew) return;
 
     CITY_LABELS.forEach(city => {
       const isMajor = city.importance === 'major';
+      
+      // Build HTML based on which languages are enabled
+      const hebrewHtml = showPlaceNamesHebrew ? `<div style="
+        font-family: 'David Libre', 'Times New Roman', serif;
+        font-size: ${isMajor ? '16px' : '13px'};
+        font-weight: 600;
+        color: #fff;
+        text-shadow: 
+          -1px -1px 0 #1a1a1a,
+          1px -1px 0 #1a1a1a,
+          -1px 1px 0 #1a1a1a,
+          1px 1px 0 #1a1a1a,
+          0 0 4px rgba(0,0,0,0.8);
+        direction: rtl;
+      ">${city.hebrew}</div>` : '';
+      
+      const englishHtml = showPlaceNamesEnglish ? `<div style="
+        font-family: 'Crimson Text', Georgia, serif;
+        font-size: ${isMajor ? '14px' : '11px'};
+        font-weight: ${isMajor ? '600' : '500'};
+        color: #fff;
+        text-shadow: 
+          -1px -1px 0 #1a1a1a,
+          1px -1px 0 #1a1a1a,
+          -1px 1px 0 #1a1a1a,
+          1px 1px 0 #1a1a1a,
+          0 0 4px rgba(0,0,0,0.8);
+        margin-top: ${showPlaceNamesHebrew ? '-2px' : '0'};
+      ">${city.name}</div>` : '';
+      
       const label = L.marker([city.lat, city.lng], {
         icon: L.divIcon({
           className: 'city-label',
@@ -600,32 +641,8 @@ export function LeafletMap({
             white-space: nowrap;
             pointer-events: none;
           ">
-            <div style="
-              font-family: 'David Libre', 'Times New Roman', serif;
-              font-size: ${isMajor ? '16px' : '13px'};
-              font-weight: 600;
-              color: #fff;
-              text-shadow: 
-                -1px -1px 0 #1a1a1a,
-                1px -1px 0 #1a1a1a,
-                -1px 1px 0 #1a1a1a,
-                1px 1px 0 #1a1a1a,
-                0 0 4px rgba(0,0,0,0.8);
-              direction: rtl;
-            ">${city.hebrew}</div>
-            <div style="
-              font-family: 'Crimson Text', Georgia, serif;
-              font-size: ${isMajor ? '14px' : '11px'};
-              font-weight: ${isMajor ? '600' : '500'};
-              color: #fff;
-              text-shadow: 
-                -1px -1px 0 #1a1a1a,
-                1px -1px 0 #1a1a1a,
-                -1px 1px 0 #1a1a1a,
-                1px 1px 0 #1a1a1a,
-                0 0 4px rgba(0,0,0,0.8);
-              margin-top: -2px;
-            ">${city.name}</div>
+            ${hebrewHtml}
+            ${englishHtml}
           </div>`,
           iconSize: [0, 0],
           iconAnchor: [0, -8],
@@ -637,7 +654,7 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       cityLabelsRef.current.push(label);
     });
-  }, [viewMode, leafletMap.current]);
+  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew]);
 
   // Draw migration paths
   useEffect(() => {
@@ -795,6 +812,22 @@ export function LeafletMap({
       
       // Get a shorter display name (acronym or first part)
       const shortName = scholar.name.split(' - ')[0].split(' (')[0];
+      const hebrewName = scholar.hebrew_name || '';
+      
+      // Build label content based on visibility settings
+      const showEnglish = showScholarNamesEnglish;
+      const showHebrew = showScholarNamesHebrew && hebrewName;
+      const showAnyLabel = showEnglish || showHebrew;
+      
+      // Build the display text
+      let labelText = '';
+      if (showEnglish && showHebrew) {
+        labelText = `${shortName} • ${hebrewName}`;
+      } else if (showHebrew) {
+        labelText = hebrewName;
+      } else if (showEnglish) {
+        labelText = shortName;
+      }
       
       const icon = L.divIcon({
         className: 'historical-marker',
@@ -819,7 +852,7 @@ export function LeafletMap({
                 ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
               "
             ></div>
-            <div class="marker-label" style="
+            ${showAnyLabel ? `<div class="marker-label" style="
               background: #1a1408;
               color: #ffd700;
               padding: 3px 8px;
@@ -828,7 +861,7 @@ export function LeafletMap({
               font-weight: 600;
               letter-spacing: 0.3px;
               white-space: nowrap;
-              max-width: 120px;
+              max-width: ${showEnglish && showHebrew ? '180px' : '120px'};
               overflow: hidden;
               text-overflow: ellipsis;
               box-shadow: 0 1px 6px rgba(0,0,0,0.7), 0 0 0 1px #1a1408;
@@ -836,7 +869,7 @@ export function LeafletMap({
               text-shadow: 0 1px 2px rgba(0,0,0,0.5);
               ${isDimmed ? 'opacity: 0.4;' : ''}
               ${isRashi ? 'background: #c9a961; color: #1a1408; border-color: #ffd700; text-shadow: none;' : ''}
-            ">${shortName}</div>
+            ">${labelText}</div>` : ''}
           </div>
         `,
         iconSize: isRashi ? [120, 60] : [100, 50],
@@ -871,7 +904,7 @@ export function LeafletMap({
     });
 
     // Note: Removed auto-pan to selected scholar - map only moves on user interaction
-  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion]);
+  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew]);
 
   return (
     <div className="relative w-full h-full">

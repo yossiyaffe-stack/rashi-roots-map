@@ -28,7 +28,11 @@ export function AppLayout() {
   const { 
     showBoundaries, setShowBoundaries,
     showMigrations, setShowMigrations,
-    showConnections, setShowConnections 
+    showConnections, setShowConnections,
+    showPlaceNamesEnglish, setShowPlaceNamesEnglish,
+    showPlaceNamesHebrew, setShowPlaceNamesHebrew,
+    showScholarNamesEnglish, setShowScholarNamesEnglish,
+    showScholarNamesHebrew, setShowScholarNamesHebrew,
   } = useMapControls();
   
   const isMapPage = location.pathname === '/';
@@ -155,6 +159,14 @@ export function AppLayout() {
                 onShowMigrationsChange={setShowMigrations}
                 showConnections={showConnections}
                 onShowConnectionsChange={setShowConnections}
+                showPlaceNamesEnglish={showPlaceNamesEnglish}
+                onShowPlaceNamesEnglishChange={setShowPlaceNamesEnglish}
+                showPlaceNamesHebrew={showPlaceNamesHebrew}
+                onShowPlaceNamesHebrewChange={setShowPlaceNamesHebrew}
+                showScholarNamesEnglish={showScholarNamesEnglish}
+                onShowScholarNamesEnglishChange={setShowScholarNamesEnglish}
+                showScholarNamesHebrew={showScholarNamesHebrew}
+                onShowScholarNamesHebrewChange={setShowScholarNamesHebrew}
               />
               <div className="overflow-visible">
                 <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
