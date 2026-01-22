@@ -174,12 +174,12 @@ export function AppLayout() {
                 )}
               </button>
               
-              {/* Horizontal slide-out panel */}
+              {/* Slide-out panel - extends upward to the right */}
               <div className={cn(
-                "absolute left-full top-0 ml-2 z-50 transition-all duration-300 origin-left",
+                "absolute left-full bottom-0 ml-2 z-50 transition-all duration-300 origin-bottom-left",
                 relationshipsPanelOpen 
-                  ? "opacity-100 translate-x-0 scale-x-100" 
-                  : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
+                  ? "opacity-100 translate-x-0 scale-100" 
+                  : "opacity-0 -translate-x-4 scale-95 pointer-events-none"
               )}>
                 <RelationshipFilterPanel />
               </div>
