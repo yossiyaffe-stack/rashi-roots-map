@@ -11,12 +11,12 @@ import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
-type MapStyle = 'dark' | 'manuscript' | 'satellite';
+
 
 const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
-  const [mapStyle, setMapStyle] = useState<MapStyle>('dark');
+  
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: scholars = [], isLoading } = useScholars();
@@ -134,27 +134,8 @@ const Index = () => {
           scholars={filteredScholars}
           selectedScholar={selectedScholar}
           onSelectScholar={setSelectedScholar}
-          mapStyle={mapStyle}
           timeRange={timeRange}
         />
-
-        {/* Layer Controls */}
-        <div className="absolute top-6 left-6 z-[1000] flex gap-2">
-          {(['manuscript', 'dark', 'satellite'] as MapStyle[]).map(style => (
-            <button
-              key={style}
-              onClick={() => setMapStyle(style)}
-              className={cn(
-                "px-4 py-2 rounded-full text-xs font-bold uppercase tracking-tight backdrop-blur-md border transition-all",
-                mapStyle === style
-                  ? "bg-accent text-accent-foreground border-accent"
-                  : "bg-slate-900/80 text-white border-white/20 hover:bg-slate-800"
-              )}
-            >
-              {style}
-            </button>
-          ))}
-        </div>
 
         {/* Scholar Detail Panel */}
         {selectedScholar && (
