@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Users, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,7 @@ const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
   const [showMigrations, setShowMigrations] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(true);
 
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();
@@ -108,19 +109,39 @@ const Index = () => {
         </div>
 
         {/* Timeline Footer */}
-        <footer className="p-4 bg-[hsl(245_50%_12%)] border-t border-white/10">
-          <div className="flex justify-between text-xs mb-2">
-            <span className="text-white/50">{timeRange[0]} CE</span>
-            <span className="text-accent font-medium">{timeRange[1]} CE</span>
+        <footer className="bg-[hsl(245_50%_12%)] border-t border-white/10">
+          <button
+            onClick={() => setTimelineExpanded(!timelineExpanded)}
+            className="w-full p-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-accent" />
+              <span className="text-xs uppercase tracking-widest text-accent font-bold">Timeline</span>
+            </div>
+            {timelineExpanded ? (
+              <ChevronDown className="w-4 h-4 text-white/40" />
+            ) : (
+              <ChevronUp className="w-4 h-4 text-white/40" />
+            )}
+          </button>
+          
+          <div className={cn(
+            "transition-all duration-200 overflow-hidden",
+            timelineExpanded ? "max-h-24 p-4 pt-0" : "max-h-0"
+          )}>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-white/50">{timeRange[0]} CE</span>
+              <span className="text-accent font-medium">{timeRange[1]} CE</span>
+            </div>
+            <Slider
+              value={[timeRange[1]]}
+              min={1000}
+              max={1800}
+              step={10}
+              onValueChange={([val]) => setTimeRange([timeRange[0], val])}
+              className="w-full"
+            />
           </div>
-          <Slider
-            value={[timeRange[1]]}
-            min={1000}
-            max={1800}
-            step={10}
-            onValueChange={([val]) => setTimeRange([timeRange[0], val])}
-            className="w-full"
-          />
         </footer>
       </aside>
 
