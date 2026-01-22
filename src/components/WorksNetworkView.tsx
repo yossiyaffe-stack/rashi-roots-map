@@ -63,13 +63,13 @@ export const WorksNetworkView = ({
     return works.filter(w => connectedWorkIds.has(w.id));
   }, [works, connectedWorkIds, showOnlyConnected]);
 
-  // Get connections for selected work (including multi-level)
+  // Get direct connections for selected work only
   const selectedWorkConnections = useMemo(() => {
     if (!selectedWork) return new Set<string>();
     const ids = new Set<string>();
     ids.add(selectedWork.id);
     
-    // Get direct connections
+    // Get only direct connections
     relationships.forEach(rel => {
       if (rel.work_id === selectedWork.id && rel.related_work_id) {
         ids.add(rel.related_work_id);
@@ -79,23 +79,8 @@ export const WorksNetworkView = ({
       }
     });
     
-    // If in focus mode, also get second-level connections for context
-    if (focusMode) {
-      const directIds = new Set(ids);
-      directIds.forEach(workId => {
-        relationships.forEach(rel => {
-          if (rel.work_id === workId && rel.related_work_id) {
-            ids.add(rel.related_work_id);
-          }
-          if (rel.related_work_id === workId && rel.work_id) {
-            ids.add(rel.work_id);
-          }
-        });
-      });
-    }
-    
     return ids;
-  }, [selectedWork, relationships, focusMode]);
+  }, [selectedWork, relationships]);
 
   // Filter works and relationships based on focus mode
   const displayedWorks = useMemo(() => {
