@@ -885,66 +885,6 @@ export function LeafletMap({
             </div>
 
 
-            {/* Kingdom Legend - Only show when boundaries are on */}
-            {showBoundaries && (
-              <div className="pt-3 border-t border-slate-200">
-                <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-                  Kingdoms & Regions
-                </div>
-                <div className="space-y-2 text-[10px]">
-                  <div className="flex items-start gap-2">
-                    <div className="w-3 h-3 rounded-sm bg-red-600 opacity-70 mt-0.5 shrink-0"></div>
-                    <div>
-                      <span className="text-slate-700 font-medium">Holy Roman Empire</span>
-                      <span className="text-slate-400 block">962–1806</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-70 mt-0.5 shrink-0"></div>
-                    <div>
-                      <span className="text-slate-700 font-medium">Kingdom of France</span>
-                      <span className="text-slate-400 block">987–1792</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-3 h-3 rounded-sm bg-green-600 opacity-70 mt-0.5 shrink-0"></div>
-                    <div>
-                      <span className="text-slate-700 font-medium">Ottoman Empire</span>
-                      <span className="text-slate-400 block">1299–1922</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-3 h-3 rounded-sm bg-purple-600 opacity-70 mt-0.5 shrink-0"></div>
-                    <div>
-                      <span className="text-slate-700 font-medium">Polish-Lithuanian</span>
-                      <span className="text-slate-400 block">1569–1795</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70 mt-0.5 shrink-0"></div>
-                    <div>
-                      <span className="text-slate-700 font-medium">Iberian Kingdoms</span>
-                      <span className="text-slate-400 block">c. 1000–1492</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 mt-2 pt-2 border-t border-slate-100">
-                    <div className="w-3 h-3 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: '#c9a961' }}></div>
-                    <div>
-                      <span className="text-slate-700 font-semibold">Champagne</span>
-                      <span className="text-slate-400 block">Rashi era: 1040–1105</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-3 h-3 rounded-sm bg-orange-600 opacity-70 mt-0.5 shrink-0"></div>
-                    <div>
-                      <span className="text-slate-700 font-semibold">Rhineland (ShUM)</span>
-                      <span className="text-slate-400 block">c. 900–1350</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
           </div>
         )}
       </div>

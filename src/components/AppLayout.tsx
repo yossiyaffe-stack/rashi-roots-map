@@ -4,6 +4,7 @@ import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { MapLegend } from '@/components/MapLegend';
+import { KingdomsLegend } from '@/components/KingdomsLegend';
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
@@ -131,10 +132,11 @@ export function AppLayout() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Legend - Only on Map page */}
+        {/* Legends - Only on Map page */}
         {isMapPage && sidebarOpen && (
-          <div className="p-3 border-t border-white/10">
+          <div className="p-3 border-t border-white/10 space-y-4">
             <MapLegend showConnections={false} showMigrations={false} relationships={relationships} />
+            <KingdomsLegend />
           </div>
         )}
 
