@@ -27,6 +27,62 @@ const TILE_LAYERS = {
   labels: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
 };
 
+// Historical kingdom boundaries (medieval period ~1200-1500)
+const HISTORICAL_BOUNDARIES = {
+  holyRomanEmpire: {
+    name: "Holy Roman Empire",
+    color: "#dc2626",
+    coordinates: [
+      [54.5, 6.0], [54.8, 9.5], [54.0, 14.0], [52.5, 14.5], 
+      [51.0, 15.0], [50.0, 17.0], [48.0, 17.5], [47.0, 16.5],
+      [46.0, 15.0], [45.5, 13.5], [45.8, 11.0], [46.2, 9.5],
+      [46.0, 8.0], [47.5, 7.5], [48.5, 6.0], [49.5, 6.0],
+      [50.5, 5.5], [52.0, 5.0], [53.5, 5.5], [54.5, 6.0]
+    ] as [number, number][]
+  },
+  kingdomOfFrance: {
+    name: "Kingdom of France",
+    color: "#3b82f6",
+    coordinates: [
+      [51.0, 2.5], [50.0, 1.5], [49.5, -1.0], [48.5, -4.5],
+      [47.5, -4.0], [46.0, -1.5], [44.0, -1.5], [43.0, -0.5],
+      [42.5, 3.0], [43.0, 4.5], [43.5, 7.0], [45.0, 7.0],
+      [46.0, 6.5], [47.0, 6.0], [48.0, 6.0], [49.0, 5.5],
+      [50.0, 4.0], [51.0, 2.5]
+    ] as [number, number][]
+  },
+  ottomanEmpire: {
+    name: "Ottoman Empire",
+    color: "#16a34a",
+    coordinates: [
+      [42.0, 26.0], [41.5, 28.0], [41.0, 29.5], [40.5, 29.0],
+      [40.0, 26.5], [39.0, 26.0], [38.0, 27.0], [37.0, 28.0],
+      [36.5, 30.0], [37.0, 32.0], [38.0, 34.0], [39.5, 36.0],
+      [41.0, 37.0], [42.0, 35.0], [42.5, 32.0], [43.0, 30.0],
+      [42.5, 28.0], [42.0, 26.0]
+    ] as [number, number][]
+  },
+  polishLithuanian: {
+    name: "Polish-Lithuanian Commonwealth",
+    color: "#9333ea",
+    coordinates: [
+      [54.5, 14.5], [55.0, 17.0], [56.0, 21.0], [56.5, 24.0],
+      [56.0, 28.0], [54.5, 30.0], [52.0, 31.0], [50.0, 28.0],
+      [49.0, 24.0], [49.5, 22.0], [50.0, 19.0], [51.0, 17.0],
+      [52.0, 15.0], [54.5, 14.5]
+    ] as [number, number][]
+  },
+  iberianPeninsula: {
+    name: "Iberian Kingdoms",
+    color: "#f59e0b",
+    coordinates: [
+      [43.5, -8.0], [43.0, -3.0], [42.5, 0.0], [42.0, 3.0],
+      [40.5, 0.5], [39.0, -0.5], [37.5, -1.0], [36.5, -5.5],
+      [37.0, -9.0], [39.0, -9.5], [41.0, -8.5], [43.5, -8.0]
+    ] as [number, number][]
+  }
+};
+
 const getScholarColor = (scholar: DbScholar): string => {
   if (scholar.name === 'Rashi') return '#e11d48';
   if (scholar.relationship_type === 'supercommentator') return '#3b82f6';
@@ -57,10 +113,13 @@ export function LeafletMap({
   const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const linesRef = useRef<L.Polyline[]>([]);
+  const boundariesRef = useRef<L.Polygon[]>([]);
+  const boundaryLabelsRef = useRef<L.Marker[]>([]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('combined');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [showLines, setShowLines] = useState(false);
+  const [showBoundaries, setShowBoundaries] = useState(true);
 
   // Initialize map
   useEffect(() => {
@@ -141,6 +200,63 @@ export function LeafletMap({
       }).addTo(leafletMap.current);
     }
   }, [viewMode, overlayOpacity]);
+
+  // Draw historical kingdom boundaries
+  useEffect(() => {
+    if (!leafletMap.current) return;
+
+    // Clear existing boundaries and labels
+    boundariesRef.current.forEach(b => b.remove());
+    boundariesRef.current = [];
+    boundaryLabelsRef.current.forEach(l => l.remove());
+    boundaryLabelsRef.current = [];
+
+    if (!showBoundaries) return;
+
+    Object.entries(HISTORICAL_BOUNDARIES).forEach(([key, region]) => {
+      const polygon = L.polygon(region.coordinates, {
+        color: region.color,
+        weight: 2,
+        opacity: 0.7,
+        fillColor: region.color,
+        fillOpacity: 0.1,
+        dashArray: '5, 5',
+      });
+
+      polygon.bindTooltip(region.name, {
+        permanent: false,
+        direction: 'center',
+        className: 'kingdom-tooltip',
+      });
+
+      polygon.addTo(leafletMap.current!);
+      boundariesRef.current.push(polygon);
+
+      // Add kingdom label at centroid
+      const centroid = polygon.getBounds().getCenter();
+      const label = L.marker(centroid, {
+        icon: L.divIcon({
+          className: 'kingdom-label',
+          html: `<div style="
+            background: ${region.color}cc;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+          ">${region.name}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [50, 10],
+        }),
+        interactive: false,
+      });
+      
+      label.addTo(leafletMap.current!);
+      boundaryLabelsRef.current.push(label);
+    });
+  }, [showBoundaries]);
 
   // Draw relationship lines
   useEffect(() => {
@@ -295,7 +411,19 @@ export function LeafletMap({
       </div>
 
       {/* Controls Panel */}
-      <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-60 space-y-4">
+      <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-60 space-y-3">
+        {/* Show Kingdoms Toggle */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="show-boundaries" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+            Show Kingdoms
+          </Label>
+          <Switch
+            id="show-boundaries"
+            checked={showBoundaries}
+            onCheckedChange={setShowBoundaries}
+          />
+        </div>
+
         {/* Show Lines Toggle */}
         <div className="flex items-center justify-between">
           <Label htmlFor="show-lines" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
@@ -330,7 +458,38 @@ export function LeafletMap({
           </div>
         )}
 
-        {/* Line Legend - Only show when lines are on */}
+        {/* Kingdom Legend - Only show when boundaries are on */}
+        {showBoundaries && (
+          <div className="pt-3 border-t border-slate-200">
+            <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+              Medieval Kingdoms
+            </div>
+            <div className="space-y-1.5 text-[10px]">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-red-600 opacity-70"></div>
+                <span className="text-slate-600">Holy Roman Empire</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-70"></div>
+                <span className="text-slate-600">Kingdom of France</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-green-600 opacity-70"></div>
+                <span className="text-slate-600">Ottoman Empire</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-purple-600 opacity-70"></div>
+                <span className="text-slate-600">Polish-Lithuanian</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70"></div>
+                <span className="text-slate-600">Iberian Kingdoms</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Connection Legend - Only show when lines are on */}
         {showLines && (
           <div className="pt-3 border-t border-slate-200">
             <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
