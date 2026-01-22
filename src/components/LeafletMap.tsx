@@ -592,37 +592,38 @@ export function LeafletMap({
         icon: L.divIcon({
           className: 'city-label',
           html: `<div style="
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(50, 50, 50, 0.85));
+            padding: ${isMajor ? '4px 10px' : '3px 8px'};
+            border-radius: 20px;
+            border: 1px solid rgba(201, 169, 97, 0.6);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             white-space: nowrap;
             pointer-events: none;
           ">
-            <div style="
+            <span style="
               font-family: 'David Libre', 'Times New Roman', serif;
               font-size: ${isMajor ? '12px' : '10px'};
               font-weight: 500;
-              color: #fff;
-              text-shadow: 
-                -1px -1px 0 #1a1a1a,
-                1px -1px 0 #1a1a1a,
-                -1px 1px 0 #1a1a1a,
-                1px 1px 0 #1a1a1a;
+              color: #c9a961;
               direction: rtl;
-            ">${city.hebrew}</div>
-            <div style="
+            ">${city.hebrew}</span>
+            <span style="
+              width: 1px;
+              height: 12px;
+              background: rgba(201, 169, 97, 0.4);
+            "></span>
+            <span style="
               font-family: 'Crimson Text', Georgia, serif;
               font-size: ${isMajor ? '11px' : '9px'};
               font-weight: ${isMajor ? '500' : '400'};
-              color: #fff;
-              text-shadow: 
-                -1px -1px 0 #1a1a1a,
-                1px -1px 0 #1a1a1a,
-                -1px 1px 0 #1a1a1a,
-                1px 1px 0 #1a1a1a;
-              margin-top: -2px;
-            ">${city.name}</div>
+              color: #f5f0e6;
+            ">${city.name}</span>
           </div>`,
           iconSize: [0, 0],
-          iconAnchor: [0, -8],
+          iconAnchor: [0, 12],
         }),
         interactive: false,
         pane: 'overlayPane',
