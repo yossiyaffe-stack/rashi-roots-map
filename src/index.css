@@ -146,6 +146,20 @@
   }
 
   /* Historical marker styling */
+  .historical-tooltip-content .scholar-meta {
+    display: block;
+    font-size: 11px;
+    opacity: 0.8;
+  }
+
+  .historical-tooltip-content .scholar-modern-name {
+    display: block;
+    font-size: 10px;
+    opacity: 0.6;
+    font-style: italic;
+    margin-top: 2px;
+  }
+
   .historical-marker {
     background: transparent !important;
     border: none !important;

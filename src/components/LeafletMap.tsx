@@ -111,6 +111,149 @@ const HISTORICAL_BOUNDARIES = {
 
 type RegionKey = keyof typeof HISTORICAL_BOUNDARIES;
 
+// Historical city names by region/period
+const HISTORICAL_CITY_NAMES: Record<string, { modern: string; historical: string; region?: RegionKey; period?: string }[]> = {
+  // Ottoman Empire names
+  'Constantinople': [
+    { modern: 'Constantinople, Ottoman Empire', historical: 'Konstantiniyye', region: 'ottomanEmpire' },
+    { modern: 'Constantinople', historical: 'Konstantiniyye', region: 'ottomanEmpire' },
+  ],
+  'Istanbul': [
+    { modern: 'Istanbul', historical: 'Konstantiniyye', region: 'ottomanEmpire' },
+  ],
+  // Polish-Lithuanian names  
+  'Vilna': [
+    { modern: 'Vilna, Lithuania', historical: 'Wilno', region: 'polishLithuanian' },
+    { modern: 'Vilna', historical: 'Wilno', region: 'polishLithuanian' },
+  ],
+  'Vilnius': [
+    { modern: 'Vilnius', historical: 'Wilno', region: 'polishLithuanian' },
+  ],
+  'Kalisz': [
+    { modern: 'Kalisz, Poland', historical: 'Kalisch', region: 'polishLithuanian' },
+    { modern: 'Kalisz', historical: 'Kalisch', region: 'polishLithuanian' },
+  ],
+  'Brest-Litovsk': [
+    { modern: 'Brest-Litovsk, Poland', historical: 'Brisk', region: 'polishLithuanian' },
+    { modern: 'Brest-Litovsk', historical: 'Brisk', region: 'polishLithuanian' },
+  ],
+  'Lublin': [
+    { modern: 'Lublin, Poland', historical: 'Lublin', region: 'polishLithuanian' },
+  ],
+  'Ludmir': [
+    { modern: 'Ludmir, Poland', historical: 'Wladimir-Wolyński', region: 'polishLithuanian' },
+  ],
+  'Warsaw': [
+    { modern: 'Warsaw, Poland', historical: 'Warschau', region: 'polishLithuanian' },
+    { modern: 'Warsaw', historical: 'Warschau', region: 'polishLithuanian' },
+  ],
+  'Volozhin': [
+    { modern: 'Volozhin, Belarus', historical: 'Wołożyn', region: 'polishLithuanian' },
+    { modern: 'Volozhin', historical: 'Wołożyn', region: 'polishLithuanian' },
+  ],
+  // Holy Roman Empire names
+  'Prague': [
+    { modern: 'Prague, Bohemia', historical: 'Prag', region: 'holyRomanEmpire' },
+    { modern: 'Prague, Czech Republic', historical: 'Prag', region: 'holyRomanEmpire' },
+    { modern: 'Prague', historical: 'Prag', region: 'holyRomanEmpire' },
+  ],
+  'Vienna': [
+    { modern: 'Vienna, Austria', historical: 'Wien', region: 'holyRomanEmpire' },
+    { modern: 'Vienna', historical: 'Wien', region: 'holyRomanEmpire' },
+  ],
+  'Mainz': [
+    { modern: 'Mainz, Germany', historical: 'Magenza (מגנצא)', region: 'rhineland' },
+    { modern: 'Mainz', historical: 'Magenza (מגנצא)', region: 'rhineland' },
+  ],
+  'Worms': [
+    { modern: 'Worms, Germany', historical: 'Warmaisa (ורמייזא)', region: 'rhineland' },
+    { modern: 'Worms', historical: 'Warmaisa (ורמייזא)', region: 'rhineland' },
+  ],
+  'Speyer': [
+    { modern: 'Speyer, Germany', historical: 'Shpira (שפירא)', region: 'rhineland' },
+    { modern: 'Speyer', historical: 'Shpira (שפירא)', region: 'rhineland' },
+  ],
+  'Cologne': [
+    { modern: 'Cologne, Germany', historical: 'Köln', region: 'holyRomanEmpire' },
+    { modern: 'Cologne', historical: 'Köln', region: 'holyRomanEmpire' },
+  ],
+  'Leipzig': [
+    { modern: 'Leipzig, Germany', historical: 'Leipzig', region: 'holyRomanEmpire' },
+  ],
+  // Kingdom of France names
+  'Troyes': [
+    { modern: 'Troyes, France', historical: 'Troyes, Champagne', region: 'champagne' },
+    { modern: 'Troyes, Champagne', historical: 'Troyes, Comté de Champagne', region: 'champagne' },
+    { modern: 'Troyes', historical: 'Troyes, Champagne', region: 'kingdomOfFrance' },
+  ],
+  'Paris': [
+    { modern: 'Paris, France', historical: 'Paris, Île-de-France', region: 'kingdomOfFrance' },
+    { modern: 'Paris', historical: 'Paris, Royaume de France', region: 'kingdomOfFrance' },
+  ],
+  'Ramerupt': [
+    { modern: 'Ramerupt, France', historical: 'Ramerupt, Champagne', region: 'champagne' },
+    { modern: 'Ramerupt', historical: 'Ramerupt, Champagne', region: 'champagne' },
+  ],
+  'Dampierre': [
+    { modern: 'Dampierre, France', historical: 'Dampierre, Champagne', region: 'champagne' },
+    { modern: 'Dampierre', historical: 'Dampierre, Champagne', region: 'champagne' },
+  ],
+  'Narbonne': [
+    { modern: 'Narbonne, Provence', historical: 'Narbonne, Languedoc', region: 'kingdomOfFrance' },
+    { modern: 'Narbonne', historical: 'Narbona', region: 'kingdomOfFrance' },
+  ],
+  // Iberian names
+  'Girona': [
+    { modern: 'Girona, Catalonia', historical: 'Gerona, Corona d\'Aragón', region: 'iberianPeninsula' },
+    { modern: 'Girona, Spain', historical: 'Gerona, Corona d\'Aragón', region: 'iberianPeninsula' },
+    { modern: 'Girona', historical: 'Gerona', region: 'iberianPeninsula' },
+  ],
+  'Toledo': [
+    { modern: 'Toledo, Spain', historical: 'Toledo, Castilla', region: 'iberianPeninsula' },
+    { modern: 'Toledo', historical: 'Tulaytulah (طليطلة)', region: 'iberianPeninsula' },
+  ],
+  'Tudela': [
+    { modern: 'Tudela, Spain', historical: 'Tudela, Navarra', region: 'iberianPeninsula' },
+    { modern: 'Tudela', historical: 'Tutila', region: 'iberianPeninsula' },
+  ],
+  // Italian cities
+  'Venice': [
+    { modern: 'Venice, Italy', historical: 'Venezia, Repubblica di Venezia', region: 'holyRomanEmpire' },
+    { modern: 'Venice', historical: 'Venezia', region: 'holyRomanEmpire' },
+  ],
+  'Bologna': [
+    { modern: 'Bologna, Italy', historical: 'Bologna, Stato Pontificio', region: 'holyRomanEmpire' },
+    { modern: 'Bologna', historical: 'Bologna', region: 'holyRomanEmpire' },
+  ],
+  'Mantua': [
+    { modern: 'Mantua, Italy', historical: 'Mantova, Ducato di Mantova', region: 'holyRomanEmpire' },
+    { modern: 'Mantua', historical: 'Mantova', region: 'holyRomanEmpire' },
+  ],
+  'Trani': [
+    { modern: 'Trani, Italy', historical: 'Trani, Regno di Sicilia', region: 'holyRomanEmpire' },
+    { modern: 'Trani', historical: 'Trani', region: 'holyRomanEmpire' },
+  ],
+};
+
+// Get historical city name based on selected region
+const getHistoricalCityName = (placeName: string | null, selectedRegion: RegionKey | null): string => {
+  if (!placeName) return '';
+  if (!selectedRegion) return placeName;
+  
+  // Check each city mapping
+  for (const [city, mappings] of Object.entries(HISTORICAL_CITY_NAMES)) {
+    for (const mapping of mappings) {
+      if (placeName.includes(city) || placeName === mapping.modern) {
+        if (mapping.region === selectedRegion) {
+          return mapping.historical;
+        }
+      }
+    }
+  }
+  
+  return placeName;
+};
+
 // Migration paths data
 interface MigrationPath {
   id: string;
@@ -583,11 +726,15 @@ export function LeafletMap({
         zIndexOffset: isDimmed ? -1000 : 0 
       });
 
+      // Get historical place name if region is selected
+      const displayPlace = getHistoricalCityName(scholar.birth_place, selectedRegion);
+      
       marker.bindTooltip(
         `<div class="historical-tooltip-content">
           <strong>${scholar.name}</strong>
           ${scholar.hebrew_name ? `<span class="hebrew-text">${scholar.hebrew_name}</span>` : ''}
-          <span class="scholar-meta">${scholar.birth_place || scholar.period || ''} • ${scholar.birth_year || '?'}–${scholar.death_year || '?'}</span>
+          <span class="scholar-meta">${displayPlace || scholar.period || ''} • ${scholar.birth_year || '?'}–${scholar.death_year || '?'}</span>
+          ${selectedRegion && displayPlace !== scholar.birth_place ? `<span class="scholar-modern-name">(Modern: ${scholar.birth_place})</span>` : ''}
         </div>`,
         { 
           className: 'historical-tooltip',
