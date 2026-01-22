@@ -80,14 +80,127 @@ const HISTORICAL_BOUNDARIES = {
       [40.5, 0.5], [39.0, -0.5], [37.5, -1.0], [36.5, -5.5],
       [37.0, -9.0], [39.0, -9.5], [41.0, -8.5], [43.5, -8.0]
     ] as [number, number][]
+  },
+  // Sub-regions
+  champagne: {
+    name: "Champagne (Rashi's Region)",
+    color: "#c9a961",
+    coordinates: [
+      [49.5, 3.0], [49.8, 4.0], [49.5, 5.0], [48.8, 5.2],
+      [48.0, 4.8], [47.8, 4.0], [48.2, 3.2], [49.0, 2.8],
+      [49.5, 3.0]
+    ] as [number, number][]
+  },
+  rhineland: {
+    name: "Rhineland (ShUM Cities)",
+    color: "#ea580c",
+    coordinates: [
+      [51.0, 6.0], [51.2, 7.0], [50.8, 8.5], [50.0, 8.8],
+      [49.2, 8.5], [49.0, 7.5], [49.5, 6.5], [50.5, 6.0],
+      [51.0, 6.0]
+    ] as [number, number][]
   }
 };
 
+type RegionKey = keyof typeof HISTORICAL_BOUNDARIES;
+
+// Migration paths data
+interface MigrationPath {
+  id: string;
+  name: string;
+  description: string;
+  year: number;
+  cause: 'expulsion' | 'persecution' | 'opportunity' | 'flight';
+  from: { lat: number; lng: number; name: string };
+  to: { lat: number; lng: number; name: string };
+  color: string;
+}
+
+const MIGRATION_PATHS: MigrationPath[] = [
+  {
+    id: 'france-rhineland-1306',
+    name: 'French Expulsion to Rhineland (1306)',
+    description: 'The 1306 expulsion drove French Jews eastward to the Rhineland',
+    year: 1306,
+    cause: 'expulsion',
+    from: { lat: 48.8566, lng: 2.3522, name: 'Paris' },
+    to: { lat: 49.4521, lng: 8.2428, name: 'Mainz' },
+    color: '#3b82f6'
+  },
+  {
+    id: 'france-savoy-1394',
+    name: 'French Expulsion to Savoy (1394)',
+    description: 'Final expulsion from France, scholars fled to Savoy and Italy',
+    year: 1394,
+    cause: 'expulsion',
+    from: { lat: 48.8566, lng: 2.3522, name: 'Paris' },
+    to: { lat: 45.5667, lng: 5.9167, name: 'Chambéry' },
+    color: '#3b82f6'
+  },
+  {
+    id: 'rhineland-austria-1348',
+    name: 'Black Death Flight (1348)',
+    description: 'Surviving scholars fled to Austria after the massacres',
+    year: 1348,
+    cause: 'persecution',
+    from: { lat: 49.4521, lng: 8.2428, name: 'Mainz' },
+    to: { lat: 47.8133, lng: 16.2431, name: 'Wiener-Neustadt' },
+    color: '#ef4444'
+  },
+  {
+    id: 'bulgaria-vienna-1396',
+    name: 'Ottoman Conquest Flight (1396)',
+    description: 'Scholars fled Bulgaria after Ottoman conquest',
+    year: 1396,
+    cause: 'flight',
+    from: { lat: 43.9900, lng: 22.8800, name: 'Vidin' },
+    to: { lat: 48.2082, lng: 16.3738, name: 'Vienna' },
+    color: '#16a34a'
+  },
+  {
+    id: 'champagne-spread',
+    name: "Rashi's Students Spread (c. 1110)",
+    description: "Rashi's grandchildren spread teachings throughout Champagne",
+    year: 1110,
+    cause: 'opportunity',
+    from: { lat: 48.2973, lng: 4.0744, name: 'Troyes' },
+    to: { lat: 48.4637, lng: 3.5669, name: 'Ramerupt' },
+    color: '#c9a961'
+  },
+  {
+    id: 'spain-ottoman-1492',
+    name: 'Spanish Expulsion to Ottoman (1492)',
+    description: 'Spanish Jews brought Sephardic traditions to Constantinople',
+    year: 1492,
+    cause: 'expulsion',
+    from: { lat: 40.4168, lng: -3.7038, name: 'Toledo' },
+    to: { lat: 41.0082, lng: 28.9784, name: 'Constantinople' },
+    color: '#f59e0b'
+  }
+];
+
+// Point-in-polygon algorithm
+const isPointInPolygon = (lat: number, lng: number, polygon: [number, number][]): boolean => {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [yi, xi] = polygon[i];
+    const [yj, xj] = polygon[j];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+};
+
 const getScholarColor = (scholar: DbScholar): string => {
-  if (scholar.name === 'Rashi') return '#e11d48';
-  if (scholar.relationship_type === 'supercommentator') return '#3b82f6';
-  if (scholar.period === 'Rishonim') return '#f59e0b';
-  return '#8b5cf6';
+  if (scholar.name === 'Rashi') return '#c9a961'; // Gold for Rashi
+  if (scholar.relationship_type === 'grandson') return '#ea580c'; // Orange for grandsons
+  if (scholar.relationship_type === 'student') return '#facc15'; // Yellow for direct students
+  if (scholar.period === 'Rishonim') return '#f59e0b'; // Amber for Rishonim
+  if (scholar.period === 'Acharonim') return '#22c55e'; // Green for Acharonim
+  if (scholar.period?.includes('Post-Black Death') || scholar.period?.includes('Post-Expulsion')) return '#16a34a';
+  if (scholar.relationship_type === 'supercommentator') return '#6366f1'; // Indigo for supercommentators
+  return '#8b7355'; // Sepia for others
 };
 
 const getRelationshipColor = (type: string): string => {
@@ -115,11 +228,14 @@ export function LeafletMap({
   const linesRef = useRef<L.Polyline[]>([]);
   const boundariesRef = useRef<L.Polygon[]>([]);
   const boundaryLabelsRef = useRef<L.Marker[]>([]);
+  const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('combined');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [showLines, setShowLines] = useState(false);
   const [showBoundaries, setShowBoundaries] = useState(true);
+  const [showMigrations, setShowMigrations] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
 
   // Initialize map
   useEffect(() => {
@@ -201,7 +317,7 @@ export function LeafletMap({
     }
   }, [viewMode, overlayOpacity]);
 
-  // Draw historical kingdom boundaries
+  // Draw historical kingdom boundaries with click-to-filter
   useEffect(() => {
     if (!leafletMap.current) return;
 
@@ -213,20 +329,40 @@ export function LeafletMap({
 
     if (!showBoundaries) return;
 
-    Object.entries(HISTORICAL_BOUNDARIES).forEach(([key, region]) => {
+    (Object.entries(HISTORICAL_BOUNDARIES) as [RegionKey, typeof HISTORICAL_BOUNDARIES[RegionKey]][]).forEach(([key, region]) => {
+      const isSelected = selectedRegion === key;
       const polygon = L.polygon(region.coordinates, {
         color: region.color,
-        weight: 2,
-        opacity: 0.7,
+        weight: isSelected ? 4 : 2,
+        opacity: isSelected ? 1 : 0.7,
         fillColor: region.color,
-        fillOpacity: 0.1,
-        dashArray: '5, 5',
+        fillOpacity: isSelected ? 0.25 : 0.1,
+        dashArray: isSelected ? undefined : '5, 5',
       });
 
-      polygon.bindTooltip(region.name, {
-        permanent: false,
-        direction: 'center',
-        className: 'kingdom-tooltip',
+      polygon.bindTooltip(
+        `${region.name}${isSelected ? ' (Click to clear filter)' : ' (Click to filter)'}`, 
+        {
+          permanent: false,
+          direction: 'center',
+          className: 'kingdom-tooltip',
+        }
+      );
+
+      polygon.on('click', () => {
+        setSelectedRegion(prev => prev === key ? null : key);
+      });
+
+      polygon.on('mouseover', () => {
+        if (!isSelected) {
+          polygon.setStyle({ fillOpacity: 0.2, weight: 3 });
+        }
+      });
+
+      polygon.on('mouseout', () => {
+        if (!isSelected) {
+          polygon.setStyle({ fillOpacity: 0.1, weight: 2 });
+        }
       });
 
       polygon.addTo(leafletMap.current!);
@@ -238,15 +374,16 @@ export function LeafletMap({
         icon: L.divIcon({
           className: 'kingdom-label',
           html: `<div style="
-            background: ${region.color}cc;
+            background: ${region.color}${isSelected ? '' : 'cc'};
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 10px;
+            font-size: ${isSelected ? '12px' : '10px'};
             font-weight: bold;
             white-space: nowrap;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-          ">${region.name}</div>`,
+            ${isSelected ? 'box-shadow: 0 0 10px ' + region.color + ';' : ''}
+          ">${region.name}${isSelected ? ' ✓' : ''}</div>`,
           iconSize: [0, 0],
           iconAnchor: [50, 10],
         }),
@@ -256,7 +393,79 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       boundaryLabelsRef.current.push(label);
     });
-  }, [showBoundaries]);
+  }, [showBoundaries, selectedRegion]);
+
+  // Draw migration paths
+  useEffect(() => {
+    if (!leafletMap.current) return;
+
+    // Clear existing migration lines
+    migrationLinesRef.current.forEach(item => item.remove());
+    migrationLinesRef.current = [];
+
+    if (!showMigrations) return;
+
+    MIGRATION_PATHS.forEach(migration => {
+      const fromLatLng: L.LatLngExpression = [migration.from.lat, migration.from.lng];
+      const toLatLng: L.LatLngExpression = [migration.to.lat, migration.to.lng];
+      
+      // Calculate curved path
+      const midLat = (migration.from.lat + migration.to.lat) / 2;
+      const midLng = (migration.from.lng + migration.to.lng) / 2;
+      const dx = migration.to.lng - migration.from.lng;
+      const dy = migration.to.lat - migration.from.lat;
+      const curveOffset = Math.sqrt(dx * dx + dy * dy) * 0.15;
+      
+      const curvedPath: L.LatLngExpression[] = [
+        fromLatLng,
+        [midLat - (dx * 0.1), midLng + (dy * 0.1)],
+        toLatLng
+      ];
+
+      // Get dash pattern based on cause
+      const dashArray = migration.cause === 'expulsion' ? '10, 5' 
+        : migration.cause === 'persecution' ? '15, 5, 5, 5'
+        : migration.cause === 'flight' ? '8, 4'
+        : '4, 4';
+
+      const line = L.polyline(curvedPath, {
+        color: migration.color,
+        weight: 4,
+        opacity: 0.7,
+        dashArray,
+        smoothFactor: 1,
+      });
+
+      const causeIcon = migration.cause === 'expulsion' ? '⚠️'
+        : migration.cause === 'persecution' ? '🔥'
+        : migration.cause === 'flight' ? '🏃'
+        : '📚';
+
+      line.bindTooltip(
+        `<strong>${causeIcon} ${migration.name}</strong><br/>
+        <span style="font-size:11px">${migration.description}</span>`,
+        { className: 'historical-tooltip', sticky: true }
+      );
+
+      line.addTo(leafletMap.current!);
+      migrationLinesRef.current.push(line);
+
+      // Add arrow marker at destination
+      const arrowIcon = L.divIcon({
+        className: 'migration-arrow',
+        html: `<div style="
+          font-size: 14px;
+          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        ">➤</div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+
+      const arrow = L.marker(toLatLng, { icon: arrowIcon, interactive: false });
+      arrow.addTo(leafletMap.current!);
+      migrationLinesRef.current.push(arrow);
+    });
+  }, [showMigrations]);
 
   // Draw relationship lines
   useEffect(() => {
@@ -314,7 +523,7 @@ export function LeafletMap({
     });
   }, [showLines, relationships, scholars]);
 
-  // Update markers when scholars or time range changes
+  // Update markers when scholars or time range or region filter changes
   useEffect(() => {
     if (!leafletMap.current) return;
 
@@ -331,9 +540,14 @@ export function LeafletMap({
 
     // Add markers
     visibleScholars.forEach(scholar => {
+      // Check if scholar is in selected region
+      const inSelectedRegion = !selectedRegion || 
+        isPointInPolygon(scholar.latitude!, scholar.longitude!, HISTORICAL_BOUNDARIES[selectedRegion].coordinates);
+      
       const color = getScholarColor(scholar);
       const isRashi = scholar.name === 'Rashi';
       const isSelected = selectedScholar?.id === scholar.id;
+      const isDimmed = selectedRegion && !inSelectedRegion;
       
       const icon = L.divIcon({
         className: 'historical-marker',
@@ -347,8 +561,9 @@ export function LeafletMap({
               border-radius: 50%;
               border: ${isRashi ? '3px solid #fbbf24' : '2px solid #fff'};
               box-shadow: 0 0 ${isSelected ? '20px' : '10px'} ${color}, 0 2px 6px rgba(0,0,0,0.4);
-              transition: transform 0.3s ease, box-shadow 0.3s ease;
+              transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
               ${isSelected ? 'transform: scale(1.4);' : ''}
+              ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
             "
           ></div>
         `,
@@ -356,7 +571,10 @@ export function LeafletMap({
         iconAnchor: isRashi ? [11, 11] : [7, 7],
       });
 
-      const marker = L.marker([scholar.latitude!, scholar.longitude!], { icon });
+      const marker = L.marker([scholar.latitude!, scholar.longitude!], { 
+        icon,
+        zIndexOffset: isDimmed ? -1000 : 0 
+      });
 
       marker.bindTooltip(
         `<div class="historical-tooltip-content">
@@ -383,7 +601,7 @@ export function LeafletMap({
         duration: 0.5,
       });
     }
-  }, [scholars, selectedScholar, timeRange, onSelectScholar]);
+  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion]);
 
   return (
     <div className="relative w-full h-full">
@@ -410,8 +628,27 @@ export function LeafletMap({
         ))}
       </div>
 
+      {/* Selected Region Banner */}
+      {selectedRegion && (
+        <div className="absolute top-20 left-6 z-[1000] bg-white/95 backdrop-blur-md rounded-lg px-4 py-2 shadow-lg border border-slate-200 flex items-center gap-3">
+          <div 
+            className="w-3 h-3 rounded-sm" 
+            style={{ backgroundColor: HISTORICAL_BOUNDARIES[selectedRegion].color }}
+          />
+          <span className="text-sm font-medium text-slate-700">
+            Filtering: {HISTORICAL_BOUNDARIES[selectedRegion].name}
+          </span>
+          <button 
+            onClick={() => setSelectedRegion(null)}
+            className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Controls Panel */}
-      <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-60 space-y-3">
+      <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-64 space-y-3 max-h-[calc(100vh-6rem)] overflow-y-auto">
         {/* Show Kingdoms Toggle */}
         <div className="flex items-center justify-between">
           <Label htmlFor="show-boundaries" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
@@ -421,6 +658,18 @@ export function LeafletMap({
             id="show-boundaries"
             checked={showBoundaries}
             onCheckedChange={setShowBoundaries}
+          />
+        </div>
+
+        {/* Show Migrations Toggle */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="show-migrations" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+            Show Migrations
+          </Label>
+          <Switch
+            id="show-migrations"
+            checked={showMigrations}
+            onCheckedChange={setShowMigrations}
           />
         </div>
 
@@ -462,7 +711,7 @@ export function LeafletMap({
         {showBoundaries && (
           <div className="pt-3 border-t border-slate-200">
             <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-              Medieval Kingdoms
+              Kingdoms & Regions
             </div>
             <div className="space-y-1.5 text-[10px]">
               <div className="flex items-center gap-2">
@@ -485,9 +734,73 @@ export function LeafletMap({
                 <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70"></div>
                 <span className="text-slate-600">Iberian Kingdoms</span>
               </div>
+              <div className="flex items-center gap-2 mt-2 pt-1 border-t border-slate-100">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#c9a961' }}></div>
+                <span className="text-slate-600 font-medium">Champagne (Rashi)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-orange-600 opacity-70"></div>
+                <span className="text-slate-600 font-medium">Rhineland (ShUM)</span>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Migration Legend - Only show when migrations are on */}
+        {showMigrations && (
+          <div className="pt-3 border-t border-slate-200">
+            <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+              Migration Causes
+            </div>
+            <div className="space-y-1.5 text-[10px]">
+              <div className="flex items-center gap-2">
+                <span>⚠️</span>
+                <span className="text-slate-600">Expulsion</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>🔥</span>
+                <span className="text-slate-600">Persecution</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>🏃</span>
+                <span className="text-slate-600">Flight</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>📚</span>
+                <span className="text-slate-600">Scholarly Movement</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scholar Colors Legend */}
+        <div className="pt-3 border-t border-slate-200">
+          <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+            Scholar Types
+          </div>
+          <div className="space-y-1.5 text-[10px]">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#c9a961', border: '2px solid #fbbf24' }}></div>
+              <span className="text-slate-600 font-medium">Rashi</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-orange-600"></div>
+              <span className="text-slate-600">Grandsons</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+              <span className="text-slate-600">Rishonim</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <span className="text-slate-600">Acharonim</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+              <span className="text-slate-600">Supercommentators</span>
+            </div>
+          </div>
+        </div>
 
         {/* Connection Legend - Only show when lines are on */}
         {showLines && (
