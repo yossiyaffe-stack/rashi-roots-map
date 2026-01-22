@@ -107,9 +107,9 @@ export function LeafletMap({
         opacity: 0.9,
       }).addTo(leafletMap.current);
     } else {
-      // Combined mode - voyager base + historical overlay
-      baseLayerRef.current = L.tileLayer(TILE_LAYERS.voyager, {
-        attribution: '© OpenStreetMap, © CARTO',
+      // Combined mode - satellite base + historical overlay
+      baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
+        attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
       historicalLayerRef.current = L.tileLayer(TILE_LAYERS.historical, {
         attribution: 'Historical Map via NYPL Map Warper',
