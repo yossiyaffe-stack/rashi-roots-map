@@ -344,7 +344,27 @@ const MIGRATION_PATHS: MigrationPath[] = [
   }
 ];
 
-// Point-in-polygon algorithm
+// Key medieval Jewish centers for custom labels
+const CITY_LABELS: { name: string; lat: number; lng: number; importance: 'major' | 'minor' }[] = [
+  { name: 'Troyes', lat: 48.2973, lng: 4.0744, importance: 'major' },
+  { name: 'Mainz', lat: 49.9929, lng: 8.2473, importance: 'major' },
+  { name: 'Worms', lat: 49.6341, lng: 8.3507, importance: 'major' },
+  { name: 'Speyer', lat: 49.3173, lng: 8.4311, importance: 'major' },
+  { name: 'Paris', lat: 48.8566, lng: 2.3522, importance: 'major' },
+  { name: 'Prague', lat: 50.0755, lng: 14.4378, importance: 'major' },
+  { name: 'Vienna', lat: 48.2082, lng: 16.3738, importance: 'major' },
+  { name: 'Constantinople', lat: 41.0082, lng: 28.9784, importance: 'major' },
+  { name: 'Toledo', lat: 39.8628, lng: -4.0273, importance: 'major' },
+  { name: 'Girona', lat: 41.9794, lng: 2.8214, importance: 'minor' },
+  { name: 'Narbonne', lat: 43.1842, lng: 3.0037, importance: 'minor' },
+  { name: 'Cologne', lat: 50.9375, lng: 6.9603, importance: 'minor' },
+  { name: 'Ramerupt', lat: 48.4637, lng: 3.5669, importance: 'minor' },
+  { name: 'Dampierre', lat: 48.0833, lng: 4.5333, importance: 'minor' },
+  { name: 'Venice', lat: 45.4408, lng: 12.3155, importance: 'minor' },
+  { name: 'Bologna', lat: 44.4949, lng: 11.3426, importance: 'minor' },
+  { name: 'Vilna', lat: 54.6872, lng: 25.2797, importance: 'minor' },
+  { name: 'Lublin', lat: 51.2465, lng: 22.5684, importance: 'minor' },
+];
 const isPointInPolygon = (lat: number, lng: number, polygon: [number, number][]): boolean => {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -397,6 +417,7 @@ export function LeafletMap({
   const boundariesRef = useRef<L.Polygon[]>([]);
   const boundaryLabelsRef = useRef<L.Marker[]>([]);
   const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
+  const cityLabelsRef = useRef<L.Marker[]>([]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('satellite');
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
@@ -553,6 +574,48 @@ export function LeafletMap({
       boundaryLabelsRef.current.push(label);
     });
   }, [showBoundaries, selectedRegion, timeRange]);
+
+  // Draw custom city labels (crisp HTML text)
+  useEffect(() => {
+    if (!leafletMap.current) return;
+
+    // Clear existing city labels
+    cityLabelsRef.current.forEach(label => label.remove());
+    cityLabelsRef.current = [];
+
+    // Only show city labels on satellite and historical views
+    if (viewMode === 'modern') return;
+
+    CITY_LABELS.forEach(city => {
+      const isMajor = city.importance === 'major';
+      const label = L.marker([city.lat, city.lng], {
+        icon: L.divIcon({
+          className: 'city-label',
+          html: `<div style="
+            font-family: 'Crimson Text', Georgia, serif;
+            font-size: ${isMajor ? '13px' : '11px'};
+            font-weight: ${isMajor ? '600' : '400'};
+            color: #1a1a1a;
+            text-shadow: 
+              -1px -1px 0 #fff,
+              1px -1px 0 #fff,
+              -1px 1px 0 #fff,
+              1px 1px 0 #fff,
+              0 0 4px rgba(255,255,255,0.9);
+            white-space: nowrap;
+            pointer-events: none;
+          ">${city.name}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, -8],
+        }),
+        interactive: false,
+        pane: 'overlayPane',
+      });
+
+      label.addTo(leafletMap.current!);
+      cityLabelsRef.current.push(label);
+    });
+  }, [viewMode]);
 
   // Draw migration paths
   useEffect(() => {
