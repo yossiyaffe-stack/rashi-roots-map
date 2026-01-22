@@ -46,7 +46,7 @@ export const NetworkView = ({
   const filteredBiographical = useMemo(() => {
     if (!filters.domains.biographical) return [];
     return biographicalRelationships.filter(rel => 
-      shouldShowRelationship('biographical', rel.relationship_category, rel.certainty)
+      shouldShowRelationship('biographical', rel.relationship_category, rel.relationship_type, rel.certainty)
     );
   }, [biographicalRelationships, filters, shouldShowRelationship]);
 
@@ -54,7 +54,7 @@ export const NetworkView = ({
   const filteredTextual = useMemo(() => {
     if (!filters.domains.textual) return [];
     return textualRelationships.filter(rel => 
-      shouldShowRelationship('textual', rel.relationship_category, rel.certainty) &&
+      shouldShowRelationship('textual', rel.relationship_category, rel.relationship_type, rel.certainty) &&
       (rel as any).from_scholar_id && (rel as any).to_scholar_id
     );
   }, [textualRelationships, filters, shouldShowRelationship]);
@@ -63,7 +63,7 @@ export const NetworkView = ({
   const filteredIntellectual = useMemo(() => {
     if (!filters.domains.intellectual) return [];
     return intellectualRelationships.filter(rel => 
-      shouldShowRelationship('intellectual', rel.relationship_category, rel.certainty)
+      shouldShowRelationship('intellectual', rel.relationship_category, rel.relationship_type, rel.certainty)
     );
   }, [intellectualRelationships, filters, shouldShowRelationship]);
 

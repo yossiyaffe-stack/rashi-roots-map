@@ -22,6 +22,17 @@ export interface RelationshipFilters {
       social: boolean;
       institutional: boolean;
     };
+    // Family subtypes for granular filtering
+    familyTypes: {
+      son: boolean;
+      son_in_law: boolean;
+      daughter: boolean;
+      daughter_in_law: boolean;
+      grandchild: boolean;
+      grandfather: boolean;
+      sibling: boolean;
+      spouse: boolean;
+    };
   };
   
   // Textual filters - aligned with actual database categories
@@ -71,6 +82,16 @@ const DEFAULT_FILTERS: RelationshipFilters = {
       social: true,
       institutional: true,
     },
+    familyTypes: {
+      son: true,
+      son_in_law: true,
+      daughter: true,
+      daughter_in_law: true,
+      grandchild: true,
+      grandfather: true,
+      sibling: true,
+      spouse: true,
+    },
   },
   textual: {
     categories: {
@@ -104,12 +125,13 @@ interface RelationshipFilterContextType {
   setFilters: (filters: RelationshipFilters) => void;
   toggleDomain: (domain: keyof RelationshipFilters['domains']) => void;
   toggleBiographicalCategory: (category: keyof RelationshipFilters['biographical']['categories']) => void;
+  toggleFamilyType: (familyType: keyof RelationshipFilters['biographical']['familyTypes']) => void;
   toggleTextualCategory: (category: keyof RelationshipFilters['textual']['categories']) => void;
   toggleIntellectualCategory: (category: keyof RelationshipFilters['intellectual']['categories']) => void;
   toggleCertainty: (level: keyof RelationshipFilters['certainty']) => void;
   resetFilters: () => void;
   activeFilterCount: number;
-  shouldShowRelationship: (domain: 'biographical' | 'textual' | 'intellectual', category: string, certainty: string | null) => boolean;
+  shouldShowRelationship: (domain: 'biographical' | 'textual' | 'intellectual', category: string, relationshipType: string | null, certainty: string | null) => boolean;
 }
 
 const RelationshipFilterContext = createContext<RelationshipFilterContextType | undefined>(undefined);
@@ -135,6 +157,19 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
         categories: {
           ...prev.biographical.categories,
           [category]: !prev.biographical.categories[category],
+        },
+      },
+    }));
+  }, []);
+
+  const toggleFamilyType = useCallback((familyType: keyof RelationshipFilters['biographical']['familyTypes']) => {
+    setFilters(prev => ({
+      ...prev,
+      biographical: {
+        ...prev.biographical,
+        familyTypes: {
+          ...prev.biographical.familyTypes,
+          [familyType]: !prev.biographical.familyTypes[familyType],
         },
       },
     }));
@@ -186,6 +221,7 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     Object.values(filters.domains).forEach(v => !v && count++);
     // Count disabled categories
     Object.values(filters.biographical.categories).forEach(v => !v && count++);
+    Object.values(filters.biographical.familyTypes).forEach(v => !v && count++);
     Object.values(filters.textual.categories).forEach(v => !v && count++);
     Object.values(filters.intellectual.categories).forEach(v => !v && count++);
     Object.values(filters.certainty).forEach(v => !v && count++);
@@ -196,6 +232,7 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
   const shouldShowRelationship = useCallback((
     domain: 'biographical' | 'textual' | 'intellectual',
     category: string,
+    relationshipType: string | null,
     certainty: string | null
   ): boolean => {
     // Check domain is enabled
@@ -210,6 +247,16 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       key => key.toLowerCase() === normalizedCategory
     );
     if (categoryKey && !domainCategories[categoryKey]) return false;
+    
+    // For biographical family relationships, also check specific family type
+    if (domain === 'biographical' && normalizedCategory === 'family' && relationshipType) {
+      const normalizedType = relationshipType.toLowerCase().replace('-', '_').replace(' ', '_');
+      const familyTypes = filters.biographical.familyTypes as Record<string, boolean>;
+      const familyTypeKey = Object.keys(familyTypes).find(
+        key => key.toLowerCase() === normalizedType
+      );
+      if (familyTypeKey && !familyTypes[familyTypeKey]) return false;
+    }
     
     // Check certainty is enabled
     if (certainty) {
@@ -226,6 +273,7 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       setFilters,
       toggleDomain,
       toggleBiographicalCategory,
+      toggleFamilyType,
       toggleTextualCategory,
       toggleIntellectualCategory,
       toggleCertainty,
@@ -247,6 +295,7 @@ export function useRelationshipFilters() {
       setFilters: () => {},
       toggleDomain: () => {},
       toggleBiographicalCategory: () => {},
+      toggleFamilyType: () => {},
       toggleTextualCategory: () => {},
       toggleIntellectualCategory: () => {},
       toggleCertainty: () => {},
