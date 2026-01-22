@@ -11,7 +11,7 @@ import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { PlaceSearch } from '@/components/PlaceSearch';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
-import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, type DbScholar } from '@/hooks/useScholars';
+import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
 import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,8 @@ const Index = () => {
   const { data: historicalEvents = [] } = useHistoricalEvents();
   const { data: places = [] } = usePlaces();
   const { data: locationNames = [] } = useLocationNames();
+  const { data: biographicalRelationships = [] } = useBiographicalRelationships();
+  const { data: textualRelationships = [] } = useTextualRelationships();
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
@@ -86,6 +88,8 @@ const Index = () => {
         <LeafletMap
           scholars={filteredScholars}
           relationships={relationships}
+          biographicalRelationships={biographicalRelationships}
+          textualRelationships={textualRelationships}
           places={places}
           locationNames={locationNames}
           selectedScholar={selectedScholar}
