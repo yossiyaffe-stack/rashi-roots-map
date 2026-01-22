@@ -179,37 +179,37 @@ export function AppLayout() {
                       )}
                     </button>
                   )}
+                  
+                  {/* Relationships - shown right after Map Controls on map page, or after Map item on Network/Works pages */}
+                  {item.path === '/' && (isMapPage || isNetworkPage || isWorksPage) && (
+                    <button
+                      onClick={() => {
+                        setRelationshipsPanelOpen(!relationshipsPanelOpen);
+                        if (!relationshipsPanelOpen) setMapControlsPanelOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mt-1",
+                        "hover:bg-white/10 text-white/70 hover:text-white",
+                        !sidebarOpen && "justify-center px-2",
+                        relationshipsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                      )}
+                    >
+                      <Filter className="w-5 h-5 shrink-0" />
+                      {sidebarOpen && (
+                        <>
+                          <span className="font-medium text-sm flex-1 text-left">Relationships</span>
+                          {relationshipsPanelOpen ? (
+                            <ChevronLeft className="w-4 h-4 text-accent" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               );
             })}
-            
-            {/* Relationships Filter - shown on Map, Network, and Works pages */}
-            {(isMapPage || isNetworkPage || isWorksPage) && (
-              <button
-                onClick={() => {
-                  setRelationshipsPanelOpen(!relationshipsPanelOpen);
-                  if (!relationshipsPanelOpen) setMapControlsPanelOpen(false);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                  "hover:bg-white/10 text-white/70 hover:text-white",
-                  !sidebarOpen && "justify-center px-2",
-                  relationshipsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                )}
-              >
-                <Filter className="w-5 h-5 shrink-0" />
-                {sidebarOpen && (
-                  <>
-                    <span className="font-medium text-sm flex-1 text-left">Relationships</span>
-                    {relationshipsPanelOpen ? (
-                      <ChevronLeft className="w-4 h-4 text-accent" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                  </>
-                )}
-              </button>
-            )}
           </nav>
 
           {/* Spacer - only when not showing legends */}
