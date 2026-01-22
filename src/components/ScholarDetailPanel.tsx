@@ -103,9 +103,27 @@ export function ScholarDetailPanel({ scholar, onClose }: ScholarDetailPanelProps
                     {work.description && (
                       <p className="text-xs text-muted-foreground mt-1">{work.description}</p>
                     )}
-                    <Badge variant="outline" className="mt-2 text-xs">
-                      {work.work_type}
-                    </Badge>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {work.work_type}
+                      </Badge>
+                      {work.manuscript_id && (
+                        <Badge variant="secondary" className="text-xs bg-accent/10 text-accent">
+                          {work.manuscript_id}
+                        </Badge>
+                      )}
+                    </div>
+                    {work.manuscript_url && (
+                      <a 
+                        href={work.manuscript_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 mt-2 text-xs text-accent hover:underline"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        View Manuscript / Digital Access
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>

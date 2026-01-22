@@ -270,6 +270,8 @@ export type Database = {
           description: string | null
           hebrew_title: string | null
           id: string
+          manuscript_id: string | null
+          manuscript_url: string | null
           scholar_id: string
           title: string
           updated_at: string
@@ -281,6 +283,8 @@ export type Database = {
           description?: string | null
           hebrew_title?: string | null
           id?: string
+          manuscript_id?: string | null
+          manuscript_url?: string | null
           scholar_id: string
           title: string
           updated_at?: string
@@ -292,6 +296,8 @@ export type Database = {
           description?: string | null
           hebrew_title?: string | null
           id?: string
+          manuscript_id?: string | null
+          manuscript_url?: string | null
           scholar_id?: string
           title?: string
           updated_at?: string
