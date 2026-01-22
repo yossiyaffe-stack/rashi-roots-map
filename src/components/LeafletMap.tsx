@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type ViewMode = 'modern' | 'combined' | 'historical' | 'satellite';
+type ViewMode = 'modern' | 'historical' | 'satellite';
 
 interface LeafletMapProps {
   scholars: DbScholar[];
@@ -404,7 +404,7 @@ export function LeafletMap({
   const boundaryLabelsRef = useRef<L.Marker[]>([]);
   const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
   
-  const [viewMode, setViewMode] = useState<ViewMode>('combined');
+  const [viewMode, setViewMode] = useState<ViewMode>('satellite');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
@@ -478,22 +478,8 @@ export function LeafletMap({
         attribution: 'Historical Map via NYPL Map Warper',
         opacity: 0.9,
       }).addTo(leafletMap.current);
-    } else {
-      // Combined mode - satellite + historical overlay
-      baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
-        attribution: '© Esri, Maxar, Earthstar Geographics',
-      }).addTo(leafletMap.current);
-      historicalLayerRef.current = L.tileLayer(TILE_LAYERS.historical, {
-        attribution: 'Historical Map via NYPL Map Warper',
-        opacity: overlayOpacity,
-      }).addTo(leafletMap.current);
-      // Add labels on top for readability
-      labelsLayerRef.current = L.tileLayer(TILE_LAYERS.labels, {
-        attribution: '© CARTO',
-        opacity: 0.8,
-      }).addTo(leafletMap.current);
     }
-  }, [viewMode, overlayOpacity]);
+  }, [viewMode]);
 
   // Draw historical kingdom boundaries with click-to-filter
   useEffect(() => {
@@ -799,7 +785,7 @@ export function LeafletMap({
       
       {/* View Mode Toggle */}
       <div className="absolute top-6 left-6 z-[1000] flex gap-2">
-        {(['modern', 'satellite', 'combined', 'historical'] as ViewMode[]).map(mode => (
+        {(['modern', 'satellite', 'historical'] as ViewMode[]).map(mode => (
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
@@ -898,27 +884,6 @@ export function LeafletMap({
               />
             </div>
 
-            {/* Historical Overlay - Only show in combined mode */}
-            {viewMode === 'combined' && (
-              <div className="pt-3 border-t border-slate-200">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-3">
-                  Historical Overlay
-                </label>
-                <Slider
-                  value={[overlayOpacity * 100]}
-                  min={0}
-                  max={100}
-                  step={5}
-                  onValueChange={([val]) => setOverlayOpacity(val / 100)}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
-                  <span>Satellite</span>
-                  <span>{Math.round(overlayOpacity * 100)}%</span>
-                  <span>17th C.</span>
-                </div>
-              </div>
-            )}
 
             {/* Kingdom Legend - Only show when boundaries are on */}
             {showBoundaries && (
