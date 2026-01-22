@@ -736,20 +736,21 @@ export function LeafletMap({
               "
             ></div>
             <div class="marker-label" style="
-              background: rgba(0, 0, 0, 0.85);
-              color: #fff;
-              padding: 3px 8px;
-              border-radius: 4px;
-              font-size: ${isRashi ? '12px' : '10px'};
-              font-weight: ${isRashi ? '700' : '600'};
+              background: rgba(15, 15, 35, 0.95);
+              color: #ffffff;
+              padding: 4px 10px;
+              border-radius: 6px;
+              font-size: ${isRashi ? '13px' : '11px'};
+              font-weight: 700;
+              letter-spacing: 0.3px;
               white-space: nowrap;
-              max-width: 120px;
+              max-width: 140px;
               overflow: hidden;
               text-overflow: ellipsis;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-              border: 1px solid rgba(255,255,255,0.2);
+              box-shadow: 0 3px 12px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,255,255,0.15);
+              text-shadow: 0 1px 2px rgba(0,0,0,0.8);
               ${isDimmed ? 'opacity: 0.4;' : ''}
-              ${isRashi ? 'background: linear-gradient(135deg, #c9a961, #b8963e); color: #1a1a2e;' : ''}
+              ${isRashi ? 'background: linear-gradient(135deg, #d4af37, #b8963e); color: #1a1a2e; text-shadow: none; box-shadow: 0 3px 12px rgba(212,175,55,0.5), 0 0 0 2px rgba(255,255,255,0.3);' : ''}
             ">${shortName}</div>
           </div>
         `,
