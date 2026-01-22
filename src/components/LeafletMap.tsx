@@ -908,6 +908,15 @@ export function LeafletMap({
       const isSelected = selectedScholar?.id === scholar.id;
       const isDimmed = selectedRegion && !inSelectedRegion;
       
+      // Calculate size based on importance (0-100 scale, default 50)
+      // Min size: 8px, Max size: 24px for Rashi/highest importance
+      const importance = scholar.importance ?? 50;
+      const baseSize = isRashi 
+        ? 24 
+        : Math.max(8, Math.min(20, 8 + (importance / 100) * 12));
+      const borderWidth = baseSize > 14 ? 2.5 : baseSize > 10 ? 2 : 1.5;
+      const fontSize = baseSize > 14 ? 11 : baseSize > 10 ? 10 : 9;
+      
       // Get a shorter display name (acronym or first part)
       const shortName = scholar.name.split(' - ')[0].split(' (')[0];
       const hebrewName = scholar.hebrew_name || '';
@@ -927,6 +936,10 @@ export function LeafletMap({
         labelText = shortName;
       }
       
+      // Highlight styling for high-importance scholars
+      const isHighImportance = importance >= 80 || isRashi;
+      const glowSize = isSelected ? 16 : (isHighImportance ? 12 : 8);
+      
       const icon = L.divIcon({
         className: 'historical-marker',
         html: `
@@ -940,43 +953,43 @@ export function LeafletMap({
               class="marker-dot ${isRashi ? 'marker-rashi-dot' : ''}" 
               style="
                 background: ${color}; 
-                width: ${isRashi ? '18px' : '10px'};
-                height: ${isRashi ? '18px' : '10px'};
+                width: ${baseSize}px;
+                height: ${baseSize}px;
                 border-radius: 50%;
-                border: ${isRashi ? '2px solid #fbbf24' : '1.5px solid #fff'};
-                box-shadow: 0 0 ${isSelected ? '16px' : '8px'} ${color}, 0 1px 4px rgba(0,0,0,0.4);
+                border: ${isRashi ? '2.5px solid #fbbf24' : `${borderWidth}px solid ${isHighImportance ? '#fff' : 'rgba(255,255,255,0.8)'}`};
+                box-shadow: 0 0 ${glowSize}px ${color}, 0 1px 4px rgba(0,0,0,0.4);
                 transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-                ${isSelected ? 'transform: scale(1.4);' : ''}
+                ${isSelected ? 'transform: scale(1.3);' : ''}
                 ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
               "
             ></div>
             ${showAnyLabel ? `<div class="marker-label" style="
               background: #1a1408;
               color: #ffd700;
-              padding: 3px 8px;
+              padding: ${isHighImportance ? '4px 10px' : '3px 8px'};
               border-radius: 3px;
-              font-size: ${isRashi ? '11px' : '9px'};
-              font-weight: 600;
+              font-size: ${fontSize}px;
+              font-weight: ${isHighImportance ? '700' : '600'};
               letter-spacing: 0.3px;
               white-space: nowrap;
               max-width: ${showEnglish && showHebrew ? '180px' : '120px'};
               overflow: hidden;
               text-overflow: ellipsis;
               box-shadow: 0 1px 6px rgba(0,0,0,0.7), 0 0 0 1px #1a1408;
-              border: 1.5px solid #c9a961;
+              border: ${isHighImportance ? '2px' : '1.5px'} solid ${isHighImportance ? '#ffd700' : '#c9a961'};
               text-shadow: 0 1px 2px rgba(0,0,0,0.5);
               ${isDimmed ? 'opacity: 0.4;' : ''}
               ${isRashi ? 'background: #c9a961; color: #1a1408; border-color: #ffd700; text-shadow: none;' : ''}
             ">${labelText}</div>` : ''}
           </div>
         `,
-        iconSize: isRashi ? [120, 60] : [100, 50],
-        iconAnchor: isRashi ? [60, 11] : [50, 7],
+        iconSize: isHighImportance ? [140, 70] : [100, 50],
+        iconAnchor: isHighImportance ? [70, Math.round(baseSize / 2)] : [50, Math.round(baseSize / 2)],
       });
 
       const marker = L.marker([scholar.latitude!, scholar.longitude!], { 
         icon,
-        zIndexOffset: isDimmed ? -1000 : 0 
+        zIndexOffset: isDimmed ? -1000 : (importance || 50) // Higher importance = higher z-index
       });
 
       // Get historical place name if region is selected
