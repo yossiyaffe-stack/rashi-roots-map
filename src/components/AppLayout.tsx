@@ -132,7 +132,10 @@ export function AppLayout() {
                   {sidebarOpen && (
                     <>
                       <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
-                      {mapControlsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                      <ChevronRight className={cn(
+                        "w-5 h-5 transition-transform duration-300 ease-out",
+                        mapControlsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
+                      )} />
                     </>
                   )}
                 </button>
@@ -161,7 +164,10 @@ export function AppLayout() {
                   {sidebarOpen && (
                     <>
                       <span className="font-medium text-sm flex-1 text-left">Legends</span>
-                      {legendsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                      <ChevronRight className={cn(
+                        "w-5 h-5 transition-transform duration-300 ease-out",
+                        legendsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
+                      )} />
                     </>
                   )}
                 </button>
@@ -190,7 +196,10 @@ export function AppLayout() {
                   {sidebarOpen && (
                     <>
                       <span className="font-medium text-sm flex-1 text-left">Kingdoms</span>
-                      {kingdomsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                      <ChevronRight className={cn(
+                        "w-5 h-5 transition-transform duration-300 ease-out",
+                        kingdomsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
+                      )} />
                     </>
                   )}
                 </button>
@@ -253,7 +262,10 @@ export function AppLayout() {
                   {sidebarOpen && (
                     <>
                       <span className="font-medium text-sm flex-1 text-left">Relationships</span>
-                      {relationshipsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                      <ChevronRight className={cn(
+                        "w-5 h-5 transition-transform duration-300 ease-out",
+                        relationshipsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
+                      )} />
                     </>
                   )}
                 </button>
@@ -350,7 +362,10 @@ export function AppLayout() {
                   {sidebarOpen && (
                     <>
                       <span className="font-medium text-sm flex-1 text-left">Scholar Journeys</span>
-                      {journeysPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                      <ChevronRight className={cn(
+                        "w-5 h-5 transition-transform duration-300 ease-out",
+                        journeysPanelOpen ? "rotate-180 text-accent" : "text-white/50"
+                      )} />
                     </>
                   )}
                 </button>
