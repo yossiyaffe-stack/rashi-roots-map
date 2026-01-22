@@ -1,15 +1,23 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DbScholar, DbRelationship, DbPlace, DbLocationName } from '@/hooks/useScholars';
+import type { DbScholar, DbRelationship, DbPlace, DbLocationName, DbBiographicalRelationship, DbTextualRelationship } from '@/hooks/useScholars';
 import type { CityFilter } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
 
+// Extended textual relationship type with scholar IDs
+type TextualRelationshipWithScholars = DbTextualRelationship & { 
+  from_scholar_id: string | null; 
+  to_scholar_id: string | null 
+};
+
 interface LeafletMapProps {
   scholars: DbScholar[];
   relationships: DbRelationship[];
+  biographicalRelationships?: DbBiographicalRelationship[];
+  textualRelationships?: TextualRelationshipWithScholars[];
   places: DbPlace[];
   locationNames: DbLocationName[];
   selectedScholar: DbScholar | null;
@@ -390,6 +398,8 @@ const getRelationshipColor = (type: string): string => {
 export function LeafletMap({ 
   scholars, 
   relationships,
+  biographicalRelationships = [],
+  textualRelationships = [],
   places,
   locationNames,
   selectedScholar, 
@@ -935,7 +945,7 @@ export function LeafletMap({
     });
   }, [showMigrations]);
 
-  // Draw relationship lines
+  // Draw relationship lines (legacy + biographical + textual)
   useEffect(() => {
     if (!leafletMap.current) return;
 
@@ -953,43 +963,95 @@ export function LeafletMap({
       }
     });
 
-    // Draw lines for each relationship
+    // Helper to draw a connection line
+    const drawLine = (
+      fromCoords: [number, number], 
+      toCoords: [number, number], 
+      color: string, 
+      tooltip: string,
+      dashed: boolean = false
+    ) => {
+      const midLat = (fromCoords[0] + toCoords[0]) / 2;
+      const midLng = (fromCoords[1] + toCoords[1]) / 2;
+      const offset = Math.abs(fromCoords[1] - toCoords[1]) * 0.15;
+      
+      const curvePoints: L.LatLngExpression[] = [
+        fromCoords,
+        [midLat + offset, midLng],
+        toCoords,
+      ];
+
+      const line = L.polyline(curvePoints, {
+        color,
+        weight: 2,
+        opacity: 0.6,
+        dashArray: dashed ? '5, 5' : undefined,
+        smoothFactor: 1,
+      });
+
+      line.bindTooltip(tooltip, { 
+        className: 'historical-tooltip',
+        sticky: true 
+      });
+
+      line.addTo(leafletMap.current!);
+      linesRef.current.push(line);
+    };
+
+    // 1. Draw legacy relationships (from 'relationships' table)
     relationships.forEach(rel => {
       const fromCoords = rel.from_scholar_id ? scholarCoords.get(rel.from_scholar_id) : null;
       const toCoords = rel.to_scholar_id ? scholarCoords.get(rel.to_scholar_id) : null;
 
       if (fromCoords && toCoords) {
         const color = getRelationshipColor(rel.type);
-        
-        // Create curved line using quadratic bezier approximation
-        const midLat = (fromCoords[0] + toCoords[0]) / 2;
-        const midLng = (fromCoords[1] + toCoords[1]) / 2;
-        const offset = Math.abs(fromCoords[1] - toCoords[1]) * 0.15;
-        
-        const curvePoints: L.LatLngExpression[] = [
-          fromCoords,
-          [midLat + offset, midLng],
-          toCoords,
-        ];
-
-        const line = L.polyline(curvePoints, {
-          color,
-          weight: 2,
-          opacity: 0.6,
-          dashArray: rel.type === 'literary' ? '5, 5' : undefined,
-          smoothFactor: 1,
-        });
-
-        line.bindTooltip(`${rel.type} relationship`, { 
-          className: 'historical-tooltip',
-          sticky: true 
-        });
-
-        line.addTo(leafletMap.current!);
-        linesRef.current.push(line);
+        drawLine(fromCoords, toCoords, color, `${rel.type} relationship`, rel.type === 'literary');
       }
     });
-  }, [showLines, relationships, scholars]);
+
+    // 2. Draw biographical relationships (family, educational, etc.)
+    biographicalRelationships.forEach(rel => {
+      const fromCoords = scholarCoords.get(rel.scholar_id);
+      const toCoords = scholarCoords.get(rel.related_scholar_id);
+
+      if (fromCoords && toCoords) {
+        // Color based on category
+        let color = '#8b5cf6'; // default purple
+        let label = rel.relationship_category;
+        
+        if (rel.relationship_category === 'family') {
+          color = '#f59e0b'; // amber
+          label = `Family: ${rel.relationship_type}`;
+        } else if (rel.relationship_category === 'educational' || rel.relationship_category === 'pedagogical') {
+          color = '#22c55e'; // green
+          label = `Educational: ${rel.relationship_type}`;
+        } else if (rel.relationship_category === 'professional') {
+          color = '#6366f1'; // indigo
+          label = `Professional: ${rel.relationship_type}`;
+        } else if (rel.relationship_category === 'social') {
+          color = '#ec4899'; // pink
+          label = `Social: ${rel.relationship_type}`;
+        }
+        
+        drawLine(fromCoords, toCoords, color, label);
+      }
+    });
+
+    // 3. Draw textual relationships (work-to-work mapped to scholar-to-scholar)
+    textualRelationships.forEach(rel => {
+      if (!rel.from_scholar_id || !rel.to_scholar_id) return;
+      
+      const fromCoords = scholarCoords.get(rel.from_scholar_id);
+      const toCoords = scholarCoords.get(rel.to_scholar_id);
+
+      if (fromCoords && toCoords) {
+        // Textual relationships are shown as blue dashed lines
+        const label = `Textual: ${rel.relationship_type}`;
+        drawLine(fromCoords, toCoords, '#3b82f6', label, true);
+      }
+    });
+
+  }, [showLines, relationships, biographicalRelationships, textualRelationships, scholars]);
 
   // Update markers when scholars or time range or region filter changes
   useEffect(() => {
