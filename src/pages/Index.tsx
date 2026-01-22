@@ -5,21 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LeafletMap } from '@/components/LeafletMap';
-import { ScholarListItem } from '@/components/ScholarListItem';
+import { TimelineView } from '@/components/TimelineView';
+import { NetworkView } from '@/components/NetworkView';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
-import { useScholars, type DbScholar } from '@/hooks/useScholars';
+import { MapLegend } from '@/components/MapLegend';
+import { HistoricalEventsList } from '@/components/HistoricalEventsList';
+import { useScholars, useHistoricalEvents, useRelationships, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
-
+type ViewMode = 'map' | 'timeline' | 'network';
 
 const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
-  
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('map');
 
-  const { data: scholars = [], isLoading } = useScholars();
+  const { data: scholars = [], isLoading: scholarsLoading } = useScholars();
+  const { data: historicalEvents = [], isLoading: eventsLoading } = useHistoricalEvents();
+  const { data: relationships = [] } = useRelationships();
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
@@ -34,27 +40,58 @@ const Index = () => {
     });
   }, [scholars, searchTerm, timeRange]);
 
+  const isLoading = scholarsLoading || eventsLoading;
+
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
       {/* Sidebar */}
       <aside className="w-96 flex flex-col z-[1001] bg-sidebar border-r border-white/10 shadow-2xl">
         {/* Header */}
-        <header className="p-8 bg-gradient-to-b from-[hsl(245_50%_28%)] to-sidebar">
-          <div className="flex items-center gap-3 mb-4">
-            <Grape className="w-7 h-7 text-accent" />
+        <header className="p-6 bg-gradient-to-b from-[hsl(245_50%_28%)] to-sidebar">
+          <div className="flex items-center gap-3 mb-3">
+            <Grape className="w-6 h-6 text-accent" />
             <span className="text-[10px] uppercase tracking-[0.2em] text-accent/80 font-bold">
               The Vine of Wisdom
             </span>
           </div>
-          <h1 className="text-3xl font-black leading-tight italic">
+          <h1 className="text-2xl font-black leading-tight italic">
             Rashi <span className="text-accent">Map</span>
           </h1>
         </header>
 
+        {/* View Mode Tabs */}
+        <div className="px-6 py-3 border-b border-white/10">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+            <TabsList className="w-full bg-white/5 border border-white/10">
+              <TabsTrigger 
+                value="map" 
+                className="flex-1 gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+              >
+                <MapIcon className="w-3.5 h-3.5" />
+                Map
+              </TabsTrigger>
+              <TabsTrigger 
+                value="timeline" 
+                className="flex-1 gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+              >
+                <History className="w-3.5 h-3.5" />
+                Timeline
+              </TabsTrigger>
+              <TabsTrigger 
+                value="network" 
+                className="flex-1 gap-1.5 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Network
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
         {/* Search & Content */}
         <div className="p-6 flex-1 overflow-hidden flex flex-col">
           {/* Search */}
-          <div className="relative mb-6">
+          <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <Input
               type="text"
@@ -66,15 +103,15 @@ const Index = () => {
           </div>
 
           {/* Scholar List */}
-          <div className="flex-1 overflow-hidden">
-            <h3 className="text-xs uppercase tracking-widest text-accent font-bold mb-4 px-2">
-              Key Commentators ({filteredScholars.length})
+          <div className="flex-1 overflow-hidden mb-4">
+            <h3 className="text-xs uppercase tracking-widest text-accent font-bold mb-3 px-1">
+              Scholars ({filteredScholars.length})
             </h3>
-            <ScrollArea className="h-[calc(100%-2rem)]">
-              <div className="space-y-2 pr-2">
+            <ScrollArea className="h-[calc(100%-1.5rem)]">
+              <div className="space-y-1.5 pr-2">
                 {isLoading ? (
                   Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="h-20 rounded-xl bg-white/5" />
+                    <Skeleton key={i} className="h-16 rounded-xl bg-white/5" />
                   ))
                 ) : (
                   filteredScholars.map(scholar => (
@@ -82,23 +119,23 @@ const Index = () => {
                       key={scholar.id}
                       onClick={() => setSelectedScholar(scholar)}
                       className={cn(
-                        "group p-4 rounded-xl cursor-pointer transition-all border",
+                        "group p-3 rounded-lg cursor-pointer transition-all border",
                         selectedScholar?.id === scholar.id
                           ? "bg-white/10 border-accent"
                           : "bg-transparent border-transparent hover:bg-white/5"
                       )}
                     >
                       <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-bold group-hover:text-accent transition-colors">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-sm group-hover:text-accent transition-colors truncate">
                             {scholar.name}
                           </h4>
-                          <p className="text-xs text-white/50">
+                          <p className="text-[11px] text-white/50 truncate">
                             {scholar.birth_place || scholar.period} • {scholar.birth_year || '?'}–{scholar.death_year || '?'}
                           </p>
                         </div>
                         {scholar.hebrew_name && (
-                          <span className="text-lg font-hebrew text-accent/80">
+                          <span className="text-sm font-hebrew text-accent/80 shrink-0 ml-2">
                             {scholar.hebrew_name}
                           </span>
                         )}
@@ -109,11 +146,17 @@ const Index = () => {
               </div>
             </ScrollArea>
           </div>
+
+          {/* Legend & Historical Events */}
+          <div className="space-y-4 pt-4 border-t border-white/10">
+            <MapLegend />
+            <HistoricalEventsList events={historicalEvents} timeRange={timeRange} />
+          </div>
         </div>
 
         {/* Timeline Footer */}
-        <footer className="p-6 bg-[hsl(245_50%_12%)] border-t border-white/10">
-          <div className="flex justify-between text-sm mb-3">
+        <footer className="p-4 bg-[hsl(245_50%_12%)] border-t border-white/10">
+          <div className="flex justify-between text-xs mb-2">
             <span className="text-white/50">{timeRange[0]} CE</span>
             <span className="text-accent font-medium">{timeRange[1]} CE</span>
           </div>
@@ -128,14 +171,35 @@ const Index = () => {
         </footer>
       </aside>
 
-      {/* Map View */}
-      <main className="flex-1 relative">
-        <LeafletMap
-          scholars={filteredScholars}
-          selectedScholar={selectedScholar}
-          onSelectScholar={setSelectedScholar}
-          timeRange={timeRange}
-        />
+      {/* Main Content */}
+      <main className="flex-1 relative bg-background">
+        {viewMode === 'map' && (
+          <LeafletMap
+            scholars={filteredScholars}
+            selectedScholar={selectedScholar}
+            onSelectScholar={setSelectedScholar}
+            timeRange={timeRange}
+          />
+        )}
+        
+        {viewMode === 'timeline' && (
+          <TimelineView
+            scholars={filteredScholars}
+            selectedScholar={selectedScholar}
+            onSelectScholar={setSelectedScholar}
+            historicalEvents={historicalEvents}
+            timeRange={timeRange}
+          />
+        )}
+        
+        {viewMode === 'network' && (
+          <NetworkView
+            scholars={filteredScholars}
+            relationships={relationships}
+            selectedScholar={selectedScholar}
+            onSelectScholar={setSelectedScholar}
+          />
+        )}
 
         {/* Scholar Detail Panel */}
         {selectedScholar && (

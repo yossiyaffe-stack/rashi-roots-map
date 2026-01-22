@@ -1,70 +1,77 @@
 import { Calendar } from 'lucide-react';
-import type { Scholar, HistoricalEvent } from '@/data/scholars';
-import { ScholarCard } from './ScholarCard';
+import type { DbScholar, DbHistoricalEvent } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
 interface TimelineViewProps {
-  scholars: Scholar[];
-  selectedScholar: Scholar | null;
-  onSelectScholar: (scholar: Scholar) => void;
-  showHistoricalContext: boolean;
-  historicalEvents: HistoricalEvent[];
-  timeFilter: [number, number];
+  scholars: DbScholar[];
+  selectedScholar: DbScholar | null;
+  onSelectScholar: (scholar: DbScholar) => void;
+  historicalEvents: DbHistoricalEvent[];
+  timeRange: [number, number];
 }
 
 export const TimelineView = ({
   scholars,
   selectedScholar,
   onSelectScholar,
-  showHistoricalContext,
   historicalEvents,
-  timeFilter
+  timeRange
 }: TimelineViewProps) => {
   // Group scholars by century
-  const centuryGroups: Record<number, Scholar[]> = {};
+  const centuryGroups: Record<number, DbScholar[]> = {};
   scholars.forEach(scholar => {
-    const century = Math.floor(scholar.birth / 100) * 100;
+    if (!scholar.birth_year) return;
+    const century = Math.floor(scholar.birth_year / 100) * 100;
     if (!centuryGroups[century]) centuryGroups[century] = [];
     centuryGroups[century].push(scholar);
   });
 
   const visibleEvents = historicalEvents.filter(
-    event => event.year >= timeFilter[0] && event.year <= timeFilter[1]
+    event => event.year >= timeRange[0] && event.year <= timeRange[1]
   );
 
-  const getEventStyles = (importance: HistoricalEvent['importance']) => {
+  const getEventStyles = (importance: DbHistoricalEvent['importance']) => {
     switch (importance) {
       case 'critical':
-        return 'border-l-destructive bg-destructive/5';
+        return 'border-l-destructive bg-destructive/10';
       case 'major':
-        return 'border-l-orange-500 bg-card';
+        return 'border-l-orange-500 bg-orange-500/10';
       case 'foundational':
-        return 'border-l-primary bg-card';
+        return 'border-l-accent bg-accent/10';
       case 'scholarly':
-        return 'border-l-green-600 bg-card';
+        return 'border-l-green-600 bg-green-600/10';
       default:
-        return 'border-l-secondary bg-card';
+        return 'border-l-muted bg-muted/10';
     }
   };
 
+  const getScholarColor = (scholar: DbScholar): string => {
+    if (scholar.name === 'Rashi') return 'bg-rose-500';
+    if (scholar.relationship_type === 'supercommentator') return 'bg-blue-500';
+    if (scholar.period === 'Rishonim') return 'bg-amber-500';
+    return 'bg-violet-500';
+  };
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 p-6 overflow-auto h-full">
       {/* Historical Events */}
-      {showHistoricalContext && visibleEvents.length > 0 && (
-        <div className="gradient-card border-2 border-primary rounded-xl p-6 mb-4">
-          <h3 className="font-display text-2xl text-foreground mb-4">Historical Context</h3>
+      {visibleEvents.length > 0 && (
+        <div className="bg-sidebar/50 border border-white/10 rounded-xl p-6 mb-4">
+          <h3 className="font-display text-xl text-accent mb-4">Historical Context</h3>
           <div className="space-y-3">
-            {visibleEvents.map((event, idx) => (
+            {visibleEvents.map((event) => (
               <div
-                key={idx}
+                key={event.id}
                 className={cn(
-                  "p-4 border-l-4 rounded",
+                  "p-4 border-l-4 rounded-r-lg",
                   getEventStyles(event.importance)
                 )}
               >
-                <span className="font-bold text-secondary text-lg mr-4">{event.year}</span>
+                <span className="font-bold text-accent text-lg mr-4">{event.year}</span>
                 <span className="font-semibold text-foreground text-lg">{event.name}</span>
-                <p className="mt-2 text-muted-foreground leading-relaxed">{event.description}</p>
+                {event.description && (
+                  <p className="mt-2 text-muted-foreground leading-relaxed">{event.description}</p>
+                )}
               </div>
             ))}
           </div>
@@ -75,19 +82,42 @@ export const TimelineView = ({
       {Object.keys(centuryGroups)
         .sort((a, b) => Number(a) - Number(b))
         .map(century => (
-          <div key={century} className="relative pl-8 border-l-4 border-primary">
-            <div className="flex items-center gap-2 mb-4 font-display text-2xl font-bold text-secondary">
-              <Calendar className="w-6 h-6 text-primary" />
+          <div key={century} className="relative pl-8 border-l-4 border-accent">
+            <div className="flex items-center gap-2 mb-4 font-display text-xl font-bold text-accent">
+              <Calendar className="w-5 h-5" />
               {century}s – {Number(century) + 99}
             </div>
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {centuryGroups[Number(century)].map(scholar => (
-                <ScholarCard
+                <div
                   key={scholar.id}
-                  scholar={scholar}
-                  isSelected={selectedScholar?.id === scholar.id}
                   onClick={() => onSelectScholar(scholar)}
-                />
+                  className={cn(
+                    "p-4 rounded-xl cursor-pointer transition-all border group",
+                    selectedScholar?.id === scholar.id
+                      ? "bg-white/10 border-accent"
+                      : "bg-sidebar/30 border-transparent hover:bg-white/5 hover:border-white/20"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn("w-3 h-3 rounded-full mt-1.5 shrink-0", getScholarColor(scholar))} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-bold text-foreground group-hover:text-accent transition-colors truncate">
+                          {scholar.name}
+                        </h4>
+                        {scholar.hebrew_name && (
+                          <span className="text-sm font-hebrew text-accent/80 shrink-0">
+                            {scholar.hebrew_name}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {scholar.birth_place || 'Unknown'} • {scholar.birth_year || '?'}–{scholar.death_year || '?'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
