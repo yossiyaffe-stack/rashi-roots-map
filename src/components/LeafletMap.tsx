@@ -2,10 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DbScholar, DbRelationship } from '@/hooks/useScholars';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
@@ -17,9 +13,8 @@ interface LeafletMapProps {
   onSelectScholar: (scholar: DbScholar) => void;
   timeRange: [number, number];
   showConnections: boolean;
-  onShowConnectionsChange: (show: boolean) => void;
   showMigrations: boolean;
-  onShowMigrationsChange: (show: boolean) => void;
+  showBoundaries: boolean;
 }
 
 // Tile layer definitions
@@ -389,9 +384,8 @@ export function LeafletMap({
   onSelectScholar, 
   timeRange,
   showConnections,
-  onShowConnectionsChange,
   showMigrations,
-  onShowMigrationsChange,
+  showBoundaries,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -405,15 +399,10 @@ export function LeafletMap({
   const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('satellite');
-  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
-  const [showBoundaries, setShowBoundaries] = useState(true);
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
-  const [controlsExpanded, setControlsExpanded] = useState(false);
 
-  // Alias props for internal use
+  // Alias for internal use
   const showLines = showConnections;
-  const setShowLines = onShowConnectionsChange;
-  const setShowMigrations = onShowMigrationsChange;
 
   // Initialize map
   useEffect(() => {
@@ -822,72 +811,6 @@ export function LeafletMap({
         </div>
       )}
 
-      {/* Controls Panel - Collapsible */}
-      <div className={cn(
-        "absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg shadow-lg border border-slate-200 transition-all duration-300",
-        controlsExpanded ? "w-64" : "w-auto"
-      )}>
-        {/* Header - Always visible */}
-        <button
-          onClick={() => setControlsExpanded(!controlsExpanded)}
-          className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-slate-600" />
-            {controlsExpanded && (
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Map Controls</span>
-            )}
-          </div>
-          {controlsExpanded ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
-        </button>
-
-        {/* Expandable content */}
-        {controlsExpanded && (
-          <div className="px-4 pb-4 space-y-3 max-h-[calc(100vh-10rem)] overflow-y-auto">
-            {/* Show Kingdoms Toggle */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="show-boundaries" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-                Show Kingdoms
-              </Label>
-              <Switch
-                id="show-boundaries"
-                checked={showBoundaries}
-                onCheckedChange={setShowBoundaries}
-              />
-            </div>
-
-            {/* Show Migrations Toggle */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="show-migrations" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-                Show Migrations
-              </Label>
-              <Switch
-                id="show-migrations"
-                checked={showMigrations}
-                onCheckedChange={setShowMigrations}
-              />
-            </div>
-
-            {/* Show Lines Toggle */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="show-lines" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-                Show Connections
-              </Label>
-              <Switch
-                id="show-lines"
-                checked={showLines}
-                onCheckedChange={setShowLines}
-              />
-            </div>
-
-
-          </div>
-        )}
-      </div>
     </div>
   );
 }
