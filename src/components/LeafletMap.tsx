@@ -454,10 +454,7 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
-      // Add labels on top
-      labelsLayerRef.current = L.tileLayer(TILE_LAYERS.labels, {
-        attribution: '© CARTO',
-      }).addTo(leafletMap.current);
+      // No labels overlay - scholar labels are the focus
     } else if (viewMode === 'historical') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.topo, {
         attribution: '© OpenTopoMap',
