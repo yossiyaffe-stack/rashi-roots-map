@@ -165,6 +165,10 @@ export const NetworkView = ({
       <div className="absolute bottom-6 left-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
         <div className="font-bold text-accent mb-2">Connection Types</div>
         <div className="flex items-center gap-2">
+          <div className="w-6 h-0.5 bg-gray-500" />
+          <span className="text-muted-foreground">Son / Son-in-law / Grandson</span>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="w-6 h-0.5 bg-amber-500" />
           <span className="text-muted-foreground">Teacher-Student</span>
         </div>
