@@ -2,6 +2,7 @@ import { Settings2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 interface MapControlsProps {
@@ -37,10 +38,10 @@ export function MapControls({
   showScholarNamesHebrew,
   onShowScholarNamesHebrewChange,
 }: MapControlsProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="space-y-2">
+    <div className="relative">
       {/* Header with collapse toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -57,101 +58,117 @@ export function MapControls({
         )}
       </button>
 
-      {/* Collapsible content */}
+      {/* Horizontal slide-out panel */}
       <div className={cn(
-        "transition-all duration-200 overflow-hidden",
-        expanded ? "max-h-96" : "max-h-0"
+        "absolute left-full top-0 ml-2 z-50 transition-all duration-300 origin-left",
+        expanded 
+          ? "opacity-100 translate-x-0 scale-x-100" 
+          : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
       )}>
-        <div className="space-y-3 pt-1">
-          {/* Layers Section */}
-          <div className="text-xs text-muted-foreground/60 uppercase tracking-wider pt-1">Layers</div>
-          
-          {/* Show Kingdoms Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-boundaries-sidebar" className="text-sm text-muted-foreground cursor-pointer">
-              Show Kingdoms
-            </Label>
-            <Switch
-              id="show-boundaries-sidebar"
-              checked={showBoundaries}
-              onCheckedChange={onShowBoundariesChange}
-            />
-          </div>
+        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[220px] max-w-[280px]">
+          <ScrollArea className="max-h-80">
+            <div className="space-y-4 pr-2">
+              {/* Layers Section */}
+              <div>
+                <div className="text-sm font-semibold text-foreground/80 mb-3">
+                  Layers
+                </div>
+                <div className="space-y-3">
+                  {/* Show Kingdoms Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-boundaries-sidebar" className="text-sm text-muted-foreground cursor-pointer">
+                      Show Kingdoms
+                    </Label>
+                    <Switch
+                      id="show-boundaries-sidebar"
+                      checked={showBoundaries}
+                      onCheckedChange={onShowBoundariesChange}
+                    />
+                  </div>
 
-          {/* Show Migrations Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-migrations-sidebar" className="text-sm text-muted-foreground cursor-pointer">
-              Show Migrations
-            </Label>
-            <Switch
-              id="show-migrations-sidebar"
-              checked={showMigrations}
-              onCheckedChange={onShowMigrationsChange}
-            />
-          </div>
+                  {/* Show Migrations Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-migrations-sidebar" className="text-sm text-muted-foreground cursor-pointer">
+                      Show Migrations
+                    </Label>
+                    <Switch
+                      id="show-migrations-sidebar"
+                      checked={showMigrations}
+                      onCheckedChange={onShowMigrationsChange}
+                    />
+                  </div>
 
-          {/* Show Connections Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-connections-sidebar" className="text-sm text-muted-foreground cursor-pointer">
-              Show Connections
-            </Label>
-            <Switch
-              id="show-connections-sidebar"
-              checked={showConnections}
-              onCheckedChange={onShowConnectionsChange}
-            />
-          </div>
+                  {/* Show Connections Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-connections-sidebar" className="text-sm text-muted-foreground cursor-pointer">
+                      Show Connections
+                    </Label>
+                    <Switch
+                      id="show-connections-sidebar"
+                      checked={showConnections}
+                      onCheckedChange={onShowConnectionsChange}
+                    />
+                  </div>
+                </div>
+              </div>
 
-          {/* Labels Section */}
-          <div className="text-xs text-muted-foreground/60 uppercase tracking-wider pt-2">Labels</div>
+              {/* Labels Section */}
+              <div className="pt-3 border-t border-white/10">
+                <div className="text-sm font-semibold text-foreground/80 mb-3">
+                  Labels
+                </div>
+                <div className="space-y-3">
+                  {/* Show Place Names English Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-place-english" className="text-sm text-muted-foreground cursor-pointer">
+                      Places (English)
+                    </Label>
+                    <Switch
+                      id="show-place-english"
+                      checked={showPlaceNamesEnglish}
+                      onCheckedChange={onShowPlaceNamesEnglishChange}
+                    />
+                  </div>
 
-          {/* Show Place Names English Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-place-english" className="text-sm text-muted-foreground cursor-pointer">
-              Place Names (English)
-            </Label>
-            <Switch
-              id="show-place-english"
-              checked={showPlaceNamesEnglish}
-              onCheckedChange={onShowPlaceNamesEnglishChange}
-            />
-          </div>
+                  {/* Show Place Names Hebrew Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-place-hebrew" className="text-sm text-muted-foreground cursor-pointer">
+                      Places (Hebrew)
+                    </Label>
+                    <Switch
+                      id="show-place-hebrew"
+                      checked={showPlaceNamesHebrew}
+                      onCheckedChange={onShowPlaceNamesHebrewChange}
+                    />
+                  </div>
 
-          {/* Show Place Names Hebrew Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-place-hebrew" className="text-sm text-muted-foreground cursor-pointer">
-              Place Names (Hebrew)
-            </Label>
-            <Switch
-              id="show-place-hebrew"
-              checked={showPlaceNamesHebrew}
-              onCheckedChange={onShowPlaceNamesHebrewChange}
-            />
-          </div>
+                  {/* Show Scholar Names English Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-scholar-english" className="text-sm text-muted-foreground cursor-pointer">
+                      Scholars (English)
+                    </Label>
+                    <Switch
+                      id="show-scholar-english"
+                      checked={showScholarNamesEnglish}
+                      onCheckedChange={onShowScholarNamesEnglishChange}
+                    />
+                  </div>
 
-          {/* Show Scholar Names English Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-scholar-english" className="text-sm text-muted-foreground cursor-pointer">
-              Scholar Names (English)
-            </Label>
-            <Switch
-              id="show-scholar-english"
-              checked={showScholarNamesEnglish}
-              onCheckedChange={onShowScholarNamesEnglishChange}
-            />
-          </div>
-
-          {/* Show Scholar Names Hebrew Toggle */}
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-scholar-hebrew" className="text-sm text-muted-foreground cursor-pointer">
-              Scholar Names (Hebrew)
-            </Label>
-            <Switch
-              id="show-scholar-hebrew"
-              checked={showScholarNamesHebrew}
-              onCheckedChange={onShowScholarNamesHebrewChange}
-            />
-          </div>
+                  {/* Show Scholar Names Hebrew Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-scholar-hebrew" className="text-sm text-muted-foreground cursor-pointer">
+                      Scholars (Hebrew)
+                    </Label>
+                    <Switch
+                      id="show-scholar-hebrew"
+                      checked={showScholarNamesHebrew}
+                      onCheckedChange={onShowScholarNamesHebrewChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>
