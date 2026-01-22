@@ -85,12 +85,39 @@ export function useScholars() {
   });
 }
 
+export interface WorkWithTextualRelationships extends DbWork {
+  textualRelationships?: {
+    id: string;
+    relationship_type: string;
+    relationship_category: string;
+    related_work_title: string | null;
+    related_work_hebrew_title: string | null;
+    related_text_canonical: string | null;
+    depth_level: number | null;
+    notes: string | null;
+    author_name: string | null;
+  }[];
+  supercommentaries?: {
+    id: string;
+    title: string;
+    hebrew_title: string | null;
+    author_name: string;
+    notes: string | null;
+  }[];
+}
+
+export interface ScholarWithWorksAndRelationships extends DbScholar {
+  works?: WorkWithTextualRelationships[];
+  relationships?: DbRelationship[];
+}
+
 export function useScholarWithWorks(scholarId: string | null) {
   return useQuery({
     queryKey: ['scholar', scholarId],
     queryFn: async () => {
       if (!scholarId) return null;
       
+      // Fetch scholar, their works, and relationships in parallel
       const [scholarRes, worksRes, relationshipsRes] = await Promise.all([
         supabase.from('scholars').select('*').eq('id', scholarId).single(),
         supabase.from('works').select('*').eq('scholar_id', scholarId),
@@ -99,11 +126,71 @@ export function useScholarWithWorks(scholarId: string | null) {
       
       if (scholarRes.error) throw scholarRes.error;
       
+      const works = worksRes.data || [];
+      const workIds = works.map(w => w.id);
+      
+      // Fetch textual relationships where this scholar's works are the TARGET (supercommentaries ON their works)
+      let textualRelsByWork: Record<string, WorkWithTextualRelationships['supercommentaries']> = {};
+      
+      if (workIds.length > 0) {
+        const { data: textualRels } = await supabase
+          .from('textual_relationships')
+          .select(`
+            id,
+            work_id,
+            related_work_id,
+            relationship_type,
+            relationship_category,
+            depth_level,
+            notes,
+            work:works!work_id(id, title, hebrew_title, scholar_id)
+          `)
+          .in('related_work_id', workIds);
+        
+        // Group supercommentaries by the target work (related_work_id)
+        if (textualRels) {
+          for (const rel of textualRels) {
+            const targetWorkId = rel.related_work_id;
+            if (!targetWorkId) continue;
+            
+            if (!textualRelsByWork[targetWorkId]) {
+              textualRelsByWork[targetWorkId] = [];
+            }
+            
+            // Get author name for the commenting work
+            const commentingWork = rel.work as any;
+            let authorName = 'Unknown';
+            if (commentingWork?.scholar_id) {
+              const { data: authorData } = await supabase
+                .from('scholars')
+                .select('name')
+                .eq('id', commentingWork.scholar_id)
+                .single();
+              if (authorData) authorName = authorData.name;
+            }
+            
+            textualRelsByWork[targetWorkId]!.push({
+              id: rel.id,
+              title: commentingWork?.title || 'Unknown Work',
+              hebrew_title: commentingWork?.hebrew_title || null,
+              author_name: authorName,
+              notes: rel.notes,
+            });
+          }
+        }
+      }
+      
+      // Attach supercommentaries to each work
+      const worksWithRelationships: WorkWithTextualRelationships[] = works.map(work => ({
+        ...work,
+        supercommentaries: textualRelsByWork[work.id] || [],
+      }));
+      
       return {
         ...scholarRes.data,
-        works: worksRes.data || [],
+        works: worksWithRelationships,
         relationships: relationshipsRes.data || [],
-      } as ScholarWithDetails;
+      } as ScholarWithWorksAndRelationships;
     },
     enabled: !!scholarId,
   });
