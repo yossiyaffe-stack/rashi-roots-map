@@ -7,7 +7,7 @@ import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
 import { MapControls } from '@/components/MapControls';
 import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useMapControls } from '@/contexts/MapControlsContext';
@@ -151,8 +151,8 @@ export function AppLayout() {
 
         {/* Legends & Controls - Only on Map page */}
         {isMapPage && sidebarOpen && (
-          <ScrollArea className="flex-1 border-t border-white/10">
-            <div className="p-3 space-y-4 overflow-visible">
+          <div className="flex-1 border-t border-white/10 overflow-y-auto custom-scrollbar">
+            <div className="p-3 space-y-4">
               <MapControls
                 showBoundaries={showBoundaries}
                 onShowBoundariesChange={setShowBoundaries}
@@ -180,7 +180,7 @@ export function AppLayout() {
                 <KingdomsLegend />
               </div>
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Footer */}
