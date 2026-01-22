@@ -204,31 +204,41 @@ export const NetworkView = ({
     });
   }, [displayedScholars]);
 
-  // Timeline-based horizontal layout - scholars flow left-to-right by birth year
+  // Compact layout - fit all scholars in viewport
   const scholarPositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number }> = {};
+    const count = sortedScholars.length;
+    if (count === 0) return positions;
     
-    // Group scholars by approximate era (every 25 years)
+    // Calculate optimal grid to fit in viewport (roughly 800x500 usable area)
+    const viewWidth = 900;
+    const viewHeight = 500;
+    
+    // Group scholars by approximate era (every 50 years for more compact grouping)
     const eras: Record<number, DbScholar[]> = {};
     sortedScholars.forEach(s => {
       const year = s.birth_year ?? 1100;
-      const era = Math.floor(year / 25) * 25;
+      const era = Math.floor(year / 50) * 50;
       if (!eras[era]) eras[era] = [];
       eras[era].push(s);
     });
     
     const eraKeys = Object.keys(eras).map(Number).sort((a, b) => a - b);
-    const colSpacing = 200;
-    const rowSpacing = 120;
+    const numCols = eraKeys.length;
+    const maxPerCol = Math.max(...eraKeys.map(k => eras[k].length));
+    
+    // Dynamic spacing based on content
+    const colSpacing = Math.min(150, viewWidth / (numCols + 1));
+    const rowSpacing = Math.min(80, viewHeight / (maxPerCol + 1));
     
     eraKeys.forEach((era, colIdx) => {
       const scholarsInEra = eras[era];
-      const centerY = 300; // Center of the SVG
+      const centerY = viewHeight / 2;
       const startY = centerY - ((scholarsInEra.length - 1) * rowSpacing) / 2;
       
       scholarsInEra.forEach((s, rowIdx) => {
         positions[s.id] = {
-          x: 150 + colIdx * colSpacing,
+          x: 80 + colIdx * colSpacing,
           y: startY + rowIdx * rowSpacing
         };
       });
@@ -237,20 +247,10 @@ export const NetworkView = ({
     return positions;
   }, [sortedScholars]);
 
-  // Calculate SVG dimensions based on layout
+  // Fixed viewport dimensions
   const svgDimensions = useMemo(() => {
-    const positions = Object.values(scholarPositions);
-    if (positions.length === 0) return { width: 800, height: 600 };
-    
-    const maxX = Math.max(...positions.map(p => p.x)) + 150;
-    const maxY = Math.max(...positions.map(p => p.y)) + 100;
-    const minY = Math.min(...positions.map(p => p.y));
-    
-    return { 
-      width: Math.max(800, maxX), 
-      height: Math.max(600, maxY - minY + 200)
-    };
-  }, [scholarPositions]);
+    return { width: 1000, height: 600 };
+  }, []);
 
   // Count connections for legend
   const connectionCounts = useMemo(() => ({
@@ -273,13 +273,15 @@ export const NetworkView = ({
       <svg 
         width="100%" 
         height="100%" 
+        viewBox="0 0 1000 600"
+        preserveAspectRatio="xMidYMid meet"
         style={{ 
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: 'center center',
           transition: isPanning ? 'none' : 'transform 0.1s ease-out'
         }}
       >
-        <g transform={`translate(${svgDimensions.width / 2 - 400}, 50)`}>
+        <g>
         <defs>
           <marker id="arrowhead-bio" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.biographical} />
