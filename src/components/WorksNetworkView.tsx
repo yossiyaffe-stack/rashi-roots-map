@@ -8,6 +8,7 @@ import { RadialLayout } from './works-network/RadialLayout';
 import { WorksLegend } from './works-network/WorksLegend';
 import { LayoutModeSelector } from './works-network/LayoutModeSelector';
 import { CenterWorkSelector } from './works-network/CenterWorkSelector';
+import { Slider } from '@/components/ui/slider';
 
 interface WorksNetworkViewProps {
   works: WorkWithAuthor[];
@@ -38,6 +39,7 @@ export const WorksNetworkView = ({
   const [centerWork, setCenterWork] = useState<WorkWithAuthor | null>(null);
   const [showOnlyConnected, setShowOnlyConnected] = useState(true);
   const [focusMode, setFocusMode] = useState(false); // Only show selected work's relationships
+  const [focusDepth, setFocusDepth] = useState(1); // How many levels of relationships to show
   const [highlightSelected, setHighlightSelected] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -63,24 +65,40 @@ export const WorksNetworkView = ({
     return works.filter(w => connectedWorkIds.has(w.id));
   }, [works, connectedWorkIds, showOnlyConnected]);
 
-  // Get direct connections for selected work only
+  // Get connections for selected work based on depth level
   const selectedWorkConnections = useMemo(() => {
     if (!selectedWork) return new Set<string>();
     const ids = new Set<string>();
     ids.add(selectedWork.id);
     
-    // Get only direct connections
-    relationships.forEach(rel => {
-      if (rel.work_id === selectedWork.id && rel.related_work_id) {
-        ids.add(rel.related_work_id);
-      }
-      if (rel.related_work_id === selectedWork.id && rel.work_id) {
-        ids.add(rel.work_id);
-      }
-    });
+    // Recursively get connections up to focusDepth levels
+    let currentLevel = new Set<string>([selectedWork.id]);
+    
+    for (let depth = 0; depth < focusDepth; depth++) {
+      const nextLevel = new Set<string>();
+      
+      currentLevel.forEach(workId => {
+        relationships.forEach(rel => {
+          if (rel.work_id === workId && rel.related_work_id) {
+            if (!ids.has(rel.related_work_id)) {
+              nextLevel.add(rel.related_work_id);
+              ids.add(rel.related_work_id);
+            }
+          }
+          if (rel.related_work_id === workId && rel.work_id) {
+            if (!ids.has(rel.work_id)) {
+              nextLevel.add(rel.work_id);
+              ids.add(rel.work_id);
+            }
+          }
+        });
+      });
+      
+      currentLevel = nextLevel;
+    }
     
     return ids;
-  }, [selectedWork, relationships]);
+  }, [selectedWork, relationships, focusDepth]);
 
   // Filter works and relationships based on focus mode
   const displayedWorks = useMemo(() => {
@@ -319,6 +337,29 @@ export const WorksNetworkView = ({
           <Focus className="w-4 h-4" />
           Focus Mode
         </button>
+        
+        {/* Depth slider - only show when focus mode is active */}
+        {focusMode && selectedWork && (
+          <div className="bg-card/90 backdrop-blur border border-border rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Depth</span>
+              <span className="font-medium text-amber-300">{focusDepth}</span>
+            </div>
+            <Slider
+              value={[focusDepth]}
+              onValueChange={([v]) => setFocusDepth(v)}
+              min={1}
+              max={5}
+              step={1}
+              className="w-28"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Direct</span>
+              <span>Deep</span>
+            </div>
+          </div>
+        )}
+        
         <button
           onClick={() => setHighlightSelected(!highlightSelected)}
           disabled={focusMode}
