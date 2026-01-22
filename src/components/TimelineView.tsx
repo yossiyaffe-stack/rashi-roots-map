@@ -1,4 +1,4 @@
-import { Calendar } from 'lucide-react';
+import { Calendar, Globe, BookOpen } from 'lucide-react';
 import type { DbScholar, DbHistoricalEvent } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
@@ -30,8 +30,25 @@ export const TimelineView = ({
     event => event.year >= timeRange[0] && event.year <= timeRange[1]
   );
 
-  const getEventStyles = (importance: DbHistoricalEvent['importance']) => {
-    switch (importance) {
+  const getEventStyles = (event: DbHistoricalEvent) => {
+    const isSecular = (event as any).category === 'secular';
+    
+    if (isSecular) {
+      // Secular events use blue theme
+      switch (event.importance) {
+        case 'critical':
+          return 'border-l-blue-500 bg-blue-500/15';
+        case 'major':
+          return 'border-l-blue-400 bg-blue-400/10';
+        case 'foundational':
+          return 'border-l-blue-300 bg-blue-300/10';
+        default:
+          return 'border-l-blue-300 bg-blue-300/10';
+      }
+    }
+    
+    // Jewish events use original colors
+    switch (event.importance) {
       case 'critical':
         return 'border-l-destructive bg-destructive/10';
       case 'major':
@@ -59,21 +76,37 @@ export const TimelineView = ({
         <div className="bg-sidebar/50 border border-white/10 rounded-xl p-6 mb-4">
           <h3 className="font-display text-xl text-accent mb-4">Historical Context</h3>
           <div className="space-y-3">
-            {visibleEvents.map((event) => (
-              <div
-                key={event.id}
-                className={cn(
-                  "p-4 border-l-4 rounded-r-lg",
-                  getEventStyles(event.importance)
-                )}
-              >
-                <span className="font-bold text-accent text-lg mr-4">{event.year}</span>
-                <span className="font-semibold text-foreground text-lg">{event.name}</span>
-                {event.description && (
-                  <p className="mt-2 text-muted-foreground leading-relaxed">{event.description}</p>
-                )}
-              </div>
-            ))}
+            {visibleEvents.map((event) => {
+              const isSecular = (event as any).category === 'secular';
+              return (
+                <div
+                  key={event.id}
+                  className={cn(
+                    "p-4 border-l-4 rounded-r-lg",
+                    getEventStyles(event)
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {isSecular && <Globe className="w-4 h-4 text-blue-400" />}
+                    <span className={cn(
+                      "font-bold text-lg mr-4",
+                      isSecular ? "text-blue-400" : "text-accent"
+                    )}>
+                      {event.year}
+                    </span>
+                    <span className="font-semibold text-foreground text-lg">{event.name}</span>
+                    {isSecular && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 ml-2">
+                        Secular
+                      </span>
+                    )}
+                  </div>
+                  {event.description && (
+                    <p className="mt-2 text-muted-foreground leading-relaxed">{event.description}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
