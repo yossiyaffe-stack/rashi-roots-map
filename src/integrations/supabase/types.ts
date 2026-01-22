@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      biographical_relationships: {
+        Row: {
+          certainty:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          circa: boolean | null
+          created_at: string
+          from_year: number | null
+          id: string
+          location_id: string | null
+          notes: string | null
+          primary_relationship: boolean | null
+          related_scholar_id: string
+          relationship_category: string
+          relationship_type: string
+          scholar_id: string
+          source: string | null
+          to_year: number | null
+          updated_at: string
+        }
+        Insert: {
+          certainty?:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          circa?: boolean | null
+          created_at?: string
+          from_year?: number | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          primary_relationship?: boolean | null
+          related_scholar_id: string
+          relationship_category: string
+          relationship_type: string
+          scholar_id: string
+          source?: string | null
+          to_year?: number | null
+          updated_at?: string
+        }
+        Update: {
+          certainty?:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          circa?: boolean | null
+          created_at?: string
+          from_year?: number | null
+          id?: string
+          location_id?: string | null
+          notes?: string | null
+          primary_relationship?: boolean | null
+          related_scholar_id?: string
+          relationship_category?: string
+          relationship_type?: string
+          scholar_id?: string
+          source?: string | null
+          to_year?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "biographical_relationships_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biographical_relationships_related_scholar_id_fkey"
+            columns: ["related_scholar_id"]
+            isOneToOne: false
+            referencedRelation: "scholars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "biographical_relationships_scholar_id_fkey"
+            columns: ["scholar_id"]
+            isOneToOne: false
+            referencedRelation: "scholars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historical_events: {
         Row: {
           created_at: string
@@ -46,6 +128,81 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      intellectual_relationships: {
+        Row: {
+          certainty:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          circa: boolean | null
+          created_at: string
+          from_year: number | null
+          id: string
+          influence_strength: string | null
+          notes: string | null
+          related_concept: string | null
+          relationship_category: string
+          relationship_type: string
+          scholar_id: string
+          source: string | null
+          to_year: number | null
+          updated_at: string
+          work_id: string | null
+        }
+        Insert: {
+          certainty?:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          circa?: boolean | null
+          created_at?: string
+          from_year?: number | null
+          id?: string
+          influence_strength?: string | null
+          notes?: string | null
+          related_concept?: string | null
+          relationship_category: string
+          relationship_type: string
+          scholar_id: string
+          source?: string | null
+          to_year?: number | null
+          updated_at?: string
+          work_id?: string | null
+        }
+        Update: {
+          certainty?:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          circa?: boolean | null
+          created_at?: string
+          from_year?: number | null
+          id?: string
+          influence_strength?: string | null
+          notes?: string | null
+          related_concept?: string | null
+          relationship_category?: string
+          relationship_type?: string
+          scholar_id?: string
+          source?: string | null
+          to_year?: number | null
+          updated_at?: string
+          work_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intellectual_relationships_scholar_id_fkey"
+            columns: ["scholar_id"]
+            isOneToOne: false
+            referencedRelation: "scholars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intellectual_relationships_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       location_names: {
         Row: {
@@ -377,6 +534,84 @@ export type Database = {
         }
         Relationships: []
       }
+      textual_relationships: {
+        Row: {
+          certainty:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          citation_count: number | null
+          created_at: string
+          depth_level: number | null
+          id: string
+          notes: string | null
+          related_text_canonical: string | null
+          related_work_id: string | null
+          relationship_category: string
+          relationship_type: string
+          section_reference: string | null
+          source: string | null
+          subject_text: string | null
+          subject_type: string | null
+          updated_at: string
+          work_id: string
+        }
+        Insert: {
+          certainty?:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          citation_count?: number | null
+          created_at?: string
+          depth_level?: number | null
+          id?: string
+          notes?: string | null
+          related_text_canonical?: string | null
+          related_work_id?: string | null
+          relationship_category: string
+          relationship_type: string
+          section_reference?: string | null
+          source?: string | null
+          subject_text?: string | null
+          subject_type?: string | null
+          updated_at?: string
+          work_id: string
+        }
+        Update: {
+          certainty?:
+            | Database["public"]["Enums"]["relationship_certainty"]
+            | null
+          citation_count?: number | null
+          created_at?: string
+          depth_level?: number | null
+          id?: string
+          notes?: string | null
+          related_text_canonical?: string | null
+          related_work_id?: string | null
+          relationship_category?: string
+          relationship_type?: string
+          section_reference?: string | null
+          source?: string | null
+          subject_text?: string | null
+          subject_type?: string | null
+          updated_at?: string
+          work_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "textual_relationships_related_work_id_fkey"
+            columns: ["related_work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "textual_relationships_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -482,6 +717,8 @@ export type Database = {
         | "refuge"
         | "travel"
         | "death"
+      relationship_certainty: "certain" | "probable" | "possible" | "speculated"
+      relationship_domain: "biographical" | "textual" | "intellectual"
       relationship_type: "family" | "educational" | "literary"
       work_type:
         | "commentary"
@@ -651,6 +888,8 @@ export const Constants = {
         "travel",
         "death",
       ],
+      relationship_certainty: ["certain", "probable", "possible", "speculated"],
+      relationship_domain: ["biographical", "textual", "intellectual"],
       relationship_type: ["family", "educational", "literary"],
       work_type: [
         "commentary",
