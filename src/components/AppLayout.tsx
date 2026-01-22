@@ -36,7 +36,10 @@ export function AppLayout() {
   const handleScholarsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     
-    if (isMapPage) {
+    if (location.pathname === '/scholars') {
+      // On scholars page: go back to map
+      navigate('/');
+    } else if (isMapPage) {
       // On map page: toggle overlay, if already open go to full page
       if (isOverlayOpen) {
         setIsOverlayOpen(false);
@@ -45,7 +48,7 @@ export function AppLayout() {
         setIsOverlayOpen(true);
       }
     } else {
-      // On other pages: just navigate to scholars
+      // On other pages: navigate to scholars
       navigate('/scholars');
     }
   };
@@ -89,7 +92,8 @@ export function AppLayout() {
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
             const isScholars = item.path === '/scholars';
-            const showOverlayIndicator = isScholars && isMapPage && isOverlayOpen;
+            const isScholarsPage = location.pathname === '/scholars';
+            const showOverlayIndicator = isScholars && (isMapPage && isOverlayOpen || isScholarsPage);
             
             if (isScholars) {
               return (
