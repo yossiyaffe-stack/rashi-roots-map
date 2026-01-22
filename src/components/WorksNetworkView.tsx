@@ -355,10 +355,10 @@ export const WorksNetworkView = ({
               {/* Glow effect for selected */}
               {isSelected && (
                 <rect
-                  x={-78}
-                  y={-33}
-                  width={156}
-                  height={66}
+                  x={-88}
+                  y={-38}
+                  width={176}
+                  height={76}
                   rx={10}
                   fill="none"
                   stroke="#fbbf24"
@@ -370,10 +370,10 @@ export const WorksNetworkView = ({
               
               {/* Background rectangle */}
               <rect
-                x={-75}
-                y={-30}
-                width={150}
-                height={60}
+                x={-85}
+                y={-35}
+                width={170}
+                height={70}
                 rx={8}
                 fill={isSelected ? color : 'hsl(var(--card))'}
                 stroke={color}
@@ -384,21 +384,21 @@ export const WorksNetworkView = ({
               {/* Work title */}
               <text
                 textAnchor="middle"
-                dy={-5}
+                dy={-6}
                 fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--foreground))'}
-                fontSize={12}
+                fontSize={14}
                 fontWeight={600}
                 opacity={dimmed ? 0.3 : 1}
               >
-                {work.title.length > 18 ? work.title.slice(0, 16) + '...' : work.title}
+                {work.title.length > 20 ? work.title.slice(0, 18) + '...' : work.title}
               </text>
               
               {/* Author name */}
               <text
                 textAnchor="middle"
-                dy={12}
+                dy={14}
                 fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--muted-foreground))'}
-                fontSize={10}
+                fontSize={12}
                 opacity={dimmed ? 0.3 : 0.8}
               >
                 {work.author_name}
