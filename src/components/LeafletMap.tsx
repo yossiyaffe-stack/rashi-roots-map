@@ -600,7 +600,7 @@ export function LeafletMap({
               font-family: 'David Libre', 'Times New Roman', serif;
               font-size: ${isMajor ? '12px' : '10px'};
               font-weight: 500;
-              color: #c9a961;
+              color: #fff;
               text-shadow: 
                 -1px -1px 0 #1a1a1a,
                 1px -1px 0 #1a1a1a,
