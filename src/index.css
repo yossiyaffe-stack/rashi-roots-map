@@ -114,6 +114,49 @@
   .leaflet-container {
     background: hsl(230 25% 8%);
   }
+
+  /* Custom pulsing markers */
+  .custom-marker {
+    background: transparent;
+    border: none;
+  }
+
+  .marker-pulse {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    position: relative;
+    animation: pulse 2s infinite;
+  }
+
+  .marker-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: inherit;
+    opacity: 0.4;
+    animation: pulse-ring 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: 0.4; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  /* Rashi special marker */
+  .marker-rashi {
+    width: 28px;
+    height: 28px;
+    background: #e11d48;
+    border: 3px solid #fbbf24;
+    box-shadow: 0 0 20px #e11d48, 0 0 40px #e11d48;
+  }
 }
 
 @layer utilities {

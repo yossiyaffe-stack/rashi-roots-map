@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Grape, Layers, Calendar, Users, MapPin } from 'lucide-react';
+import { Search, Grape, Map as MapIcon, History, Users, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -11,15 +11,13 @@ import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
-type MapStyle = 'dark' | 'light' | 'terrain';
-type ViewMode = 'map' | 'timeline' | 'network';
+type MapStyle = 'dark' | 'manuscript' | 'satellite';
 
 const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
   const [mapStyle, setMapStyle] = useState<MapStyle>('dark');
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('map');
 
   const { data: scholars = [], isLoading } = useScholars();
 
@@ -37,92 +35,86 @@ const Index = () => {
   }, [scholars, searchTerm, timeRange]);
 
   return (
-    <div className="w-screen h-screen flex bg-background text-foreground overflow-hidden">
+    <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="w-[400px] flex flex-col z-50 gradient-sidebar shadow-2xl border-r border-sidebar-border">
+      <aside className="w-96 flex flex-col z-[1001] bg-sidebar border-r border-white/10 shadow-2xl">
         {/* Header */}
-        <header className="p-8 bg-gradient-to-b from-[hsl(245_50%_25%)] to-transparent">
-          <div className="flex items-center gap-3 mb-2">
-            <Grape className="w-8 h-8 text-accent" />
-            <span className="text-xs tracking-[3px] uppercase text-muted-foreground">
+        <header className="p-8 bg-gradient-to-b from-[hsl(245_50%_28%)] to-sidebar">
+          <div className="flex items-center gap-3 mb-4">
+            <Grape className="w-7 h-7 text-accent" />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-accent/80 font-bold">
               The Vine of Wisdom
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold leading-tight">
-            Rashi <span className="gradient-gold">Intellectual</span> History
+          <h1 className="text-3xl font-black leading-tight italic">
+            Rashi <span className="text-accent">Map</span>
           </h1>
         </header>
 
-        {/* Search */}
-        <div className="px-8 pb-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
+        {/* Search & Content */}
+        <div className="p-6 flex-1 overflow-hidden flex flex-col">
+          {/* Search */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <Input
               type="text"
-              placeholder="Search the lineage..."
+              placeholder="Search scholars..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 bg-white/5 border-white/10 text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-accent/20"
+              className="pl-10 bg-white/5 border-white/10 text-foreground placeholder:text-white/40 focus:border-accent focus:ring-accent/20"
             />
           </div>
-        </div>
 
-        {/* View Mode Tabs */}
-        <div className="px-8 pb-4">
-          <div className="flex gap-1 p-1 bg-white/5 rounded-lg">
-            {[
-              { id: 'map' as ViewMode, icon: MapPin, label: 'Map' },
-              { id: 'timeline' as ViewMode, icon: Calendar, label: 'Timeline' },
-              { id: 'network' as ViewMode, icon: Users, label: 'Network' },
-            ].map(({ id, icon: Icon, label }) => (
-              <Button
-                key={id}
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewMode(id)}
-                className={cn(
-                  "flex-1 gap-2 text-xs",
-                  viewMode === id
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+          {/* Scholar List */}
+          <div className="flex-1 overflow-hidden">
+            <h3 className="text-xs uppercase tracking-widest text-accent font-bold mb-4 px-2">
+              Key Commentators ({filteredScholars.length})
+            </h3>
+            <ScrollArea className="h-[calc(100%-2rem)]">
+              <div className="space-y-2 pr-2">
+                {isLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 rounded-xl bg-white/5" />
+                  ))
+                ) : (
+                  filteredScholars.map(scholar => (
+                    <div
+                      key={scholar.id}
+                      onClick={() => setSelectedScholar(scholar)}
+                      className={cn(
+                        "group p-4 rounded-xl cursor-pointer transition-all border",
+                        selectedScholar?.id === scholar.id
+                          ? "bg-white/10 border-accent"
+                          : "bg-transparent border-transparent hover:bg-white/5"
+                      )}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold group-hover:text-accent transition-colors">
+                            {scholar.name}
+                          </h4>
+                          <p className="text-xs text-white/50">
+                            {scholar.birth_place || scholar.period} • {scholar.birth_year || '?'}–{scholar.death_year || '?'}
+                          </p>
+                        </div>
+                        {scholar.hebrew_name && (
+                          <span className="text-lg font-hebrew text-accent/80">
+                            {scholar.hebrew_name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
                 )}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
-              </Button>
-            ))}
+              </div>
+            </ScrollArea>
           </div>
         </div>
 
-        {/* Scholar List */}
-        <div className="flex-1 px-8 overflow-hidden">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-accent mb-3">
-            Scholars ({filteredScholars.length})
-          </h3>
-          <ScrollArea className="h-[calc(100%-2rem)]">
-            <div className="flex flex-col gap-2 pr-4 pb-4">
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-20 rounded-xl bg-white/5" />
-                ))
-              ) : (
-                filteredScholars.map(scholar => (
-                  <ScholarListItem
-                    key={scholar.id}
-                    scholar={scholar}
-                    isSelected={selectedScholar?.id === scholar.id}
-                    onClick={() => setSelectedScholar(scholar)}
-                  />
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* Timeline Slider Footer */}
-        <footer className="p-6 bg-[hsl(245_50%_12%)] border-t border-sidebar-border">
+        {/* Timeline Footer */}
+        <footer className="p-6 bg-[hsl(245_50%_12%)] border-t border-white/10">
           <div className="flex justify-between text-sm mb-3">
-            <span className="text-muted-foreground">{timeRange[0]} CE</span>
+            <span className="text-white/50">{timeRange[0]} CE</span>
             <span className="text-accent font-medium">{timeRange[1]} CE</span>
           </div>
           <Slider
@@ -136,58 +128,33 @@ const Index = () => {
         </footer>
       </aside>
 
-      {/* Main Map Area */}
+      {/* Map View */}
       <main className="flex-1 relative">
-        {viewMode === 'map' && (
-          <LeafletMap
-            scholars={filteredScholars}
-            selectedScholar={selectedScholar}
-            onSelectScholar={setSelectedScholar}
-            mapStyle={mapStyle}
-            timeRange={timeRange}
-          />
-        )}
+        <LeafletMap
+          scholars={filteredScholars}
+          selectedScholar={selectedScholar}
+          onSelectScholar={setSelectedScholar}
+          mapStyle={mapStyle}
+          timeRange={timeRange}
+        />
 
-        {viewMode === 'timeline' && (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg">Timeline view coming soon</p>
-            </div>
-          </div>
-        )}
-
-        {viewMode === 'network' && (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <p className="text-lg">Network view coming soon</p>
-            </div>
-          </div>
-        )}
-
-        {/* Map Style Switcher */}
-        {viewMode === 'map' && (
-          <div className="absolute top-5 left-5 z-[1000] flex gap-2">
-            {(['dark', 'light', 'terrain'] as MapStyle[]).map(style => (
-              <Button
-                key={style}
-                variant="ghost"
-                size="sm"
-                onClick={() => setMapStyle(style)}
-                className={cn(
-                  "px-4 py-2 backdrop-blur-md border transition-all capitalize",
-                  mapStyle === style
-                    ? "bg-accent text-accent-foreground border-accent"
-                    : "bg-black/40 text-white/80 border-white/20 hover:bg-black/60 hover:text-white"
-                )}
-              >
-                <Layers className="w-4 h-4 mr-2" />
-                {style}
-              </Button>
-            ))}
-          </div>
-        )}
+        {/* Layer Controls */}
+        <div className="absolute top-6 left-6 z-[1000] flex gap-2">
+          {(['manuscript', 'dark', 'satellite'] as MapStyle[]).map(style => (
+            <button
+              key={style}
+              onClick={() => setMapStyle(style)}
+              className={cn(
+                "px-4 py-2 rounded-full text-xs font-bold uppercase tracking-tight backdrop-blur-md border transition-all",
+                mapStyle === style
+                  ? "bg-accent text-accent-foreground border-accent"
+                  : "bg-slate-900/80 text-white border-white/20 hover:bg-slate-800"
+              )}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
 
         {/* Scholar Detail Panel */}
         {selectedScholar && (
