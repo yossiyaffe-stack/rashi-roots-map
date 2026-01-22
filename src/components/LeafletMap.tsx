@@ -906,42 +906,103 @@ export function LeafletMap({
       return s.birth_year >= timeRange[0] && s.birth_year <= timeRange[1];
     });
 
-    // Zoom-based visibility thresholds
-    // Zoom < 5: Only show importance >= 90 (major figures)
-    // Zoom 5-6: Show importance >= 70
-    // Zoom 6-7: Show importance >= 50
-    // Zoom 7-8: Show all markers, labels only for importance >= 60
-    // Zoom >= 8: Show all markers with labels
-    const getMinImportanceForMarker = (zoom: number) => {
-      if (zoom < 5) return 90;
-      if (zoom < 6) return 70;
-      if (zoom < 7) return 50;
-      return 0; // Show all
-    };
+    // Get map instance for coordinate conversions
+    const map = leafletMap.current;
     
-    const getMinImportanceForLabel = (zoom: number) => {
-      if (zoom < 6) return 100; // Only Rashi
-      if (zoom < 7) return 80;
-      if (zoom < 8) return 60;
-      return 0; // Show all labels
-    };
+    // Sort scholars by importance (highest first) so important labels get priority
+    const sortedScholars = [...visibleScholars].sort((a, b) => {
+      const impA = a.importance ?? 50;
+      const impB = b.importance ?? 50;
+      // Rashi always first
+      if (a.name === 'Rashi') return -1;
+      if (b.name === 'Rashi') return 1;
+      return impB - impA;
+    });
 
-    const minImportanceForMarker = getMinImportanceForMarker(zoomLevel);
-    const minImportanceForLabel = getMinImportanceForLabel(zoomLevel);
+    // Track occupied label rectangles for collision detection
+    const occupiedRects: { x: number; y: number; width: number; height: number }[] = [];
+    
+    // Check if a new label would overlap with existing ones
+    const wouldOverlap = (x: number, y: number, width: number, height: number, padding: number = 5): boolean => {
+      const newRect = {
+        x: x - padding,
+        y: y - padding,
+        width: width + padding * 2,
+        height: height + padding * 2,
+      };
+      
+      for (const rect of occupiedRects) {
+        // Check for intersection
+        if (!(newRect.x + newRect.width < rect.x ||
+              rect.x + rect.width < newRect.x ||
+              newRect.y + newRect.height < rect.y ||
+              rect.y + rect.height < newRect.y)) {
+          return true;
+        }
+      }
+      return false;
+    };
 
     // Scale marker sizes based on zoom
     const zoomScale = Math.max(0.6, Math.min(1.2, zoomLevel / 8));
 
-    // Add markers
+    // First pass: determine which labels should be shown based on collision detection
+    const labelsToShow = new Set<string>();
+    
+    sortedScholars.forEach(scholar => {
+      const importance = scholar.importance ?? 50;
+      const isRashi = scholar.name === 'Rashi';
+      const isSelected = selectedScholar?.id === scholar.id;
+      
+      // Get pixel position of scholar
+      const point = map.latLngToContainerPoint([scholar.latitude!, scholar.longitude!]);
+      
+      // Estimate label dimensions based on name length and settings
+      const shortName = scholar.name.split(' - ')[0].split(' (')[0];
+      const hebrewName = scholar.hebrew_name || '';
+      const showEnglish = showScholarNamesEnglish;
+      const showHebrew = showScholarNamesHebrew && hebrewName;
+      
+      if (!showEnglish && !showHebrew) return;
+      
+      let labelText = '';
+      if (showEnglish && showHebrew) {
+        labelText = `${shortName} • ${hebrewName}`;
+      } else if (showHebrew) {
+        labelText = hebrewName;
+      } else if (showEnglish) {
+        labelText = shortName;
+      }
+      
+      // Estimate label width/height (roughly 7px per character, 20px height)
+      const estWidth = Math.min(180, labelText.length * 7 + 20);
+      const estHeight = 24;
+      
+      // Label is positioned below the marker dot
+      const rawSize = isRashi ? 24 : Math.max(8, Math.min(20, 8 + (importance / 100) * 12));
+      const baseSize = Math.round(rawSize * zoomScale);
+      const labelX = point.x - estWidth / 2;
+      const labelY = point.y + baseSize / 2 + 4;
+      
+      // Rashi and selected always show
+      if (isRashi || isSelected) {
+        labelsToShow.add(scholar.id);
+        occupiedRects.push({ x: labelX, y: labelY, width: estWidth, height: estHeight });
+        return;
+      }
+      
+      // Check if this label would overlap with any existing labels
+      if (!wouldOverlap(labelX, labelY, estWidth, estHeight)) {
+        labelsToShow.add(scholar.id);
+        occupiedRects.push({ x: labelX, y: labelY, width: estWidth, height: estHeight });
+      }
+    });
+
+    // Second pass: create markers
     visibleScholars.forEach(scholar => {
       const importance = scholar.importance ?? 50;
       const isRashi = scholar.name === 'Rashi';
-      
-      // Skip low-importance scholars when zoomed out (unless selected)
       const isSelected = selectedScholar?.id === scholar.id;
-      if (!isRashi && !isSelected && importance < minImportanceForMarker) {
-        return;
-      }
 
       // Check if scholar is in selected region
       const inSelectedRegion = !selectedRegion || 
@@ -958,14 +1019,14 @@ export function LeafletMap({
       const borderWidth = baseSize > 14 ? 2.5 : baseSize > 10 ? 2 : 1.5;
       const fontSize = baseSize > 14 ? 11 : baseSize > 10 ? 10 : 9;
       
-      // Determine if label should be shown based on zoom level
-      const shouldShowLabel = isRashi || isSelected || importance >= minImportanceForLabel;
+      // Determine if label should be shown (collision-detected)
+      const shouldShowLabel = labelsToShow.has(scholar.id);
       
       // Get a shorter display name (acronym or first part)
       const shortName = scholar.name.split(' - ')[0].split(' (')[0];
       const hebrewName = scholar.hebrew_name || '';
       
-      // Build label content based on visibility settings AND zoom level
+      // Build label content based on visibility settings AND collision detection
       const showEnglish = showScholarNamesEnglish && shouldShowLabel;
       const showHebrew = showScholarNamesHebrew && hebrewName && shouldShowLabel;
       const showAnyLabel = showEnglish || showHebrew;
