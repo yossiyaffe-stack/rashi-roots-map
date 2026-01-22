@@ -906,28 +906,34 @@ export function LeafletMap({
       return s.birth_year >= timeRange[0] && s.birth_year <= timeRange[1];
     });
 
-    // Zoom-based visibility thresholds
-    // Zoom < 5: Only show importance >= 90 (major figures)
-    // Zoom 5-6: Show importance >= 70
-    // Zoom 6-7: Show importance >= 50
-    // Zoom 7-8: Show all markers, labels only for importance >= 60
-    // Zoom >= 8: Show all markers with labels
+    // Zoom-based visibility thresholds - stricter since most scholars have high importance
+    // Zoom < 5: Only Rashi (importance 100)
+    // Zoom 5-6: Show importance >= 98 (top 2-3 scholars)
+    // Zoom 6-7: Show importance >= 95 (top ~5 scholars)
+    // Zoom 7-8: Show importance >= 90 (top ~10 scholars)
+    // Zoom 8-9: Show importance >= 80
+    // Zoom >= 9: Show all markers
     const getMinImportanceForMarker = (zoom: number) => {
-      if (zoom < 5) return 90;
-      if (zoom < 6) return 70;
-      if (zoom < 7) return 50;
+      if (zoom < 5) return 100;  // Only Rashi
+      if (zoom < 6) return 98;   // Rashi + Vilna Gaon
+      if (zoom < 7) return 95;   // + Maharal, Ramban, etc.
+      if (zoom < 8) return 90;   // + Rabbenu Tam, etc.
+      if (zoom < 9) return 80;   // Most major figures
       return 0; // Show all
     };
     
     const getMinImportanceForLabel = (zoom: number) => {
-      if (zoom < 6) return 100; // Only Rashi
-      if (zoom < 7) return 80;
-      if (zoom < 8) return 60;
+      if (zoom < 6) return 101;  // No labels except Rashi
+      if (zoom < 7) return 98;   // Only top scholars
+      if (zoom < 8) return 95;
+      if (zoom < 9) return 85;
       return 0; // Show all labels
     };
 
     const minImportanceForMarker = getMinImportanceForMarker(zoomLevel);
     const minImportanceForLabel = getMinImportanceForLabel(zoomLevel);
+
+    console.log(`Zoom: ${zoomLevel}, Min importance for marker: ${minImportanceForMarker}, for label: ${minImportanceForLabel}`);
 
     // Scale marker sizes based on zoom
     const zoomScale = Math.max(0.6, Math.min(1.2, zoomLevel / 8));
@@ -935,9 +941,10 @@ export function LeafletMap({
     // Add markers
     visibleScholars.forEach(scholar => {
       const importance = scholar.importance ?? 50;
-      const isRashi = scholar.name === 'Rashi';
+      // Check if this is Rashi (name starts with "Rashi")
+      const isRashi = scholar.name.toLowerCase().startsWith('rashi');
       
-      // Skip low-importance scholars when zoomed out (unless selected)
+      // Skip low-importance scholars when zoomed out (unless selected or Rashi)
       const isSelected = selectedScholar?.id === scholar.id;
       if (!isRashi && !isSelected && importance < minImportanceForMarker) {
         return;
