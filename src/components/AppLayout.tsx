@@ -1,13 +1,14 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { Map, Clock, Users, Grape, Menu, X, BookOpen } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { path: '/', label: 'Map', icon: Map },
+  { path: '/scholars', label: 'Scholars', icon: GraduationCap },
   { path: '/timeline', label: 'Timeline', icon: Clock },
-  { path: '/network', label: 'Network', icon: Users },
+  { path: '/network', label: 'Network', icon: Share2 },
   { path: '/context', label: 'Historical Context', icon: BookOpen },
 ];
 
