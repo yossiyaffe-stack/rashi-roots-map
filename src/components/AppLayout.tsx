@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2 } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ const navItems = [
   { path: '/scholars', label: 'Scholars', icon: GraduationCap, hasOverlay: true },
   { path: '/timeline', label: 'Timeline', icon: Clock },
   { path: '/network', label: 'Network', icon: Share2 },
+  { path: '/works', label: 'Works', icon: Library },
   { path: '/context', label: 'Historical Context', icon: BookOpen },
 ];
 
@@ -42,6 +43,7 @@ export function AppLayout() {
   
   const isMapPage = location.pathname === '/';
   const isNetworkPage = location.pathname === '/network';
+  const isWorksPage = location.pathname === '/works';
 
   const handleScholarsClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -152,8 +154,8 @@ export function AppLayout() {
               );
             })}
             
-            {/* Relationships Filter - shown on Map and Network pages */}
-            {(isMapPage || isNetworkPage) && (
+            {/* Relationships Filter - shown on Map, Network, and Works pages */}
+            {(isMapPage || isNetworkPage || isWorksPage) && (
               <button
                 onClick={() => {
                   setRelationshipsPanelOpen(!relationshipsPanelOpen);
@@ -231,7 +233,7 @@ export function AppLayout() {
         </aside>
 
         {/* Slide-out Panel for Relationships - Full height */}
-        {(isMapPage || isNetworkPage) && relationshipsPanelOpen && (
+        {(isMapPage || isNetworkPage || isWorksPage) && relationshipsPanelOpen && (
           <div className={cn(
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col"
