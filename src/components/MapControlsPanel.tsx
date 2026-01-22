@@ -10,6 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 interface MapControlsPanelProps {
   showBoundaries: boolean;
   onShowBoundariesChange: (show: boolean) => void;
+  showBoundaryShading: boolean;
+  onShowBoundaryShadingChange: (show: boolean) => void;
   showMigrations: boolean;
   onShowMigrationsChange: (show: boolean) => void;
   showConnections: boolean;
@@ -42,6 +44,8 @@ const ALL_REASONS: LocationReason[] = ['birth', 'study', 'rabbinate', 'exile', '
 export function MapControlsPanel({
   showBoundaries,
   onShowBoundariesChange,
+  showBoundaryShading,
+  onShowBoundaryShadingChange,
   showMigrations,
   onShowMigrationsChange,
   showConnections,
@@ -100,6 +104,20 @@ export function MapControlsPanel({
                   onCheckedChange={onShowBoundariesChange}
                 />
               </div>
+
+              {/* Show Boundary Shading Toggle - only visible when boundaries are on */}
+              {showBoundaries && (
+                <div className="flex items-center justify-between pl-4 border-l-2 border-accent/30">
+                  <Label htmlFor="show-boundary-shading-panel" className="text-sm text-muted-foreground cursor-pointer">
+                    Fill Shading
+                  </Label>
+                  <Switch
+                    id="show-boundary-shading-panel"
+                    checked={showBoundaryShading}
+                    onCheckedChange={onShowBoundaryShadingChange}
+                  />
+                </div>
+              )}
 
               {/* Show Migrations Toggle */}
               <div className="flex items-center justify-between">

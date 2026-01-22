@@ -6,6 +6,8 @@ export type CityFilter = 'all' | 'major';
 interface MapControlsContextType {
   showBoundaries: boolean;
   setShowBoundaries: (show: boolean) => void;
+  showBoundaryShading: boolean;
+  setShowBoundaryShading: (show: boolean) => void;
   showMigrations: boolean;
   setShowMigrations: (show: boolean) => void;
   showConnections: boolean;
@@ -32,6 +34,7 @@ const MapControlsContext = createContext<MapControlsContextType | undefined>(und
 
 export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showBoundaries, setShowBoundaries] = useState(true);
+  const [showBoundaryShading, setShowBoundaryShading] = useState(true);
   const [showMigrations, setShowMigrations] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
   const [showPlaceNamesEnglish, setShowPlaceNamesEnglish] = useState(true);
@@ -47,6 +50,8 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
     <MapControlsContext.Provider value={{
       showBoundaries,
       setShowBoundaries,
+      showBoundaryShading,
+      setShowBoundaryShading,
       showMigrations,
       setShowMigrations,
       showConnections,
@@ -80,6 +85,8 @@ export function useMapControls() {
     return {
       showBoundaries: true,
       setShowBoundaries: () => {},
+      showBoundaryShading: true,
+      setShowBoundaryShading: () => {},
       showMigrations: false,
       setShowMigrations: () => {},
       showConnections: false,
