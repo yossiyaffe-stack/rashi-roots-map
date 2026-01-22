@@ -16,8 +16,8 @@ const navItems = [
   { path: '/', label: 'Map', icon: Map },
   { path: '/scholars', label: 'Scholars', icon: GraduationCap, hasOverlay: true },
   { path: '/timeline', label: 'Timeline', icon: Clock },
-  { path: '/network', label: 'Network', icon: Share2 },
-  { path: '/works', label: 'Works', icon: Library },
+  { path: '/network', label: 'Scholars Network', icon: Share2 },
+  { path: '/works', label: 'Works Network', icon: Library },
   { path: '/context', label: 'Historical Context', icon: BookOpen },
 ];
 
