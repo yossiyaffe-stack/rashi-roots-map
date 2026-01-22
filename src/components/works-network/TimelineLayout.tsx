@@ -36,9 +36,9 @@ export const TimelineLayout = ({
     return { minYear: min === Infinity ? 1000 : min, maxYear: max === -Infinity ? 1600 : max };
   }, [sortedWorks]);
 
-  // Timeline axis position
-  const timelineX = 80;
-  const contentStartX = 140;
+  // Timeline axis position - enlarged for readability
+  const timelineX = 120;
+  const contentStartX = 200;
   const yearSpan = maxYear - minYear || 100;
 
   // Position works chronologically with depth-based horizontal offset
@@ -48,10 +48,10 @@ export const TimelineLayout = ({
     // Group works by depth and track positions
     const depthYearSlots: Record<number, Record<number, number>> = {};
     
-    const paddingTop = 80;
-    const paddingBottom = 80;
+    const paddingTop = 120;
+    const paddingBottom = 120;
     const usableHeight = viewHeight - paddingTop - paddingBottom;
-    const nodeHeight = 60;
+    const nodeHeight = 100;
     
     sortedWorks.forEach(work => {
       const year = work.year_written ?? 1100;
@@ -61,16 +61,16 @@ export const TimelineLayout = ({
       const yearProgress = (year - minYear) / yearSpan;
       const baseY = paddingTop + yearProgress * usableHeight;
       
-      // X position based on depth level - more spacing
-      const depthOffset = depth * 220;
-      const x = contentStartX + depthOffset + 85;
+      // X position based on depth level - much larger spacing
+      const depthOffset = depth * 320;
+      const x = contentStartX + depthOffset + 120;
       
       // Avoid vertical overlapping within same depth column
       if (!depthYearSlots[depth]) depthYearSlots[depth] = {};
       const roundedY = Math.round(baseY / nodeHeight) * nodeHeight;
       depthYearSlots[depth][roundedY] = (depthYearSlots[depth][roundedY] || 0) + 1;
       const slotCount = depthYearSlots[depth][roundedY];
-      const verticalOffset = (slotCount - 1) * (nodeHeight + 10);
+      const verticalOffset = (slotCount - 1) * (nodeHeight + 20);
       
       positions[work.id] = {
         x: x,
@@ -122,26 +122,26 @@ export const TimelineLayout = ({
       {/* Year markers */}
       {yearMarkers.map(year => {
         const yearProgress = (year - minYear) / yearSpan;
-        const y = 60 + yearProgress * (viewHeight - 120);
-        if (y < 40 || y > viewHeight - 40) return null;
+        const y = 100 + yearProgress * (viewHeight - 200);
+        if (y < 60 || y > viewHeight - 60) return null;
         
         return (
           <g key={year}>
             <line
-              x1={timelineX - 8}
+              x1={timelineX - 12}
               y1={y}
-              x2={timelineX + 8}
+              x2={timelineX + 12}
               y2={y}
               stroke="hsl(var(--border))"
-              strokeWidth={1.5}
+              strokeWidth={2}
             />
             <text
-              x={timelineX - 12}
-              y={y + 4}
+              x={timelineX - 18}
+              y={y + 5}
               textAnchor="end"
               fill="hsl(var(--muted-foreground))"
-              fontSize={11}
-              fontWeight={500}
+              fontSize={14}
+              fontWeight={600}
             >
               {year}
             </text>
@@ -154,12 +154,12 @@ export const TimelineLayout = ({
         {[0, 1, 2, 3].map(depth => (
           <text
             key={depth}
-            x={contentStartX + depth * 200 + 100}
-            y={30}
+            x={contentStartX + depth * 320 + 120}
+            y={50}
             textAnchor="middle"
             fill={DEPTH_COLORS[depth]}
-            fontSize={12}
-            fontWeight={600}
+            fontSize={16}
+            fontWeight={700}
           >
             {depth === 0 ? 'Original Texts' : depth === 1 ? 'Commentaries' : depth === 2 ? 'Supercommentaries' : 'Super-super'}
           </text>
@@ -219,41 +219,41 @@ export const TimelineLayout = ({
             {/* Selection glow */}
             {isSelected && (
               <rect
-                x={-78}
-                y={-28}
-                width={156}
-                height={56}
-                rx={10}
+                x={-113}
+                y={-43}
+                width={226}
+                height={86}
+                rx={14}
                 fill="none"
                 stroke="#fbbf24"
-                strokeWidth="3"
+                strokeWidth="4"
                 opacity="0.6"
                 filter="url(#work-glow)"
               />
             )}
             
-            {/* Node background */}
+            {/* Node background - much larger */}
             <rect
-              x={-75}
-              y={-25}
-              width={150}
-              height={50}
-              rx={8}
+              x={-110}
+              y={-40}
+              width={220}
+              height={80}
+              rx={12}
               fill={isSelected ? color : 'hsl(var(--card))'}
               stroke={color}
-              strokeWidth={isSelected ? 2.5 : 1.5}
+              strokeWidth={isSelected ? 3 : 2}
               opacity={dimmed ? 0.25 : 1}
               className="transition-all duration-200"
             />
 
             {/* Manuscript indicator */}
             {work.manuscript_url && !dimmed && (
-              <g transform="translate(60, -20)">
-                <circle r={8} fill="hsl(var(--card))" stroke={color} strokeWidth={1} />
+              <g transform="translate(95, -32)">
+                <circle r={12} fill="hsl(var(--card))" stroke={color} strokeWidth={1.5} />
                 <text
                   textAnchor="middle"
-                  dy={4}
-                  fontSize={10}
+                  dy={5}
+                  fontSize={14}
                   fill={color}
                 >
                   📜
@@ -261,25 +261,25 @@ export const TimelineLayout = ({
               </g>
             )}
             
-            {/* Work title */}
+            {/* Work title - larger font */}
             <text
               textAnchor="middle"
-              dy={-4}
+              dy={-8}
               fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--foreground))'}
-              fontSize={12}
-              fontWeight={600}
+              fontSize={16}
+              fontWeight={700}
               opacity={dimmed ? 0.25 : 1}
             >
-              {work.title.length > 18 ? work.title.slice(0, 16) + '...' : work.title}
+              {work.title.length > 22 ? work.title.slice(0, 20) + '...' : work.title}
             </text>
             
-            {/* Author & year */}
+            {/* Author & year - larger font */}
             <text
               textAnchor="middle"
-              dy={12}
+              dy={16}
               fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--muted-foreground))'}
-              fontSize={10}
-              opacity={dimmed ? 0.25 : 0.8}
+              fontSize={13}
+              opacity={dimmed ? 0.25 : 0.85}
             >
               {work.author_name} {work.year_written ? `(${work.year_written})` : ''}
             </text>
