@@ -7,8 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { MapLegend } from '@/components/MapLegend';
+import { HistoricalEventsList } from '@/components/HistoricalEventsList';
 
-import { useScholars, useRelationships, type DbScholar } from '@/hooks/useScholars';
+import { useScholars, useHistoricalEvents, useRelationships, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: scholars = [], isLoading: scholarsLoading } = useScholars();
+  const { data: historicalEvents = [], isLoading: eventsLoading } = useHistoricalEvents();
   const { data: relationships = [] } = useRelationships();
 
   const filteredScholars = useMemo(() => {
@@ -32,7 +34,7 @@ const Index = () => {
     });
   }, [scholars, searchTerm, timeRange]);
 
-  const isLoading = scholarsLoading;
+  const isLoading = scholarsLoading || eventsLoading;
 
   return (
     <div className="w-full h-full flex overflow-hidden">
@@ -97,9 +99,10 @@ const Index = () => {
             </ScrollArea>
           </div>
 
-          {/* Legend */}
-          <div className="pt-4 border-t border-white/10">
+          {/* Legend & Events */}
+          <div className="space-y-4 pt-4 border-t border-white/10">
             <MapLegend />
+            <HistoricalEventsList events={historicalEvents} timeRange={timeRange} />
           </div>
         </div>
 
