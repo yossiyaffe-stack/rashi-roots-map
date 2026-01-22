@@ -31,6 +31,7 @@ const TILE_LAYERS = {
 const HISTORICAL_BOUNDARIES = {
   holyRomanEmpire: {
     name: "Holy Roman Empire",
+    years: "962–1806",
     color: "#dc2626",
     coordinates: [
       [54.5, 6.0], [54.8, 9.5], [54.0, 14.0], [52.5, 14.5], 
@@ -42,6 +43,7 @@ const HISTORICAL_BOUNDARIES = {
   },
   kingdomOfFrance: {
     name: "Kingdom of France",
+    years: "987–1792",
     color: "#3b82f6",
     coordinates: [
       [51.0, 2.5], [50.0, 1.5], [49.5, -1.0], [48.5, -4.5],
@@ -53,6 +55,7 @@ const HISTORICAL_BOUNDARIES = {
   },
   ottomanEmpire: {
     name: "Ottoman Empire",
+    years: "1299–1922",
     color: "#16a34a",
     coordinates: [
       [42.0, 26.0], [41.5, 28.0], [41.0, 29.5], [40.5, 29.0],
@@ -64,6 +67,7 @@ const HISTORICAL_BOUNDARIES = {
   },
   polishLithuanian: {
     name: "Polish-Lithuanian Commonwealth",
+    years: "1569–1795",
     color: "#9333ea",
     coordinates: [
       [54.5, 14.5], [55.0, 17.0], [56.0, 21.0], [56.5, 24.0],
@@ -74,6 +78,7 @@ const HISTORICAL_BOUNDARIES = {
   },
   iberianPeninsula: {
     name: "Iberian Kingdoms",
+    years: "c. 1000–1492",
     color: "#f59e0b",
     coordinates: [
       [43.5, -8.0], [43.0, -3.0], [42.5, 0.0], [42.0, 3.0],
@@ -83,7 +88,8 @@ const HISTORICAL_BOUNDARIES = {
   },
   // Sub-regions
   champagne: {
-    name: "Champagne (Rashi's Region)",
+    name: "Champagne",
+    years: "Rashi era: 1040–1105",
     color: "#c9a961",
     coordinates: [
       [49.5, 3.0], [49.8, 4.0], [49.5, 5.0], [48.8, 5.2],
@@ -92,7 +98,8 @@ const HISTORICAL_BOUNDARIES = {
     ] as [number, number][]
   },
   rhineland: {
-    name: "Rhineland (ShUM Cities)",
+    name: "Rhineland (ShUM)",
+    years: "c. 900–1350",
     color: "#ea580c",
     coordinates: [
       [51.0, 6.0], [51.2, 7.0], [50.8, 8.5], [50.0, 8.8],
@@ -713,34 +720,55 @@ export function LeafletMap({
             <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
               Kingdoms & Regions
             </div>
-            <div className="space-y-1.5 text-[10px]">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm bg-red-600 opacity-70"></div>
-                <span className="text-slate-600">Holy Roman Empire</span>
+            <div className="space-y-2 text-[10px]">
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 rounded-sm bg-red-600 opacity-70 mt-0.5 shrink-0"></div>
+                <div>
+                  <span className="text-slate-700 font-medium">Holy Roman Empire</span>
+                  <span className="text-slate-400 block">962–1806</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-70"></div>
-                <span className="text-slate-600">Kingdom of France</span>
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-70 mt-0.5 shrink-0"></div>
+                <div>
+                  <span className="text-slate-700 font-medium">Kingdom of France</span>
+                  <span className="text-slate-400 block">987–1792</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm bg-green-600 opacity-70"></div>
-                <span className="text-slate-600">Ottoman Empire</span>
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 rounded-sm bg-green-600 opacity-70 mt-0.5 shrink-0"></div>
+                <div>
+                  <span className="text-slate-700 font-medium">Ottoman Empire</span>
+                  <span className="text-slate-400 block">1299–1922</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm bg-purple-600 opacity-70"></div>
-                <span className="text-slate-600">Polish-Lithuanian</span>
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 rounded-sm bg-purple-600 opacity-70 mt-0.5 shrink-0"></div>
+                <div>
+                  <span className="text-slate-700 font-medium">Polish-Lithuanian</span>
+                  <span className="text-slate-400 block">1569–1795</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70"></div>
-                <span className="text-slate-600">Iberian Kingdoms</span>
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70 mt-0.5 shrink-0"></div>
+                <div>
+                  <span className="text-slate-700 font-medium">Iberian Kingdoms</span>
+                  <span className="text-slate-400 block">c. 1000–1492</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-2 pt-1 border-t border-slate-100">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#c9a961' }}></div>
-                <span className="text-slate-600 font-medium">Champagne (Rashi)</span>
+              <div className="flex items-start gap-2 mt-2 pt-2 border-t border-slate-100">
+                <div className="w-3 h-3 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: '#c9a961' }}></div>
+                <div>
+                  <span className="text-slate-700 font-semibold">Champagne</span>
+                  <span className="text-slate-400 block">Rashi era: 1040–1105</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-sm bg-orange-600 opacity-70"></div>
-                <span className="text-slate-600 font-medium">Rhineland (ShUM)</span>
+              <div className="flex items-start gap-2">
+                <div className="w-3 h-3 rounded-sm bg-orange-600 opacity-70 mt-0.5 shrink-0"></div>
+                <div>
+                  <span className="text-slate-700 font-semibold">Rhineland (ShUM)</span>
+                  <span className="text-slate-400 block">c. 900–1350</span>
+                </div>
               </div>
             </div>
           </div>
