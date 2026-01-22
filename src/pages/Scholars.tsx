@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
+import { useScholarNameVariants } from '@/hooks/useScholarNameVariants';
 import { cn } from '@/lib/utils';
 
 const Scholars = () => {
@@ -12,15 +13,20 @@ const Scholars = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: scholars = [], isLoading } = useScholars();
+  
+  // Build search index from scholar names
+  const scholarNameMap = useScholarNameVariants(scholars);
 
   const filteredScholars = useMemo(() => {
+    if (searchTerm === '') return scholars;
+    
+    const term = searchTerm.toLowerCase();
     return scholars.filter(s => {
-      const matchesSearch = searchTerm === '' ||
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (s.hebrew_name && s.hebrew_name.includes(searchTerm));
-      return matchesSearch;
+      // Check all name variants (acronyms, Hebrew, transliterations)
+      const variants = scholarNameMap.get(s.id) || [];
+      return variants.some(v => v.includes(term));
     });
-  }, [scholars, searchTerm]);
+  }, [scholars, searchTerm, scholarNameMap]);
 
   // Group scholars by period
   const scholarsByPeriod = useMemo(() => {
@@ -53,7 +59,7 @@ const Scholars = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by name or Hebrew name..."
+            placeholder="Search: Rashi, רש״י, Maimonides, רמב״ם..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-white/5 border-white/10"
