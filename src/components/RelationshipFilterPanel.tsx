@@ -133,47 +133,44 @@ export function RelationshipFilterPanel() {
 
   return (
     <Collapsible open={panelOpen} onOpenChange={setPanelOpen}>
-      <div className="space-y-3">
-        {/* Header (collapsible) */}
-        <div className="flex items-center justify-between gap-2">
-          <CollapsibleTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                "flex flex-1 items-center gap-2 text-left",
-                "rounded-md px-1 py-1",
-                "hover:bg-white/5 transition-colors"
-              )}
-            >
-              <Filter className="w-4 h-4 text-accent" />
-              <span className="text-xs uppercase tracking-widest text-accent font-bold">Relationships</span>
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5">
-                  {activeFilterCount} filtered
-                </Badge>
-              )}
-              <span className="ml-auto text-white/40">
-                {panelOpen ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </span>
-            </button>
-          </CollapsibleTrigger>
+    <div className="space-y-3">
+        {/* Header row */}
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex w-full items-center gap-2 text-left",
+              "rounded-md px-1 py-1",
+              "hover:bg-white/5 transition-colors"
+            )}
+          >
+            {panelOpen ? (
+              <ChevronDown className="w-4 h-4 text-white/40 shrink-0" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-white/40 shrink-0" />
+            )}
+            <Filter className="w-4 h-4 text-accent shrink-0" />
+            <span className="text-xs uppercase tracking-widest text-accent font-bold">Relationships</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="text-[10px] px-1.5 shrink-0">
+                {activeFilterCount} filtered
+              </Badge>
+            )}
+          </button>
+        </CollapsibleTrigger>
 
-          {activeFilterCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetFilters}
-              className="h-7 px-2 text-xs text-white/50 hover:text-white"
-            >
-              <RotateCcw className="w-3 h-3 mr-1" />
-              Reset
-            </Button>
-          )}
-        </div>
+        {/* Reset button - separate row when filters active */}
+        {activeFilterCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="h-7 w-full justify-center text-xs text-white/50 hover:text-white border border-white/10"
+          >
+            <RotateCcw className="w-3 h-3 mr-1" />
+            Reset Filters
+          </Button>
+        )}
 
         <CollapsibleContent className="space-y-3">
           {/* Domain Sections */}
