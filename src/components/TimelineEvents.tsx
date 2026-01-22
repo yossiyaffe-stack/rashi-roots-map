@@ -1,5 +1,4 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { DbHistoricalEvent } from '@/hooks/useScholars';
@@ -70,35 +69,35 @@ export function TimelineEvents({ events, timeRange }: TimelineEventsProps) {
 
   return (
     <>
-      <ScrollArea className="w-full">
-        <div ref={scrollContainerRef} className="flex gap-2 pb-2 overflow-x-auto scrollbar-none">
-          {filteredEvents.map((event) => {
-            const config = IMPORTANCE_CONFIG[event.importance] || IMPORTANCE_CONFIG.scholarly;
-            return (
-              <button
-                key={event.id}
-                onClick={() => setSelectedEvent(event)}
-                className={cn(
-                  "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all",
-                  "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20",
-                  "text-left group"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <div className={cn("w-2 h-2 rounded-full", config.color)} />
-                  <span className="text-xs font-medium text-white/80 group-hover:text-white">
-                    {event.year}
-                  </span>
-                </div>
-                <div className="text-[11px] text-white/50 group-hover:text-white/70 max-w-[150px] truncate">
-                  {event.name}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      <div 
+        ref={scrollContainerRef} 
+        className="flex gap-2 pb-2 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30"
+      >
+        {filteredEvents.map((event) => {
+          const config = IMPORTANCE_CONFIG[event.importance] || IMPORTANCE_CONFIG.scholarly;
+          return (
+            <button
+              key={event.id}
+              onClick={() => setSelectedEvent(event)}
+              className={cn(
+                "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all",
+                "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20",
+                "text-left group"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div className={cn("w-2 h-2 rounded-full", config.color)} />
+                <span className="text-xs font-medium text-white/80 group-hover:text-white">
+                  {event.year}
+                </span>
+              </div>
+              <div className="text-[11px] text-white/50 group-hover:text-white/70 max-w-[150px] truncate">
+                {event.name}
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
       <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
         <DialogContent className="bg-sidebar border-white/10">
