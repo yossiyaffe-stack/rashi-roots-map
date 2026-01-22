@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Users, FileText, Lightbulb, Filter, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Users, FileText, Filter, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,6 @@ interface NetworkViewProps {
 const DOMAIN_COLORS = {
   biographical: '#f43f5e', // rose-500
   textual: '#10b981', // emerald-500
-  intellectual: '#8b5cf6', // violet-500
 };
 
 export const NetworkView = ({ 
@@ -59,13 +58,7 @@ export const NetworkView = ({
     );
   }, [textualRelationships, filters, shouldShowRelationship]);
 
-  // Filter intellectual relationships
-  const filteredIntellectual = useMemo(() => {
-    if (!filters.domains.intellectual) return [];
-    return intellectualRelationships.filter(rel => 
-      shouldShowRelationship('intellectual', rel.relationship_category, rel.relationship_type, rel.certainty)
-    );
-  }, [intellectualRelationships, filters, shouldShowRelationship]);
+  // Intellectual relationships removed - no longer needed
 
   // Get scholars connected to the selected scholar
   const selectedScholarConnections = useMemo(() => {
@@ -86,12 +79,8 @@ export const NetworkView = ({
       if (toId === selectedScholar.id && fromId) ids.add(fromId);
     });
     
-    filteredIntellectual.forEach(rel => {
-      if (rel.scholar_id === selectedScholar.id) ids.add(rel.scholar_id);
-    });
-    
     return ids;
-  }, [selectedScholar, filteredBiographical, filteredTextual, filteredIntellectual]);
+  }, [selectedScholar, filteredBiographical, filteredTextual]);
 
   // Get set of scholar IDs that have active relationships
   const connectedScholarIds = useMemo(() => {
@@ -109,12 +98,8 @@ export const NetworkView = ({
       if (toId) ids.add(toId);
     });
     
-    filteredIntellectual.forEach(rel => {
-      ids.add(rel.scholar_id);
-    });
-    
     return ids;
-  }, [filteredBiographical, filteredTextual, filteredIntellectual]);
+  }, [filteredBiographical, filteredTextual]);
 
   // Filter scholars based on toggles
   const displayedScholars = useMemo(() => {
@@ -256,8 +241,7 @@ export const NetworkView = ({
   const connectionCounts = useMemo(() => ({
     biographical: filteredBiographical.length,
     textual: filteredTextual.length,
-    intellectual: filteredIntellectual.length,
-  }), [filteredBiographical, filteredTextual, filteredIntellectual]);
+  }), [filteredBiographical, filteredTextual]);
 
   return (
     <div 
@@ -288,9 +272,6 @@ export const NetworkView = ({
           </marker>
           <marker id="arrowhead-text" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.textual} />
-          </marker>
-          <marker id="arrowhead-int" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.intellectual} />
           </marker>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -361,29 +342,6 @@ export const NetworkView = ({
           );
         })}
 
-        {/* Draw intellectual connections (scholar-to-work, shown as self-loops/arcs) */}
-        {filteredIntellectual.map((conn, idx) => {
-          const fromPos = scholarPositions[conn.scholar_id];
-          
-          if (!fromPos) return null;
-          
-          const isHighlighted = isRelationshipHighlighted(conn.scholar_id);
-          const arcRadius = 20 + (idx % 3) * 5;
-          
-          return (
-            <path
-              key={`int-${conn.id}`}
-              d={`M ${fromPos.x - arcRadius} ${fromPos.y - 10} 
-                  A ${arcRadius} ${arcRadius} 0 0 1 ${fromPos.x + arcRadius} ${fromPos.y - 10}`}
-              fill="none"
-              stroke={DOMAIN_COLORS.intellectual}
-              strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
-              strokeDasharray="4,2"
-              opacity={isHighlighted ? 0.8 : 0.15}
-              className="transition-all duration-200"
-            />
-          );
-        })}
 
         {/* Draw nodes */}
         {sortedScholars.map((scholar) => {
@@ -587,17 +545,8 @@ export const NetworkView = ({
           </div>
         )}
         
-        {connectionCounts.intellectual > 0 && (
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-3 h-3" style={{ color: DOMAIN_COLORS.intellectual }} />
-            <div className="w-6 h-0.5 border-t-2 border-dashed" style={{ borderColor: DOMAIN_COLORS.intellectual }} />
-            <span className="text-muted-foreground">
-              Intellectual ({connectionCounts.intellectual})
-            </span>
-          </div>
-        )}
         
-        {connectionCounts.biographical === 0 && connectionCounts.textual === 0 && connectionCounts.intellectual === 0 && (
+        {connectionCounts.biographical === 0 && connectionCounts.textual === 0 && (
           <div className="text-muted-foreground italic">No relationships to display</div>
         )}
       </div>

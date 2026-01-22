@@ -9,7 +9,6 @@ export interface RelationshipFilters {
   domains: {
     biographical: boolean;
     textual: boolean;
-    intellectual: boolean;
   };
   
   // Biographical filters - simplified to direct relationships only
@@ -38,18 +37,6 @@ export interface RelationshipFilters {
     };
   };
   
-  // Intellectual filters - aligned with actual database categories
-  intellectual: {
-    categories: {
-      methodology: boolean;
-      influence: boolean;
-      authorship: boolean;
-      study: boolean;
-      school: boolean;
-      transmission: boolean;
-    };
-  };
-  
   // Certainty filter
   certainty: {
     certain: boolean;
@@ -63,7 +50,6 @@ const DEFAULT_FILTERS: RelationshipFilters = {
   domains: {
     biographical: true,
     textual: true,
-    intellectual: true,
   },
   biographical: {
     categories: {
@@ -86,16 +72,6 @@ const DEFAULT_FILTERS: RelationshipFilters = {
       transmission: true,
     },
   },
-  intellectual: {
-    categories: {
-      methodology: true,
-      influence: true,
-      authorship: true,
-      study: true,
-      school: true,
-      transmission: true,
-    },
-  },
   certainty: {
     certain: true,
     probable: true,
@@ -111,11 +87,10 @@ interface RelationshipFilterContextType {
   toggleBiographicalCategory: (category: keyof RelationshipFilters['biographical']['categories']) => void;
   toggleFamilyType: (familyType: keyof RelationshipFilters['biographical']['familyTypes']) => void;
   toggleTextualCategory: (category: keyof RelationshipFilters['textual']['categories']) => void;
-  toggleIntellectualCategory: (category: keyof RelationshipFilters['intellectual']['categories']) => void;
   toggleCertainty: (level: keyof RelationshipFilters['certainty']) => void;
   resetFilters: () => void;
   activeFilterCount: number;
-  shouldShowRelationship: (domain: 'biographical' | 'textual' | 'intellectual', category: string, relationshipType: string | null, certainty: string | null) => boolean;
+  shouldShowRelationship: (domain: 'biographical' | 'textual', category: string, relationshipType: string | null, certainty: string | null) => boolean;
 }
 
 const RelationshipFilterContext = createContext<RelationshipFilterContextType | undefined>(undefined);
@@ -172,19 +147,6 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     }));
   }, []);
 
-  const toggleIntellectualCategory = useCallback((category: keyof RelationshipFilters['intellectual']['categories']) => {
-    setFilters(prev => ({
-      ...prev,
-      intellectual: {
-        ...prev.intellectual,
-        categories: {
-          ...prev.intellectual.categories,
-          [category]: !prev.intellectual.categories[category],
-        },
-      },
-    }));
-  }, []);
-
   const toggleCertainty = useCallback((level: keyof RelationshipFilters['certainty']) => {
     setFilters(prev => ({
       ...prev,
@@ -207,14 +169,13 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     Object.values(filters.biographical.categories).forEach(v => !v && count++);
     Object.values(filters.biographical.familyTypes).forEach(v => !v && count++);
     Object.values(filters.textual.categories).forEach(v => !v && count++);
-    Object.values(filters.intellectual.categories).forEach(v => !v && count++);
     Object.values(filters.certainty).forEach(v => !v && count++);
     return count;
   }, [filters]);
 
   // Helper to check if a relationship should be shown based on current filters
   const shouldShowRelationship = useCallback((
-    domain: 'biographical' | 'textual' | 'intellectual',
+    domain: 'biographical' | 'textual',
     category: string,
     relationshipType: string | null,
     certainty: string | null
@@ -275,7 +236,6 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       toggleBiographicalCategory,
       toggleFamilyType,
       toggleTextualCategory,
-      toggleIntellectualCategory,
       toggleCertainty,
       resetFilters,
       activeFilterCount,
@@ -297,7 +257,6 @@ export function useRelationshipFilters() {
       toggleBiographicalCategory: () => {},
       toggleFamilyType: () => {},
       toggleTextualCategory: () => {},
-      toggleIntellectualCategory: () => {},
       toggleCertainty: () => {},
       resetFilters: () => {},
       activeFilterCount: 0,
