@@ -188,12 +188,23 @@ export function useTextualRelationships() {
   return useQuery({
     queryKey: ['textual-relationships'],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      // Fetch textual relationships with work author info to map to scholars
+      const { data, error } = await supabase
         .from('textual_relationships')
-        .select('*');
+        .select(`
+          *,
+          work:works!work_id(id, scholar_id),
+          related_work:works!related_work_id(id, scholar_id)
+        `);
       
       if (error) throw error;
-      return (data ?? []) as DbTextualRelationship[];
+      
+      // Transform to include scholar IDs for visualization
+      return (data ?? []).map((rel: any) => ({
+        ...rel,
+        from_scholar_id: rel.work?.scholar_id || null,
+        to_scholar_id: rel.related_work?.scholar_id || null,
+      })) as (DbTextualRelationship & { from_scholar_id: string | null; to_scholar_id: string | null })[];
     },
   });
 }

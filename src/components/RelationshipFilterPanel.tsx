@@ -14,10 +14,11 @@ const DOMAIN_COLORS = {
   intellectual: { bg: 'bg-violet-500/20', border: 'border-violet-500', text: 'text-violet-400', icon: Lightbulb },
 };
 
-// Category labels
+// Category labels - aligned with database categories
 const CATEGORY_LABELS = {
   biographical: {
     family: 'Family',
+    educational: 'Educational',
     pedagogical: 'Teacher-Student',
     professional: 'Professional',
     social: 'Social',
@@ -31,9 +32,10 @@ const CATEGORY_LABELS = {
     transmission: 'Transmission',
   },
   intellectual: {
+    methodology: 'Methodology',
+    influence: 'Influence',
     authorship: 'Authorship',
     study: 'Study',
-    methodology: 'Methodology',
     school: 'School',
     transmission: 'Transmission',
   },
