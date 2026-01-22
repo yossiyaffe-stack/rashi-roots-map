@@ -136,21 +136,50 @@ export function AppLayout() {
               }
 
               return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                    "hover:bg-white/10 text-white/70 hover:text-white",
-                    !sidebarOpen && "justify-center px-2"
+                <div key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                      "hover:bg-white/10 text-white/70 hover:text-white",
+                      !sidebarOpen && "justify-center px-2"
+                    )}
+                    activeClassName="bg-accent/20 text-accent border border-accent/30"
+                  >
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    {sidebarOpen && (
+                      <span className="font-medium text-sm">{item.label}</span>
+                    )}
+                  </NavLink>
+                  
+                  {/* Map Controls - shown right after Map */}
+                  {item.path === '/' && isMapPage && (
+                    <button
+                      onClick={() => {
+                        setMapControlsPanelOpen(!mapControlsPanelOpen);
+                        if (!mapControlsPanelOpen) setRelationshipsPanelOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mt-1",
+                        "hover:bg-white/10 text-white/70 hover:text-white",
+                        !sidebarOpen && "justify-center px-2",
+                        mapControlsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                      )}
+                    >
+                      <Settings2 className="w-5 h-5 shrink-0" />
+                      {sidebarOpen && (
+                        <>
+                          <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
+                          {mapControlsPanelOpen ? (
+                            <ChevronLeft className="w-4 h-4 text-accent" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </>
+                      )}
+                    </button>
                   )}
-                  activeClassName="bg-accent/20 text-accent border border-accent/30"
-                >
-                  <item.icon className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && (
-                    <span className="font-medium text-sm">{item.label}</span>
-                  )}
-                </NavLink>
+                </div>
               );
             })}
             
@@ -173,34 +202,6 @@ export function AppLayout() {
                   <>
                     <span className="font-medium text-sm flex-1 text-left">Relationships</span>
                     {relationshipsPanelOpen ? (
-                      <ChevronLeft className="w-4 h-4 text-accent" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Map Controls - shown only on Map page */}
-            {isMapPage && (
-              <button
-                onClick={() => {
-                  setMapControlsPanelOpen(!mapControlsPanelOpen);
-                  if (!mapControlsPanelOpen) setRelationshipsPanelOpen(false);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                  "hover:bg-white/10 text-white/70 hover:text-white",
-                  !sidebarOpen && "justify-center px-2",
-                  mapControlsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                )}
-              >
-                <Settings2 className="w-5 h-5 shrink-0" />
-                {sidebarOpen && (
-                  <>
-                    <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
-                    {mapControlsPanelOpen ? (
                       <ChevronLeft className="w-4 h-4 text-accent" />
                     ) : (
                       <ChevronRight className="w-4 h-4" />
