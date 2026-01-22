@@ -454,11 +454,10 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
-      // Add clean light labels overlay
-      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+      // Add dark labels for contrast on satellite imagery
+      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
         attribution: '© CARTO',
         pane: 'overlayPane',
-        opacity: 0.9,
       }).addTo(leafletMap.current);
     } else if (viewMode === 'historical') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.topo, {
@@ -470,11 +469,10 @@ export function LeafletMap({
         opacity: 0.9,
       }).addTo(leafletMap.current);
       // Add clear reference labels on top
-      // Add clean light labels overlay
-      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+      // Add dark labels for contrast on historical map
+      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
         attribution: '© CARTO',
         pane: 'overlayPane',
-        opacity: 0.8,
       }).addTo(leafletMap.current);
     }
   }, [viewMode]);
