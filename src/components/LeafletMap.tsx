@@ -670,61 +670,159 @@ export function LeafletMap({
       const fromLatLng: L.LatLngExpression = [migration.from.lat, migration.from.lng];
       const toLatLng: L.LatLngExpression = [migration.to.lat, migration.to.lng];
       
-      // Calculate curved path
+      // Calculate curved path with more control points for smoother curve
       const midLat = (migration.from.lat + migration.to.lat) / 2;
       const midLng = (migration.from.lng + migration.to.lng) / 2;
       const dx = migration.to.lng - migration.from.lng;
       const dy = migration.to.lat - migration.from.lat;
-      const curveOffset = Math.sqrt(dx * dx + dy * dy) * 0.15;
       
       const curvedPath: L.LatLngExpression[] = [
         fromLatLng,
-        [midLat - (dx * 0.1), midLng + (dy * 0.1)],
+        [midLat - (dx * 0.15), midLng + (dy * 0.15)],
         toLatLng
       ];
 
-      // Get dash pattern based on cause
-      const dashArray = migration.cause === 'expulsion' ? '10, 5' 
-        : migration.cause === 'persecution' ? '15, 5, 5, 5'
-        : migration.cause === 'flight' ? '8, 4'
-        : '4, 4';
+      // Get cause-specific styling - much more distinct from kingdom borders
+      const causeStyles = {
+        expulsion: { 
+          color: '#ef4444', 
+          icon: '⚠️',
+          label: 'Expulsion',
+          glowColor: 'rgba(239, 68, 68, 0.6)'
+        },
+        persecution: { 
+          color: '#f97316', 
+          icon: '🔥',
+          label: 'Persecution',
+          glowColor: 'rgba(249, 115, 22, 0.6)'
+        },
+        flight: { 
+          color: '#eab308', 
+          icon: '🏃',
+          label: 'Flight',
+          glowColor: 'rgba(234, 179, 8, 0.6)'
+        },
+        opportunity: { 
+          color: '#22c55e', 
+          icon: '📚',
+          label: 'Scholarly Migration',
+          glowColor: 'rgba(34, 197, 94, 0.6)'
+        },
+      };
+      
+      const style = causeStyles[migration.cause];
 
+      // Create glow/shadow line (behind main line)
+      const glowLine = L.polyline(curvedPath, {
+        color: style.glowColor,
+        weight: 12,
+        opacity: 0.4,
+        lineCap: 'round',
+        lineJoin: 'round',
+        smoothFactor: 1,
+      });
+      glowLine.addTo(leafletMap.current!);
+      migrationLinesRef.current.push(glowLine);
+
+      // Create main line - solid, thick, with rounded caps (very different from dashed borders)
       const line = L.polyline(curvedPath, {
-        color: migration.color,
-        weight: 4,
-        opacity: 0.7,
-        dashArray,
+        color: style.color,
+        weight: 5,
+        opacity: 0.9,
+        lineCap: 'round',
+        lineJoin: 'round',
         smoothFactor: 1,
       });
 
-      const causeIcon = migration.cause === 'expulsion' ? '⚠️'
-        : migration.cause === 'persecution' ? '🔥'
-        : migration.cause === 'flight' ? '🏃'
-        : '📚';
+      // Click opens a popup with full explanation
+      line.bindPopup(
+        `<div style="min-width: 250px; font-family: 'Crimson Text', Georgia, serif;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="font-size: 24px;">${style.icon}</span>
+            <div>
+              <div style="font-size: 16px; font-weight: 700; color: ${style.color};">${migration.name}</div>
+              <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">${style.label}</div>
+            </div>
+          </div>
+          <div style="font-size: 14px; line-height: 1.5; color: #333; margin-bottom: 12px;">
+            ${migration.description}
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 8px;">
+            <div><strong>From:</strong> ${migration.from.name}</div>
+            <div><strong>To:</strong> ${migration.to.name}</div>
+          </div>
+          <div style="font-size: 11px; color: #999; margin-top: 4px; text-align: center;">
+            Click anywhere on map to close
+          </div>
+        </div>`,
+        { 
+          className: 'migration-popup',
+          maxWidth: 320,
+        }
+      );
 
+      // Hover tooltip for quick info
       line.bindTooltip(
-        `<strong>${causeIcon} ${migration.name}</strong><br/>
-        <span style="font-size:11px">${migration.description}</span>`,
+        `<strong>${style.icon} ${migration.name}</strong><br/>
+        <span style="font-size:11px; opacity: 0.8;">Click for details</span>`,
         { className: 'historical-tooltip', sticky: true }
       );
+
+      // Hover effects
+      line.on('mouseover', () => {
+        line.setStyle({ weight: 7, opacity: 1 });
+        glowLine.setStyle({ weight: 16, opacity: 0.6 });
+      });
+      
+      line.on('mouseout', () => {
+        line.setStyle({ weight: 5, opacity: 0.9 });
+        glowLine.setStyle({ weight: 12, opacity: 0.4 });
+      });
 
       line.addTo(leafletMap.current!);
       migrationLinesRef.current.push(line);
 
-      // Add arrow marker at destination
+      // Add animated arrow marker at destination
       const arrowIcon = L.divIcon({
         className: 'migration-arrow',
         html: `<div style="
-          font-size: 14px;
-          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-        ">➤</div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
+          width: 0;
+          height: 0;
+          border-left: 10px solid transparent;
+          border-right: 10px solid transparent;
+          border-bottom: 16px solid ${style.color};
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+          transform: rotate(${Math.atan2(
+            migration.to.lat - migration.from.lat,
+            migration.to.lng - migration.from.lng
+          ) * 180 / Math.PI - 90}deg);
+        "></div>`,
+        iconSize: [20, 16],
+        iconAnchor: [10, 8],
       });
 
       const arrow = L.marker(toLatLng, { icon: arrowIcon, interactive: false });
       arrow.addTo(leafletMap.current!);
       migrationLinesRef.current.push(arrow);
+
+      // Add origin circle marker
+      const originIcon = L.divIcon({
+        className: 'migration-origin',
+        html: `<div style="
+          width: 12px;
+          height: 12px;
+          background: ${style.color};
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        "></div>`,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+      });
+
+      const origin = L.marker(fromLatLng, { icon: originIcon, interactive: false });
+      origin.addTo(leafletMap.current!);
+      migrationLinesRef.current.push(origin);
     });
   }, [showMigrations]);
 
