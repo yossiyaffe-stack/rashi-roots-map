@@ -9,17 +9,21 @@ import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
 import { useScholars, useRelationships, type DbScholar } from '@/hooks/useScholars';
+import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
-  const [showConnections, setShowConnections] = useState(false);
-  const [showMigrations, setShowMigrations] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
+  const { 
+    showBoundaries, setShowBoundaries,
+    showMigrations, setShowMigrations,
+    showConnections, setShowConnections 
+  } = useMapControls();
 
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();
@@ -48,9 +52,8 @@ const Index = () => {
           onSelectScholar={setSelectedScholar}
           timeRange={timeRange}
           showConnections={showConnections}
-          onShowConnectionsChange={setShowConnections}
           showMigrations={showMigrations}
-          onShowMigrationsChange={setShowMigrations}
+          showBoundaries={showBoundaries}
         />
 
         {/* Scholars Overlay Panel - Left side */}

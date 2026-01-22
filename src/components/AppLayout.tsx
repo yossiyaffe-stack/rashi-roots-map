@@ -5,8 +5,10 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
+import { MapControls } from '@/components/MapControls';
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
+import { useMapControls } from '@/contexts/MapControlsContext';
 
 const navItems = [
   { path: '/', label: 'Map', icon: Map },
@@ -22,6 +24,11 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
   const { isOverlayOpen, setIsOverlayOpen } = useScholarsOverlay();
+  const { 
+    showBoundaries, setShowBoundaries,
+    showMigrations, setShowMigrations,
+    showConnections, setShowConnections 
+  } = useMapControls();
   
   const isMapPage = location.pathname === '/';
 
@@ -132,10 +139,18 @@ export function AppLayout() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Legends - Only on Map page */}
+        {/* Legends & Controls - Only on Map page */}
         {isMapPage && sidebarOpen && (
           <div className="p-3 border-t border-white/10 space-y-4">
-            <MapLegend showConnections={false} showMigrations={false} relationships={relationships} />
+            <MapControls
+              showBoundaries={showBoundaries}
+              onShowBoundariesChange={setShowBoundaries}
+              showMigrations={showMigrations}
+              onShowMigrationsChange={setShowMigrations}
+              showConnections={showConnections}
+              onShowConnectionsChange={setShowConnections}
+            />
+            <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
             <KingdomsLegend />
           </div>
         )}
