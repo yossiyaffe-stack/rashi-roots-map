@@ -153,8 +153,9 @@ export function AppLayout() {
 
         {/* Legends & Controls - Only on Map page */}
         {isMapPage && sidebarOpen && (
-          <div className="flex-1 border-t border-white/10 overflow-y-auto custom-scrollbar">
-            <div className="p-3 space-y-4">
+          <div className="flex-1 flex flex-col border-t border-white/10 min-h-0">
+            {/* MapControls - fixed at top, not scrollable */}
+            <div className="p-3 pb-0 shrink-0">
               <MapControls
                 showBoundaries={showBoundaries}
                 onShowBoundariesChange={setShowBoundaries}
@@ -175,14 +176,15 @@ export function AppLayout() {
                 showOnlyScholarCities={showOnlyScholarCities}
                 onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
               />
-              
-              {/* Relationship Filters */}
-              <RelationshipFilterPanel />
-              
-              <div className="overflow-visible">
+            </div>
+            
+            {/* Scrollable area for filters and legends */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+              <div className="p-3 pt-4 space-y-4">
+                {/* Relationship Filters */}
+                <RelationshipFilterPanel />
+                
                 <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
-              </div>
-              <div className="overflow-visible">
                 <KingdomsLegend />
               </div>
             </div>
