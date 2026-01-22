@@ -176,7 +176,7 @@ const Index = () => {
 
         {/* Legend - Bottom Left of Map */}
         <div className="absolute bottom-6 left-6 z-[1000] bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4">
-          <MapLegend showConnections={showConnections} showMigrations={showMigrations} />
+          <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
         </div>
 
         {/* Scholar Detail Panel */}
