@@ -3,6 +3,8 @@ import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap } from 'luc
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { MapLegend } from '@/components/MapLegend';
+import { useRelationships } from '@/hooks/useScholars';
 
 const navItems = [
   { path: '/', label: 'Map', icon: Map },
@@ -15,6 +17,9 @@ const navItems = [
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  const { data: relationships = [] } = useRelationships();
+  
+  const isMapPage = location.pathname === '/';
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
@@ -51,7 +56,7 @@ export function AppLayout() {
         </header>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1 flex-1">
+        <nav className="p-3 space-y-1">
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
             return (
@@ -73,6 +78,16 @@ export function AppLayout() {
             );
           })}
         </nav>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Legend - Only on Map page */}
+        {isMapPage && sidebarOpen && (
+          <div className="p-3 border-t border-white/10">
+            <MapLegend showConnections={false} showMigrations={false} relationships={relationships} />
+          </div>
+        )}
 
         {/* Footer */}
         {sidebarOpen && (
