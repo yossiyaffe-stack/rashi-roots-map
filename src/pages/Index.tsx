@@ -138,7 +138,7 @@ const Index = () => {
       </button>
 
       {/* Map Content */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative h-full min-h-0">
         <LeafletMap
           scholars={filteredScholars}
           relationships={relationships}
