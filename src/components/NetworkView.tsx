@@ -1,23 +1,57 @@
 import { useMemo } from 'react';
-import type { DbScholar, DbRelationship } from '@/hooks/useScholars';
+import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
+import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
+import { Users, FileText, Lightbulb } from 'lucide-react';
 
 interface NetworkViewProps {
   scholars: DbScholar[];
-  relationships: DbRelationship[];
+  biographicalRelationships: DbBiographicalRelationship[];
+  textualRelationships: DbTextualRelationship[];
+  intellectualRelationships: DbIntellectualRelationship[];
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
 }
 
+// Domain colors matching the filter panel
+const DOMAIN_COLORS = {
+  biographical: '#f43f5e', // rose-500
+  textual: '#10b981', // emerald-500
+  intellectual: '#8b5cf6', // violet-500
+};
+
 export const NetworkView = ({ 
   scholars, 
-  relationships, 
+  biographicalRelationships,
+  textualRelationships,
+  intellectualRelationships,
   selectedScholar, 
   onSelectScholar 
 }: NetworkViewProps) => {
-  
-  const connections = useMemo(() => {
-    return relationships.filter(r => r.from_scholar_id && r.to_scholar_id);
-  }, [relationships]);
+  const { filters, shouldShowRelationship } = useRelationshipFilters();
+
+  // Filter biographical relationships based on filters
+  const filteredBiographical = useMemo(() => {
+    if (!filters.domains.biographical) return [];
+    return biographicalRelationships.filter(rel => 
+      shouldShowRelationship('biographical', rel.relationship_category, rel.certainty)
+    );
+  }, [biographicalRelationships, filters, shouldShowRelationship]);
+
+  // Filter textual relationships - note: these connect works, not scholars directly
+  const filteredTextual = useMemo(() => {
+    if (!filters.domains.textual) return [];
+    return textualRelationships.filter(rel => 
+      shouldShowRelationship('textual', rel.relationship_category, rel.certainty)
+    );
+  }, [textualRelationships, filters, shouldShowRelationship]);
+
+  // Filter intellectual relationships
+  const filteredIntellectual = useMemo(() => {
+    if (!filters.domains.intellectual) return [];
+    return intellectualRelationships.filter(rel => 
+      shouldShowRelationship('intellectual', rel.relationship_category, rel.certainty)
+    );
+  }, [intellectualRelationships, filters, shouldShowRelationship]);
 
   const getNodeColor = (scholar: DbScholar): string => {
     if (scholar.name === 'Rashi') return '#e11d48';
@@ -52,12 +86,25 @@ export const NetworkView = ({
 
   const svgHeight = Math.max(600, Math.ceil(scholars.length / 4) * 180 + 100);
 
+  // Count connections for legend
+  const connectionCounts = useMemo(() => ({
+    biographical: filteredBiographical.length,
+    textual: filteredTextual.length,
+    intellectual: filteredIntellectual.length,
+  }), [filteredBiographical, filteredTextual, filteredIntellectual]);
+
   return (
     <div className="w-full h-full overflow-auto p-6">
       <svg width="100%" height={svgHeight} className="min-w-[800px]">
         <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" className="fill-accent" />
+          <marker id="arrowhead-bio" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.biographical} />
+          </marker>
+          <marker id="arrowhead-text" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.textual} />
+          </marker>
+          <marker id="arrowhead-int" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.intellectual} />
           </marker>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -68,28 +115,53 @@ export const NetworkView = ({
           </filter>
         </defs>
 
-        {/* Draw connections first (behind nodes) */}
-        {connections.map((conn, idx) => {
-          const fromPos = scholarPositions[conn.from_scholar_id!];
-          const toPos = scholarPositions[conn.to_scholar_id!];
+        {/* Draw biographical connections (person-to-person) */}
+        {filteredBiographical.map((conn, idx) => {
+          const fromPos = scholarPositions[conn.scholar_id];
+          const toPos = scholarPositions[conn.related_scholar_id];
           
           if (!fromPos || !toPos) return null;
           
-          const isEducational = conn.type === 'educational';
-          const isLiterary = conn.type === 'literary';
+          // Offset lines slightly to prevent overlap
+          const offset = idx * 0.5;
           
           return (
             <line
-              key={`${conn.from_scholar_id}-${conn.to_scholar_id}-${idx}`}
+              key={`bio-${conn.id}`}
               x1={fromPos.x}
-              y1={fromPos.y}
+              y1={fromPos.y + offset}
               x2={toPos.x}
-              y2={toPos.y}
-              stroke={isEducational ? '#f59e0b' : isLiterary ? '#3b82f6' : '#6b7280'}
+              y2={toPos.y + offset}
+              stroke={DOMAIN_COLORS.biographical}
               strokeWidth="2"
-              strokeDasharray={isLiterary ? "5,5" : "none"}
-              markerEnd="url(#arrowhead)"
-              opacity="0.5"
+              markerEnd="url(#arrowhead-bio)"
+              opacity="0.6"
+              className="transition-opacity hover:opacity-100"
+            />
+          );
+        })}
+
+        {/* Draw intellectual connections (scholar-to-work, shown as scholar connections) */}
+        {filteredIntellectual.map((conn, idx) => {
+          const fromPos = scholarPositions[conn.scholar_id];
+          
+          // For intellectual relationships, we show them as self-loops or connect to related scholars
+          if (!fromPos) return null;
+          
+          // Draw as a small arc indicating intellectual activity
+          const arcRadius = 20 + (idx % 3) * 5;
+          
+          return (
+            <path
+              key={`int-${conn.id}`}
+              d={`M ${fromPos.x - arcRadius} ${fromPos.y - 10} 
+                  A ${arcRadius} ${arcRadius} 0 0 1 ${fromPos.x + arcRadius} ${fromPos.y - 10}`}
+              fill="none"
+              stroke={DOMAIN_COLORS.intellectual}
+              strokeWidth="2"
+              strokeDasharray="4,2"
+              opacity="0.6"
+              className="transition-opacity hover:opacity-100"
             />
           );
         })}
@@ -145,7 +217,7 @@ export const NetworkView = ({
                 {scholar.name.split('(')[0].trim()}
               </text>
               
-              {/* Hebrew name on hover */}
+              {/* Hebrew name */}
               {scholar.hebrew_name && (
                 <text
                   x={pos.x}
@@ -162,20 +234,42 @@ export const NetworkView = ({
       </svg>
 
       {/* Legend */}
-      <div className="absolute bottom-6 left-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
-        <div className="font-bold text-accent mb-2">Connection Types</div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-gray-500" />
-          <span className="text-muted-foreground">Son / Son-in-law / Grandson</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-amber-500" />
-          <span className="text-muted-foreground">Teacher-Student</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-0.5 bg-blue-500" style={{ borderTop: '2px dashed' }} />
-          <span className="text-muted-foreground">Literary</span>
-        </div>
+      <div className="absolute bottom-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
+        <div className="font-bold text-accent mb-2">Relationship Domains</div>
+        
+        {connectionCounts.biographical > 0 && (
+          <div className="flex items-center gap-2">
+            <Users className="w-3 h-3" style={{ color: DOMAIN_COLORS.biographical }} />
+            <div className="w-6 h-0.5" style={{ backgroundColor: DOMAIN_COLORS.biographical }} />
+            <span className="text-muted-foreground">
+              Biographical ({connectionCounts.biographical})
+            </span>
+          </div>
+        )}
+        
+        {connectionCounts.textual > 0 && (
+          <div className="flex items-center gap-2">
+            <FileText className="w-3 h-3" style={{ color: DOMAIN_COLORS.textual }} />
+            <div className="w-6 h-0.5" style={{ backgroundColor: DOMAIN_COLORS.textual }} />
+            <span className="text-muted-foreground">
+              Textual ({connectionCounts.textual})
+            </span>
+          </div>
+        )}
+        
+        {connectionCounts.intellectual > 0 && (
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-3 h-3" style={{ color: DOMAIN_COLORS.intellectual }} />
+            <div className="w-6 h-0.5 border-t-2 border-dashed" style={{ borderColor: DOMAIN_COLORS.intellectual }} />
+            <span className="text-muted-foreground">
+              Intellectual ({connectionCounts.intellectual})
+            </span>
+          </div>
+        )}
+        
+        {connectionCounts.biographical === 0 && connectionCounts.textual === 0 && connectionCounts.intellectual === 0 && (
+          <div className="text-muted-foreground italic">No relationships to display</div>
+        )}
       </div>
     </div>
   );

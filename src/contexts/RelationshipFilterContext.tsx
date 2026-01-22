@@ -105,6 +105,7 @@ interface RelationshipFilterContextType {
   toggleCertainty: (level: keyof RelationshipFilters['certainty']) => void;
   resetFilters: () => void;
   activeFilterCount: number;
+  shouldShowRelationship: (domain: 'biographical' | 'textual' | 'intellectual', category: string, certainty: string | null) => boolean;
 }
 
 const RelationshipFilterContext = createContext<RelationshipFilterContextType | undefined>(undefined);
@@ -187,6 +188,34 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     return count;
   }, [filters]);
 
+  // Helper to check if a relationship should be shown based on current filters
+  const shouldShowRelationship = useCallback((
+    domain: 'biographical' | 'textual' | 'intellectual',
+    category: string,
+    certainty: string | null
+  ): boolean => {
+    // Check domain is enabled
+    if (!filters.domains[domain]) return false;
+    
+    // Check category is enabled (normalize to lowercase for matching)
+    const normalizedCategory = category.toLowerCase();
+    const domainCategories = filters[domain].categories as Record<string, boolean>;
+    
+    // Find matching category key
+    const categoryKey = Object.keys(domainCategories).find(
+      key => key.toLowerCase() === normalizedCategory
+    );
+    if (categoryKey && !domainCategories[categoryKey]) return false;
+    
+    // Check certainty is enabled
+    if (certainty) {
+      const normalizedCertainty = certainty.toLowerCase() as keyof RelationshipFilters['certainty'];
+      if (filters.certainty[normalizedCertainty] === false) return false;
+    }
+    
+    return true;
+  }, [filters]);
+
   return (
     <RelationshipFilterContext.Provider value={{
       filters,
@@ -198,6 +227,7 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       toggleCertainty,
       resetFilters,
       activeFilterCount,
+      shouldShowRelationship,
     }}>
       {children}
     </RelationshipFilterContext.Provider>
@@ -218,6 +248,7 @@ export function useRelationshipFilters() {
       toggleCertainty: () => {},
       resetFilters: () => {},
       activeFilterCount: 0,
+      shouldShowRelationship: () => true,
     };
   }
   return context;
