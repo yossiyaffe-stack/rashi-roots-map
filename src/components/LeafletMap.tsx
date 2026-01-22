@@ -454,11 +454,7 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
-      // Add crisp Stamen Toner labels - sharp black text
-      labelsLayerRef.current = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png', {
-        attribution: '© Stadia Maps, © Stamen Design',
-        pane: 'overlayPane',
-      }).addTo(leafletMap.current);
+      // No labels overlay - scholar markers are the focus
     } else if (viewMode === 'historical') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.topo, {
         attribution: '© OpenTopoMap',
@@ -469,11 +465,7 @@ export function LeafletMap({
         opacity: 0.9,
       }).addTo(leafletMap.current);
       // Add clear reference labels on top
-      // Add crisp Stamen Toner labels - sharp black text
-      labelsLayerRef.current = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png', {
-        attribution: '© Stadia Maps, © Stamen Design',
-        pane: 'overlayPane',
-      }).addTo(leafletMap.current);
+      // No labels overlay - scholar markers are the focus
     }
   }, [viewMode]);
 
