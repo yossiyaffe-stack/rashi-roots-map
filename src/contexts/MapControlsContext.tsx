@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-export type CityFilter = 'all' | 'major' | 'minor' | 'scholar-only';
+export type CityFilter = 'all' | 'major';
 
 interface MapControlsContextType {
   showBoundaries: boolean;
