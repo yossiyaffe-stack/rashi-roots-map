@@ -603,12 +603,12 @@ export function LeafletMap({
       const hoverFillOpacity = showBoundaryShading ? 0.2 : 0;
       
       const polygon = L.polygon(region.coordinates, {
-        color: region.color,
-        weight: isSelected ? 4 : 2,
-        opacity: isSelected ? 1 : 0.7,
+        color: '#1a1a1a',
+        weight: isSelected ? 5 : 3,
+        opacity: isSelected ? 1 : 0.85,
         fillColor: region.color,
         fillOpacity: baseFillOpacity,
-        dashArray: isSelected ? undefined : '5, 5',
+        dashArray: isSelected ? undefined : '8, 6',
       });
 
       polygon.bindTooltip(
