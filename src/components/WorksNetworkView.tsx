@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkWithAuthor, TextualRelationshipWithWorks } from '@/hooks/useWorks';
 import { LayoutMode, HoveredWork } from './works-network/types';
@@ -37,6 +37,7 @@ export const WorksNetworkView = ({
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('timeline');
   const [centerWork, setCenterWork] = useState<WorkWithAuthor | null>(null);
   const [showOnlyConnected, setShowOnlyConnected] = useState(true);
+  const [focusMode, setFocusMode] = useState(false); // Only show selected work's relationships
   const [highlightSelected, setHighlightSelected] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -57,16 +58,18 @@ export const WorksNetworkView = ({
   }, [relationships]);
 
   // Filter works based on showOnlyConnected
-  const displayedWorks = useMemo(() => {
+  const baseDisplayedWorks = useMemo(() => {
     if (!showOnlyConnected) return works;
     return works.filter(w => connectedWorkIds.has(w.id));
   }, [works, connectedWorkIds, showOnlyConnected]);
 
-  // Get connections for selected work
+  // Get connections for selected work (including multi-level)
   const selectedWorkConnections = useMemo(() => {
     if (!selectedWork) return new Set<string>();
     const ids = new Set<string>();
     ids.add(selectedWork.id);
+    
+    // Get direct connections
     relationships.forEach(rel => {
       if (rel.work_id === selectedWork.id && rel.related_work_id) {
         ids.add(rel.related_work_id);
@@ -75,8 +78,38 @@ export const WorksNetworkView = ({
         ids.add(rel.work_id);
       }
     });
+    
+    // If in focus mode, also get second-level connections for context
+    if (focusMode) {
+      const directIds = new Set(ids);
+      directIds.forEach(workId => {
+        relationships.forEach(rel => {
+          if (rel.work_id === workId && rel.related_work_id) {
+            ids.add(rel.related_work_id);
+          }
+          if (rel.related_work_id === workId && rel.work_id) {
+            ids.add(rel.work_id);
+          }
+        });
+      });
+    }
+    
     return ids;
-  }, [selectedWork, relationships]);
+  }, [selectedWork, relationships, focusMode]);
+
+  // Filter works and relationships based on focus mode
+  const displayedWorks = useMemo(() => {
+    if (!focusMode || !selectedWork) return baseDisplayedWorks;
+    return baseDisplayedWorks.filter(w => selectedWorkConnections.has(w.id));
+  }, [baseDisplayedWorks, focusMode, selectedWork, selectedWorkConnections]);
+
+  const displayedRelationships = useMemo(() => {
+    if (!focusMode || !selectedWork) return relationships;
+    return relationships.filter(rel => 
+      selectedWorkConnections.has(rel.work_id || '') || 
+      selectedWorkConnections.has(rel.related_work_id || '')
+    );
+  }, [relationships, focusMode, selectedWork, selectedWorkConnections]);
 
   // Calculate depth levels for works based on relationships
   const workDepthLevels = useMemo(() => {
@@ -182,12 +215,12 @@ export const WorksNetworkView = ({
 
   const layoutProps = {
     works: displayedWorks,
-    relationships,
+    relationships: displayedRelationships,
     selectedWork,
     onSelectWork,
     workDepthLevels,
     selectedWorkConnections,
-    highlightSelected,
+    highlightSelected: highlightSelected && !focusMode, // Disable highlight when in focus mode
     viewWidth,
     viewHeight,
     onHoverWork: handleHoverWork,
@@ -287,12 +320,29 @@ export const WorksNetworkView = ({
           Connected Only
         </button>
         <button
-          onClick={() => setHighlightSelected(!highlightSelected)}
+          onClick={() => setFocusMode(!focusMode)}
+          disabled={!selectedWork}
           className={cn(
             "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
-            highlightSelected 
+            focusMode && selectedWork
+              ? "bg-amber-500/20 border-amber-500/50 text-amber-300" 
+              : "bg-card/90 border-border text-foreground",
+            !selectedWork && "opacity-50 cursor-not-allowed"
+          )}
+          title={selectedWork ? "Show only relationships for selected work" : "Select a work first"}
+        >
+          <Focus className="w-4 h-4" />
+          Focus Mode
+        </button>
+        <button
+          onClick={() => setHighlightSelected(!highlightSelected)}
+          disabled={focusMode}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            highlightSelected && !focusMode
               ? "bg-accent/20 border-accent/50 text-accent" 
-              : "bg-card/90 border-border text-foreground"
+              : "bg-card/90 border-border text-foreground",
+            focusMode && "opacity-50"
           )}
         >
           Highlight Selected
