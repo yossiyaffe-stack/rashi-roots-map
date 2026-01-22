@@ -219,6 +219,28 @@
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
   }
+
+  /* Journey route animated dashes */
+  .journey-route-animated {
+    animation: journey-dash 1.5s linear infinite;
+  }
+
+  @keyframes journey-dash {
+    to {
+      stroke-dashoffset: -20;
+    }
+  }
+
+  /* Journey marker styling */
+  .journey-marker {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .journey-arrow {
+    background: transparent !important;
+    border: none !important;
+  }
 }
 
 @layer utilities {
