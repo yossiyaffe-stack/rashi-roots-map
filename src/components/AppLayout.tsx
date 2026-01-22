@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -12,19 +12,12 @@ import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useMapControls } from '@/contexts/MapControlsContext';
 
-const navItems = [
-  { path: '/', label: 'Map', icon: Map },
-  { path: '/scholars', label: 'Scholars', icon: GraduationCap, hasOverlay: true },
-  { path: '/timeline', label: 'Timeline', icon: Clock },
-  { path: '/network', label: 'Scholars Network', icon: Share2 },
-  { path: '/works', label: 'Works Network', icon: Library },
-  { path: '/context', label: 'Historical Context', icon: BookOpen },
-];
-
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [relationshipsPanelOpen, setRelationshipsPanelOpen] = useState(false);
   const [mapControlsPanelOpen, setMapControlsPanelOpen] = useState(false);
+  const [legendsPanelOpen, setLegendsPanelOpen] = useState(false);
+  const [kingdomsPanelOpen, setKingdomsPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
@@ -101,129 +94,248 @@ export function AppLayout() {
             </div>
           </header>
 
-          {/* Navigation */}
-          <nav className="p-3 space-y-1 shrink-0">
-            {navItems.map(item => {
-              const isActive = location.pathname === item.path;
-              const isScholars = item.path === '/scholars';
-              const isScholarsPage = location.pathname === '/scholars';
-              const showOverlayIndicator = isScholars && (isMapPage && isOverlayOpen || isScholarsPage);
-              
-              if (isScholars) {
-                return (
-                  <button
-                    key={item.path}
-                    onClick={handleScholarsClick}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                      "hover:bg-white/10 text-white/70 hover:text-white",
-                      !sidebarOpen && "justify-center px-2",
-                      showOverlayIndicator && "bg-accent/20 text-accent border border-accent/30"
-                    )}
-                  >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    {sidebarOpen && (
-                      <>
-                        <span className="font-medium text-sm flex-1 text-left">{item.label}</span>
-                        <ChevronRight className={cn(
-                          "w-4 h-4 transition-transform",
-                          showOverlayIndicator && "rotate-90 text-accent"
-                        )} />
-                      </>
-                    )}
-                  </button>
-                );
-              }
-
-              return (
-                <div key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                      "hover:bg-white/10 text-white/70 hover:text-white",
-                      !sidebarOpen && "justify-center px-2"
-                    )}
-                    activeClassName="bg-accent/20 text-accent border border-accent/30"
-                  >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    {sidebarOpen && (
-                      <span className="font-medium text-sm">{item.label}</span>
-                    )}
-                  </NavLink>
-                  
-                  {/* Map Controls - shown right after Map */}
-                  {item.path === '/' && isMapPage && (
-                    <button
-                      onClick={() => {
-                        setMapControlsPanelOpen(!mapControlsPanelOpen);
-                        if (!mapControlsPanelOpen) setRelationshipsPanelOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mt-1",
-                        "hover:bg-white/10 text-white/70 hover:text-white",
-                        !sidebarOpen && "justify-center px-2",
-                        mapControlsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                      )}
-                    >
-                      <Settings2 className="w-5 h-5 shrink-0" />
-                      {sidebarOpen && (
-                        <>
-                          <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
-                          {mapControlsPanelOpen ? (
-                            <ChevronLeft className="w-4 h-4 text-accent" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </>
-                      )}
-                    </button>
-                  )}
-                  
-                  {/* Relationships - shown right after Map Controls on map page, or after Map item on Network/Works pages */}
-                  {item.path === '/' && (isMapPage || isNetworkPage || isWorksPage) && (
-                    <button
-                      onClick={() => {
-                        setRelationshipsPanelOpen(!relationshipsPanelOpen);
-                        if (!relationshipsPanelOpen) setMapControlsPanelOpen(false);
-                      }}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all mt-1",
-                        "hover:bg-white/10 text-white/70 hover:text-white",
-                        !sidebarOpen && "justify-center px-2",
-                        relationshipsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                      )}
-                    >
-                      <Filter className="w-5 h-5 shrink-0" />
-                      {sidebarOpen && (
-                        <>
-                          <span className="font-medium text-sm flex-1 text-left">Relationships</span>
-                          {relationshipsPanelOpen ? (
-                            <ChevronLeft className="w-4 h-4 text-accent" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                        </>
-                      )}
-                    </button>
-                  )}
+          {/* Navigation - Three Sections */}
+          <nav className="p-3 space-y-1 shrink-0 flex-1 overflow-y-auto">
+            {/* ========== SECTION 1: MAP ========== */}
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/40 font-semibold">
+                  Map
                 </div>
-              );
-            })}
+              )}
+              
+              {/* Map */}
+              <NavLink
+                to="/"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <Map className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Map</span>}
+              </NavLink>
+
+              {/* Map Controls - only on map page */}
+              {isMapPage && (
+                <button
+                  onClick={() => {
+                    setMapControlsPanelOpen(!mapControlsPanelOpen);
+                    if (!mapControlsPanelOpen) {
+                      setRelationshipsPanelOpen(false);
+                      setLegendsPanelOpen(false);
+                      setKingdomsPanelOpen(false);
+                    }
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "hover:bg-white/10 text-white/70 hover:text-white",
+                    !sidebarOpen && "justify-center px-2",
+                    mapControlsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                  )}
+                >
+                  <Settings2 className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
+                      {mapControlsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Legends - only on map page */}
+              {isMapPage && (
+                <button
+                  onClick={() => {
+                    setLegendsPanelOpen(!legendsPanelOpen);
+                    if (!legendsPanelOpen) {
+                      setMapControlsPanelOpen(false);
+                      setRelationshipsPanelOpen(false);
+                      setKingdomsPanelOpen(false);
+                    }
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "hover:bg-white/10 text-white/70 hover:text-white",
+                    !sidebarOpen && "justify-center px-2",
+                    legendsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                  )}
+                >
+                  <Palette className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="font-medium text-sm flex-1 text-left">Legends</span>
+                      {legendsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Kingdoms - only on map page */}
+              {isMapPage && (
+                <button
+                  onClick={() => {
+                    setKingdomsPanelOpen(!kingdomsPanelOpen);
+                    if (!kingdomsPanelOpen) {
+                      setMapControlsPanelOpen(false);
+                      setRelationshipsPanelOpen(false);
+                      setLegendsPanelOpen(false);
+                    }
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "hover:bg-white/10 text-white/70 hover:text-white",
+                    !sidebarOpen && "justify-center px-2",
+                    kingdomsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                  )}
+                >
+                  <Crown className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="font-medium text-sm flex-1 text-left">Kingdoms</span>
+                      {kingdomsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-white/10 my-3" />
+
+            {/* ========== SECTION 2: SCHOLARS ========== */}
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/40 font-semibold">
+                  Scholars
+                </div>
+              )}
+
+              {/* Scholars */}
+              <button
+                onClick={handleScholarsClick}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  (location.pathname === '/scholars' || (isMapPage && isOverlayOpen)) && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <GraduationCap className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Scholars</span>
+                    <ChevronRight className={cn(
+                      "w-4 h-4 transition-transform",
+                      (location.pathname === '/scholars' || (isMapPage && isOverlayOpen)) && "rotate-90 text-accent"
+                    )} />
+                  </>
+                )}
+              </button>
+
+              {/* Relationships - shown on Map, Network, and Works pages */}
+              {(isMapPage || isNetworkPage || isWorksPage) && (
+                <button
+                  onClick={() => {
+                    setRelationshipsPanelOpen(!relationshipsPanelOpen);
+                    if (!relationshipsPanelOpen) {
+                      setMapControlsPanelOpen(false);
+                      setLegendsPanelOpen(false);
+                      setKingdomsPanelOpen(false);
+                    }
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "hover:bg-white/10 text-white/70 hover:text-white",
+                    !sidebarOpen && "justify-center px-2",
+                    relationshipsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                  )}
+                >
+                  <Filter className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="font-medium text-sm flex-1 text-left">Relationships</span>
+                      {relationshipsPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Scholars Network */}
+              <NavLink
+                to="/network"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <Share2 className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Scholars Network</span>}
+              </NavLink>
+
+              {/* Works Network */}
+              <NavLink
+                to="/works"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <Library className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Works Network</span>}
+              </NavLink>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-white/10 my-3" />
+
+            {/* ========== SECTION 3: TIMELINE ========== */}
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/40 font-semibold">
+                  Timeline
+                </div>
+              )}
+
+              {/* Timeline */}
+              <NavLink
+                to="/timeline"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <Clock className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Timeline</span>}
+              </NavLink>
+
+              {/* Historical Context */}
+              <NavLink
+                to="/context"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <BookOpen className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Historical Context</span>}
+              </NavLink>
+            </div>
           </nav>
 
-          {/* Spacer - only when not showing legends */}
-          {(!isMapPage || !sidebarOpen) && <div className="flex-1" />}
-
-          {/* Legends - Only on Map page (controls moved to slide-out panel) */}
-          {isMapPage && sidebarOpen && (
-            <div className="flex-1 flex flex-col border-t border-white/10 min-h-0">
-              <div className="flex-1 min-h-0 p-3 pt-4 space-y-4">
-                <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
-                <KingdomsLegend />
-              </div>
-            </div>
-          )}
+          {/* Spacer */}
+          <div className="flex-shrink-0" />
 
           {/* Footer */}
           {sidebarOpen && (
@@ -269,6 +381,28 @@ export function AppLayout() {
               showOnlyScholarCities={showOnlyScholarCities}
               onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
             />
+          </div>
+        )}
+
+        {/* Slide-out Panel for Legends - Full height */}
+        {isMapPage && legendsPanelOpen && (
+          <div className={cn(
+            "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
+            "flex flex-col w-72 p-4"
+          )}>
+            <div className="text-sm font-semibold text-white/80 mb-3">Map Legend</div>
+            <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
+          </div>
+        )}
+
+        {/* Slide-out Panel for Kingdoms - Full height */}
+        {isMapPage && kingdomsPanelOpen && (
+          <div className={cn(
+            "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
+            "flex flex-col w-72 p-4"
+          )}>
+            <div className="text-sm font-semibold text-white/80 mb-3">Medieval Kingdoms</div>
+            <KingdomsLegend />
           </div>
         )}
       </div>
