@@ -5,6 +5,8 @@ import type { DbScholar, DbRelationship } from '@/hooks/useScholars';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ChevronDown, ChevronUp, Settings2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'combined' | 'historical' | 'satellite';
 
@@ -386,6 +388,7 @@ export function LeafletMap({
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [showMigrations, setShowMigrations] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
+  const [controlsExpanded, setControlsExpanded] = useState(false);
 
   // Initialize map
   useEffect(() => {
@@ -801,202 +804,228 @@ export function LeafletMap({
         </div>
       )}
 
-      {/* Controls Panel */}
-      <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-64 space-y-3 max-h-[calc(100vh-6rem)] overflow-y-auto">
-        {/* Show Kingdoms Toggle */}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="show-boundaries" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-            Show Kingdoms
-          </Label>
-          <Switch
-            id="show-boundaries"
-            checked={showBoundaries}
-            onCheckedChange={setShowBoundaries}
-          />
-        </div>
-
-        {/* Show Migrations Toggle */}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="show-migrations" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-            Show Migrations
-          </Label>
-          <Switch
-            id="show-migrations"
-            checked={showMigrations}
-            onCheckedChange={setShowMigrations}
-          />
-        </div>
-
-        {/* Show Lines Toggle */}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="show-lines" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
-            Show Connections
-          </Label>
-          <Switch
-            id="show-lines"
-            checked={showLines}
-            onCheckedChange={setShowLines}
-          />
-        </div>
-
-        {/* Historical Overlay - Only show in combined mode */}
-        {viewMode === 'combined' && (
-          <div className="pt-3 border-t border-slate-200">
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-3">
-              Historical Overlay
-            </label>
-            <Slider
-              value={[overlayOpacity * 100]}
-              min={0}
-              max={100}
-              step={5}
-              onValueChange={([val]) => setOverlayOpacity(val / 100)}
-              className="w-full"
-            />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
-              <span>Satellite</span>
-              <span>{Math.round(overlayOpacity * 100)}%</span>
-              <span>17th C.</span>
-            </div>
+      {/* Controls Panel - Collapsible */}
+      <div className={cn(
+        "absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg shadow-lg border border-slate-200 transition-all duration-300",
+        controlsExpanded ? "w-64" : "w-auto"
+      )}>
+        {/* Header - Always visible */}
+        <button
+          onClick={() => setControlsExpanded(!controlsExpanded)}
+          className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Settings2 className="w-4 h-4 text-slate-600" />
+            {controlsExpanded && (
+              <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Map Controls</span>
+            )}
           </div>
-        )}
+          {controlsExpanded ? (
+            <ChevronUp className="w-4 h-4 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          )}
+        </button>
 
-        {/* Kingdom Legend - Only show when boundaries are on */}
-        {showBoundaries && (
-          <div className="pt-3 border-t border-slate-200">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-              Kingdoms & Regions
+        {/* Expandable content */}
+        {controlsExpanded && (
+          <div className="px-4 pb-4 space-y-3 max-h-[calc(100vh-10rem)] overflow-y-auto">
+            {/* Show Kingdoms Toggle */}
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-boundaries" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                Show Kingdoms
+              </Label>
+              <Switch
+                id="show-boundaries"
+                checked={showBoundaries}
+                onCheckedChange={setShowBoundaries}
+              />
             </div>
-            <div className="space-y-2 text-[10px]">
-              <div className="flex items-start gap-2">
-                <div className="w-3 h-3 rounded-sm bg-red-600 opacity-70 mt-0.5 shrink-0"></div>
-                <div>
-                  <span className="text-slate-700 font-medium">Holy Roman Empire</span>
-                  <span className="text-slate-400 block">962–1806</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-70 mt-0.5 shrink-0"></div>
-                <div>
-                  <span className="text-slate-700 font-medium">Kingdom of France</span>
-                  <span className="text-slate-400 block">987–1792</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-3 h-3 rounded-sm bg-green-600 opacity-70 mt-0.5 shrink-0"></div>
-                <div>
-                  <span className="text-slate-700 font-medium">Ottoman Empire</span>
-                  <span className="text-slate-400 block">1299–1922</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-3 h-3 rounded-sm bg-purple-600 opacity-70 mt-0.5 shrink-0"></div>
-                <div>
-                  <span className="text-slate-700 font-medium">Polish-Lithuanian</span>
-                  <span className="text-slate-400 block">1569–1795</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70 mt-0.5 shrink-0"></div>
-                <div>
-                  <span className="text-slate-700 font-medium">Iberian Kingdoms</span>
-                  <span className="text-slate-400 block">c. 1000–1492</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 mt-2 pt-2 border-t border-slate-100">
-                <div className="w-3 h-3 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: '#c9a961' }}></div>
-                <div>
-                  <span className="text-slate-700 font-semibold">Champagne</span>
-                  <span className="text-slate-400 block">Rashi era: 1040–1105</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-3 h-3 rounded-sm bg-orange-600 opacity-70 mt-0.5 shrink-0"></div>
-                <div>
-                  <span className="text-slate-700 font-semibold">Rhineland (ShUM)</span>
-                  <span className="text-slate-400 block">c. 900–1350</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Migration Legend - Only show when migrations are on */}
-        {showMigrations && (
-          <div className="pt-3 border-t border-slate-200">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-              Migration Causes
+            {/* Show Migrations Toggle */}
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-migrations" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                Show Migrations
+              </Label>
+              <Switch
+                id="show-migrations"
+                checked={showMigrations}
+                onCheckedChange={setShowMigrations}
+              />
             </div>
-            <div className="space-y-1.5 text-[10px]">
-              <div className="flex items-center gap-2">
-                <span>⚠️</span>
-                <span className="text-slate-600">Expulsion</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>🔥</span>
-                <span className="text-slate-600">Persecution</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>🏃</span>
-                <span className="text-slate-600">Flight</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>📚</span>
-                <span className="text-slate-600">Scholarly Movement</span>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Scholar Colors Legend */}
-        <div className="pt-3 border-t border-slate-200">
-          <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-            Scholar Types
-          </div>
-          <div className="space-y-1.5 text-[10px]">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#c9a961', border: '2px solid #fbbf24' }}></div>
-              <span className="text-slate-600 font-medium">Rashi</span>
+            {/* Show Lines Toggle */}
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-lines" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                Show Connections
+              </Label>
+              <Switch
+                id="show-lines"
+                checked={showLines}
+                onCheckedChange={setShowLines}
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-600"></div>
-              <span className="text-slate-600">Grandsons</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-              <span className="text-slate-600">Rishonim</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-slate-600">Acharonim</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-              <span className="text-slate-600">Supercommentators</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Connection Legend - Only show when lines are on */}
-        {showLines && (
-          <div className="pt-3 border-t border-slate-200">
-            <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-              Connection Types
+            {/* Historical Overlay - Only show in combined mode */}
+            {viewMode === 'combined' && (
+              <div className="pt-3 border-t border-slate-200">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-3">
+                  Historical Overlay
+                </label>
+                <Slider
+                  value={[overlayOpacity * 100]}
+                  min={0}
+                  max={100}
+                  step={5}
+                  onValueChange={([val]) => setOverlayOpacity(val / 100)}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
+                  <span>Satellite</span>
+                  <span>{Math.round(overlayOpacity * 100)}%</span>
+                  <span>17th C.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Kingdom Legend - Only show when boundaries are on */}
+            {showBoundaries && (
+              <div className="pt-3 border-t border-slate-200">
+                <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+                  Kingdoms & Regions
+                </div>
+                <div className="space-y-2 text-[10px]">
+                  <div className="flex items-start gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-red-600 opacity-70 mt-0.5 shrink-0"></div>
+                    <div>
+                      <span className="text-slate-700 font-medium">Holy Roman Empire</span>
+                      <span className="text-slate-400 block">962–1806</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-blue-500 opacity-70 mt-0.5 shrink-0"></div>
+                    <div>
+                      <span className="text-slate-700 font-medium">Kingdom of France</span>
+                      <span className="text-slate-400 block">987–1792</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-green-600 opacity-70 mt-0.5 shrink-0"></div>
+                    <div>
+                      <span className="text-slate-700 font-medium">Ottoman Empire</span>
+                      <span className="text-slate-400 block">1299–1922</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-purple-600 opacity-70 mt-0.5 shrink-0"></div>
+                    <div>
+                      <span className="text-slate-700 font-medium">Polish-Lithuanian</span>
+                      <span className="text-slate-400 block">1569–1795</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-amber-500 opacity-70 mt-0.5 shrink-0"></div>
+                    <div>
+                      <span className="text-slate-700 font-medium">Iberian Kingdoms</span>
+                      <span className="text-slate-400 block">c. 1000–1492</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 mt-2 pt-2 border-t border-slate-100">
+                    <div className="w-3 h-3 rounded-sm mt-0.5 shrink-0" style={{ backgroundColor: '#c9a961' }}></div>
+                    <div>
+                      <span className="text-slate-700 font-semibold">Champagne</span>
+                      <span className="text-slate-400 block">Rashi era: 1040–1105</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-orange-600 opacity-70 mt-0.5 shrink-0"></div>
+                    <div>
+                      <span className="text-slate-700 font-semibold">Rhineland (ShUM)</span>
+                      <span className="text-slate-400 block">c. 900–1350</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Migration Legend - Only show when migrations are on */}
+            {showMigrations && (
+              <div className="pt-3 border-t border-slate-200">
+                <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+                  Migration Causes
+                </div>
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span className="text-slate-600">Expulsion</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔥</span>
+                    <span className="text-slate-600">Persecution</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🏃</span>
+                    <span className="text-slate-600">Flight</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>📚</span>
+                    <span className="text-slate-600">Scholarly Movement</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Scholar Colors Legend */}
+            <div className="pt-3 border-t border-slate-200">
+              <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+                Scholar Types
+              </div>
+              <div className="space-y-1.5 text-[10px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#c9a961', border: '2px solid #fbbf24' }}></div>
+                  <span className="text-slate-600 font-medium">Rashi</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-600"></div>
+                  <span className="text-slate-600">Grandsons</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-slate-600">Rishonim</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-slate-600">Acharonim</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
+                  <span className="text-slate-600">Supercommentators</span>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1.5 text-[10px]">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-green-500"></div>
-                <span className="text-slate-600">Educational</span>
+
+            {/* Connection Legend - Only show when lines are on */}
+            {showLines && (
+              <div className="pt-3 border-t border-slate-200">
+                <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+                  Connection Types
+                </div>
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-green-500"></div>
+                    <span className="text-slate-600">Educational</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-amber-500"></div>
+                    <span className="text-slate-600">Family</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-blue-500 border-dashed" style={{ borderTop: '2px dashed #3b82f6', height: 0 }}></div>
+                    <span className="text-slate-600">Literary</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-amber-500"></div>
-                <span className="text-slate-600">Family</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-blue-500 border-dashed" style={{ borderTop: '2px dashed #3b82f6', height: 0 }}></div>
-                <span className="text-slate-600">Literary</span>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
