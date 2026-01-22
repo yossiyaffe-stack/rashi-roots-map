@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DbScholar, DbRelationship, DbPlace } from '@/hooks/useScholars';
+import type { DbScholar, DbRelationship, DbPlace, DbLocationName } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
@@ -10,6 +10,7 @@ interface LeafletMapProps {
   scholars: DbScholar[];
   relationships: DbRelationship[];
   places: DbPlace[];
+  locationNames: DbLocationName[];
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
   timeRange: [number, number];
@@ -387,6 +388,7 @@ export function LeafletMap({
   scholars, 
   relationships,
   places,
+  locationNames,
   selectedScholar, 
   onSelectScholar, 
   timeRange,
@@ -417,6 +419,54 @@ export function LeafletMap({
 
   // Alias for internal use
   const showLines = showConnections;
+  
+  // Get the midpoint of the time range for historical name lookup
+  const timeMidpoint = Math.round((timeRange[0] + timeRange[1]) / 2);
+
+  // Helper function to get the best historical name for a place based on time period
+  const getHistoricalName = useMemo(() => {
+    return (placeId: string, language: 'hebrew' | 'latin' | 'english', defaultName: string | null): string | null => {
+      if (!defaultName && language !== 'latin') return null;
+      
+      // Find all names for this place in the requested language
+      const placeNames = locationNames.filter(ln => 
+        ln.place_id === placeId && 
+        ln.language === language
+      );
+      
+      if (placeNames.length === 0) {
+        // For Latin, we might have historical names in other languages
+        if (language === 'latin') {
+          const latinNames = locationNames.filter(ln => 
+            ln.place_id === placeId && 
+            ln.language === 'latin'
+          );
+          const validLatinName = latinNames.find(ln => {
+            const validFrom = ln.valid_from ?? 0;
+            const validTo = ln.valid_to ?? 9999;
+            return timeMidpoint >= validFrom && timeMidpoint <= validTo;
+          });
+          return validLatinName?.name ?? null;
+        }
+        return defaultName;
+      }
+      
+      // Find name valid for the current time period
+      const validName = placeNames.find(ln => {
+        const validFrom = ln.valid_from ?? 0;
+        const validTo = ln.valid_to ?? 9999;
+        return timeMidpoint >= validFrom && timeMidpoint <= validTo;
+      });
+      
+      // Prefer the valid historical name, then preferred name, then default
+      if (validName) return validName.name;
+      
+      const preferredName = placeNames.find(ln => ln.is_preferred);
+      if (preferredName) return preferredName.name;
+      
+      return defaultName;
+    };
+  }, [locationNames, timeMidpoint]);
 
   // Initialize map
   useEffect(() => {
@@ -606,8 +656,18 @@ export function LeafletMap({
     visiblePlaces.forEach(place => {
       const isMajor = (place.importance ?? 5) >= 8;
       
+      // Get historical names for this time period
+      const hebrewName = getHistoricalName(place.id, 'hebrew', place.name_hebrew);
+      const englishName = getHistoricalName(place.id, 'english', place.name_english) || place.name_english;
+      const latinName = getHistoricalName(place.id, 'latin', null);
+      
+      // Use Latin historical name if available and different from English
+      const displayEnglishName = latinName && latinName !== englishName 
+        ? `${latinName}` 
+        : englishName;
+      
       // Build HTML based on which languages are enabled
-      const hebrewHtml = showPlaceNamesHebrew && place.name_hebrew ? `<div style="
+      const hebrewHtml = showPlaceNamesHebrew && hebrewName ? `<div style="
         font-family: 'David Libre', 'Times New Roman', serif;
         font-size: ${isMajor ? '16px' : '13px'};
         font-weight: 600;
@@ -619,7 +679,7 @@ export function LeafletMap({
           1px 1px 0 ${shadowColor},
           0 0 4px ${glowColor};
         direction: rtl;
-      ">${place.name_hebrew}</div>` : '';
+      ">${hebrewName}</div>` : '';
       
       const englishHtml = showPlaceNamesEnglish ? `<div style="
         font-family: 'Crimson Text', Georgia, serif;
@@ -632,8 +692,8 @@ export function LeafletMap({
           -1px 1px 0 ${shadowColor},
           1px 1px 0 ${shadowColor},
           0 0 4px ${glowColor};
-        margin-top: ${showPlaceNamesHebrew && place.name_hebrew ? '-2px' : '0'};
-      ">${place.name_english}</div>` : '';
+        margin-top: ${showPlaceNamesHebrew && hebrewName ? '-2px' : '0'};
+      ">${displayEnglishName}</div>` : '';
       
       const label = L.marker([place.latitude, place.longitude], {
         icon: L.divIcon({
@@ -656,7 +716,7 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       cityLabelsRef.current.push(label);
     });
-  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew, places, zoomLevel]);
+  }, [viewMode, leafletMap.current, showPlaceNamesEnglish, showPlaceNamesHebrew, places, zoomLevel, getHistoricalName]);
 
   // Draw migration paths
   useEffect(() => {
