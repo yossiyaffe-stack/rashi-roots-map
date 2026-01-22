@@ -31,7 +31,7 @@ export const NetworkView = ({
   onSelectScholar 
 }: NetworkViewProps) => {
   const { filters, shouldShowRelationship } = useRelationshipFilters();
-  const [showOnlyConnected, setShowOnlyConnected] = useState(false);
+  const [showOnlyConnected, setShowOnlyConnected] = useState(true);
   const [focusOnSelected, setFocusOnSelected] = useState(false);
   const [highlightSelected, setHighlightSelected] = useState(false);
   
@@ -192,7 +192,7 @@ export const NetworkView = ({
 
   const getNodeRadius = (scholar: DbScholar): number => {
     const importance = scholar.importance || 50;
-    return Math.max(15, importance / 4);
+    return Math.max(8, importance / 8);
   };
 
   // Sort scholars chronologically by birth year
