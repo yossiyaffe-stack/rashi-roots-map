@@ -66,26 +66,62 @@ export const NetworkView = ({
     return Math.max(15, importance / 4);
   };
 
-  // Simple grid layout
-  const getNodePosition = (idx: number, total: number) => {
-    const cols = Math.ceil(Math.sqrt(total));
-    const row = Math.floor(idx / cols);
-    const col = idx % cols;
-    const spacing = 180;
-    const x = 120 + col * spacing;
-    const y = 80 + row * spacing;
-    return { x, y };
-  };
-
-  const scholarPositions = useMemo(() => {
-    const positions: Record<string, { x: number; y: number }> = {};
-    scholars.forEach((s, idx) => {
-      positions[s.id] = getNodePosition(idx, scholars.length);
+  // Sort scholars chronologically by birth year
+  const sortedScholars = useMemo(() => {
+    return [...scholars].sort((a, b) => {
+      const yearA = a.birth_year ?? 9999;
+      const yearB = b.birth_year ?? 9999;
+      return yearA - yearB;
     });
-    return positions;
   }, [scholars]);
 
-  const svgHeight = Math.max(600, Math.ceil(scholars.length / 4) * 180 + 100);
+  // Timeline-based horizontal layout - scholars flow left-to-right by birth year
+  const scholarPositions = useMemo(() => {
+    const positions: Record<string, { x: number; y: number }> = {};
+    
+    // Group scholars by approximate era (every 25 years)
+    const eras: Record<number, DbScholar[]> = {};
+    sortedScholars.forEach(s => {
+      const year = s.birth_year ?? 1100;
+      const era = Math.floor(year / 25) * 25;
+      if (!eras[era]) eras[era] = [];
+      eras[era].push(s);
+    });
+    
+    const eraKeys = Object.keys(eras).map(Number).sort((a, b) => a - b);
+    const colSpacing = 200;
+    const rowSpacing = 120;
+    
+    eraKeys.forEach((era, colIdx) => {
+      const scholarsInEra = eras[era];
+      const centerY = 300; // Center of the SVG
+      const startY = centerY - ((scholarsInEra.length - 1) * rowSpacing) / 2;
+      
+      scholarsInEra.forEach((s, rowIdx) => {
+        positions[s.id] = {
+          x: 150 + colIdx * colSpacing,
+          y: startY + rowIdx * rowSpacing
+        };
+      });
+    });
+    
+    return positions;
+  }, [sortedScholars]);
+
+  // Calculate SVG dimensions based on layout
+  const svgDimensions = useMemo(() => {
+    const positions = Object.values(scholarPositions);
+    if (positions.length === 0) return { width: 800, height: 600 };
+    
+    const maxX = Math.max(...positions.map(p => p.x)) + 150;
+    const maxY = Math.max(...positions.map(p => p.y)) + 100;
+    const minY = Math.min(...positions.map(p => p.y));
+    
+    return { 
+      width: Math.max(800, maxX), 
+      height: Math.max(600, maxY - minY + 200)
+    };
+  }, [scholarPositions]);
 
   // Count connections for legend
   const connectionCounts = useMemo(() => ({
@@ -96,7 +132,7 @@ export const NetworkView = ({
 
   return (
     <div className="w-full h-full overflow-auto p-6">
-      <svg width="100%" height={svgHeight} className="min-w-[800px]">
+      <svg width={svgDimensions.width} height={svgDimensions.height} className="min-w-[800px]">
         <defs>
           <marker id="arrowhead-bio" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.biographical} />
@@ -196,7 +232,7 @@ export const NetworkView = ({
         })}
 
         {/* Draw nodes */}
-        {scholars.map((scholar) => {
+        {sortedScholars.map((scholar) => {
           const pos = scholarPositions[scholar.id];
           if (!pos) return null;
           
