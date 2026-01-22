@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import type { DbScholar } from '@/hooks/useScholars';
 import { Slider } from '@/components/ui/slider';
 
-type ViewMode = 'modern' | 'combined' | 'historical';
+type ViewMode = 'modern' | 'combined' | 'historical' | 'satellite';
 
 interface LeafletMapProps {
   scholars: DbScholar[];
@@ -23,6 +23,8 @@ const TILE_LAYERS = {
   historical: 'https://mapwarper.net/maps/tile/14686/{z}/{x}/{y}.png',
   // Topo for manuscript feel
   topo: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+  // Satellite imagery
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 };
 
 const getScholarColor = (scholar: DbScholar): string => {
@@ -89,6 +91,10 @@ export function LeafletMap({
     if (viewMode === 'modern') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.voyager, {
         attribution: '© OpenStreetMap, © CARTO',
+      }).addTo(leafletMap.current);
+    } else if (viewMode === 'satellite') {
+      baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
+        attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
     } else if (viewMode === 'historical') {
       // Use topo as a subtle base, then full opacity historical
@@ -191,7 +197,7 @@ export function LeafletMap({
       
       {/* View Mode Toggle */}
       <div className="absolute top-6 left-6 z-[1000] flex gap-2">
-        {(['modern', 'combined', 'historical'] as ViewMode[]).map(mode => (
+        {(['modern', 'satellite', 'combined', 'historical'] as ViewMode[]).map(mode => (
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
