@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
 import { MapControls } from '@/components/MapControls';
+import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
@@ -150,7 +151,7 @@ export function AppLayout() {
 
         {/* Legends & Controls - Only on Map page */}
         {isMapPage && sidebarOpen && (
-          <div className="flex-1 border-t border-white/10 overflow-visible">
+          <ScrollArea className="flex-1 border-t border-white/10">
             <div className="p-3 space-y-4 overflow-visible">
               <MapControls
                 showBoundaries={showBoundaries}
@@ -168,6 +169,10 @@ export function AppLayout() {
                 showScholarNamesHebrew={showScholarNamesHebrew}
                 onShowScholarNamesHebrewChange={setShowScholarNamesHebrew}
               />
+              
+              {/* Relationship Filters */}
+              <RelationshipFilterPanel />
+              
               <div className="overflow-visible">
                 <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
               </div>
@@ -175,7 +180,7 @@ export function AppLayout() {
                 <KingdomsLegend />
               </div>
             </div>
-          </div>
+          </ScrollArea>
         )}
 
         {/* Footer */}
