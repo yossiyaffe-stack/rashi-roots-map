@@ -1,11 +1,11 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
-import { MapControls } from '@/components/MapControls';
+import { MapControlsPanel } from '@/components/MapControlsPanel';
 import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
 
 import { useRelationships } from '@/hooks/useScholars';
@@ -23,6 +23,7 @@ const navItems = [
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [relationshipsPanelOpen, setRelationshipsPanelOpen] = useState(false);
+  const [mapControlsPanelOpen, setMapControlsPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
@@ -154,7 +155,10 @@ export function AppLayout() {
             {/* Relationships Filter - shown on Map and Network pages */}
             {(isMapPage || isNetworkPage) && (
               <button
-                onClick={() => setRelationshipsPanelOpen(!relationshipsPanelOpen)}
+                onClick={() => {
+                  setRelationshipsPanelOpen(!relationshipsPanelOpen);
+                  if (!relationshipsPanelOpen) setMapControlsPanelOpen(false);
+                }}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
                   "hover:bg-white/10 text-white/70 hover:text-white",
@@ -175,39 +179,42 @@ export function AppLayout() {
                 )}
               </button>
             )}
+
+            {/* Map Controls - shown only on Map page */}
+            {isMapPage && (
+              <button
+                onClick={() => {
+                  setMapControlsPanelOpen(!mapControlsPanelOpen);
+                  if (!mapControlsPanelOpen) setRelationshipsPanelOpen(false);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  mapControlsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Settings2 className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
+                    {mapControlsPanelOpen ? (
+                      <ChevronLeft className="w-4 h-4 text-accent" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </>
+                )}
+              </button>
+            )}
           </nav>
 
           {/* Spacer - only when not showing legends */}
           {(!isMapPage || !sidebarOpen) && <div className="flex-1" />}
 
-          {/* Legends & Controls - Only on Map page */}
+          {/* Legends - Only on Map page (controls moved to slide-out panel) */}
           {isMapPage && sidebarOpen && (
             <div className="flex-1 flex flex-col border-t border-white/10 min-h-0">
-              {/* MapControls - fixed at top, not scrollable */}
-              <div className="p-3 pb-0 shrink-0">
-                <MapControls
-                  showBoundaries={showBoundaries}
-                  onShowBoundariesChange={setShowBoundaries}
-                  showMigrations={showMigrations}
-                  onShowMigrationsChange={setShowMigrations}
-                  showConnections={showConnections}
-                  onShowConnectionsChange={setShowConnections}
-                  showPlaceNamesEnglish={showPlaceNamesEnglish}
-                  onShowPlaceNamesEnglishChange={setShowPlaceNamesEnglish}
-                  showPlaceNamesHebrew={showPlaceNamesHebrew}
-                  onShowPlaceNamesHebrewChange={setShowPlaceNamesHebrew}
-                  showScholarNamesEnglish={showScholarNamesEnglish}
-                  onShowScholarNamesEnglishChange={setShowScholarNamesEnglish}
-                  showScholarNamesHebrew={showScholarNamesHebrew}
-                  onShowScholarNamesHebrewChange={setShowScholarNamesHebrew}
-                  cityFilter={cityFilter}
-                  onCityFilterChange={setCityFilter}
-                  showOnlyScholarCities={showOnlyScholarCities}
-                  onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
-                />
-              </div>
-              
-              {/* Legends area */}
               <div className="flex-1 min-h-0 p-3 pt-4 space-y-4">
                 <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
                 <KingdomsLegend />
@@ -223,13 +230,42 @@ export function AppLayout() {
           )}
         </aside>
 
-        {/* Slide-out Panel - Full height, positioned to the right of sidebar */}
+        {/* Slide-out Panel for Relationships - Full height */}
         {(isMapPage || isNetworkPage) && relationshipsPanelOpen && (
           <div className={cn(
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col"
           )}>
             <RelationshipFilterPanel />
+          </div>
+        )}
+
+        {/* Slide-out Panel for Map Controls - Full height */}
+        {isMapPage && mapControlsPanelOpen && (
+          <div className={cn(
+            "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
+            "flex flex-col"
+          )}>
+            <MapControlsPanel
+              showBoundaries={showBoundaries}
+              onShowBoundariesChange={setShowBoundaries}
+              showMigrations={showMigrations}
+              onShowMigrationsChange={setShowMigrations}
+              showConnections={showConnections}
+              onShowConnectionsChange={setShowConnections}
+              showPlaceNamesEnglish={showPlaceNamesEnglish}
+              onShowPlaceNamesEnglishChange={setShowPlaceNamesEnglish}
+              showPlaceNamesHebrew={showPlaceNamesHebrew}
+              onShowPlaceNamesHebrewChange={setShowPlaceNamesHebrew}
+              showScholarNamesEnglish={showScholarNamesEnglish}
+              onShowScholarNamesEnglishChange={setShowScholarNamesEnglish}
+              showScholarNamesHebrew={showScholarNamesHebrew}
+              onShowScholarNamesHebrewChange={setShowScholarNamesHebrew}
+              cityFilter={cityFilter}
+              onCityFilterChange={setCityFilter}
+              showOnlyScholarCities={showOnlyScholarCities}
+              onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
+            />
           </div>
         )}
       </div>
