@@ -11,7 +11,7 @@ import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { PlaceSearch } from '@/components/PlaceSearch';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
-import { useScholars, useRelationships, useHistoricalEvents, usePlaces, type DbScholar } from '@/hooks/useScholars';
+import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, type DbScholar } from '@/hooks/useScholars';
 import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,7 @@ const Index = () => {
   const { data: relationships = [] } = useRelationships();
   const { data: historicalEvents = [] } = useHistoricalEvents();
   const { data: places = [] } = usePlaces();
+  const { data: locationNames = [] } = useLocationNames();
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
@@ -84,6 +85,7 @@ const Index = () => {
           scholars={filteredScholars}
           relationships={relationships}
           places={places}
+          locationNames={locationNames}
           selectedScholar={selectedScholar}
           onSelectScholar={setSelectedScholar}
           timeRange={timeRange}
