@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Layers, GitBranch } from 'lucide-react';
+import { Layers, GitBranch, Map as MapIcon } from 'lucide-react';
 import type { Scholar } from '@/data/scholars';
 import { scholars as allScholars } from '@/data/scholars';
 import { Button } from '@/components/ui/button';
@@ -13,14 +13,85 @@ interface MapViewProps {
   onSelectScholar: (scholar: Scholar) => void;
 }
 
+// Historical boundaries (simplified GeoJSON-like coordinates for medieval period ~1200-1500)
+const historicalBoundaries = {
+  holyRomanEmpire: {
+    name: "Holy Roman Empire",
+    color: "#dc2626",
+    fillColor: "#dc2626",
+    coordinates: [
+      [54.5, 6.0], [54.8, 9.5], [54.0, 14.0], [52.5, 14.5], 
+      [51.0, 15.0], [50.0, 17.0], [48.0, 17.5], [47.0, 16.5],
+      [46.0, 15.0], [45.5, 13.5], [45.8, 11.0], [46.2, 9.5],
+      [46.0, 8.0], [47.5, 7.5], [48.5, 6.0], [49.5, 6.0],
+      [50.5, 5.5], [52.0, 5.0], [53.5, 5.5], [54.5, 6.0]
+    ]
+  },
+  kingdomOfFrance: {
+    name: "Kingdom of France",
+    color: "#3b82f6",
+    fillColor: "#3b82f6",
+    coordinates: [
+      [51.0, 2.5], [50.0, 1.5], [49.5, -1.0], [48.5, -4.5],
+      [47.5, -4.0], [46.0, -1.5], [44.0, -1.5], [43.0, -0.5],
+      [42.5, 3.0], [43.0, 4.5], [43.5, 7.0], [45.0, 7.0],
+      [46.0, 6.5], [47.0, 6.0], [48.0, 6.0], [49.0, 5.5],
+      [50.0, 4.0], [51.0, 2.5]
+    ]
+  },
+  ottomanEmpire: {
+    name: "Ottoman Empire",
+    color: "#16a34a",
+    fillColor: "#16a34a",
+    coordinates: [
+      [42.0, 26.0], [41.5, 28.0], [41.0, 29.5], [40.5, 29.0],
+      [40.0, 26.5], [39.0, 26.0], [38.0, 27.0], [37.0, 28.0],
+      [36.5, 30.0], [37.0, 32.0], [38.0, 34.0], [39.5, 36.0],
+      [41.0, 37.0], [42.0, 35.0], [42.5, 32.0], [43.0, 30.0],
+      [42.5, 28.0], [42.0, 26.0]
+    ]
+  },
+  polishLithuanian: {
+    name: "Polish-Lithuanian Commonwealth",
+    color: "#9333ea",
+    fillColor: "#9333ea",
+    coordinates: [
+      [54.5, 14.5], [55.0, 17.0], [56.0, 21.0], [56.5, 24.0],
+      [56.0, 28.0], [54.5, 30.0], [52.0, 31.0], [50.0, 28.0],
+      [49.0, 24.0], [49.5, 22.0], [50.0, 19.0], [51.0, 17.0],
+      [52.0, 15.0], [54.5, 14.5]
+    ]
+  },
+  champagne: {
+    name: "Champagne (Rashi's Region)",
+    color: "#c9a961",
+    fillColor: "#c9a961",
+    coordinates: [
+      [49.5, 3.0], [49.8, 4.0], [49.5, 5.0], [48.8, 5.2],
+      [48.0, 4.8], [47.8, 4.0], [48.2, 3.2], [49.0, 2.8],
+      [49.5, 3.0]
+    ]
+  },
+  rhineland: {
+    name: "Rhineland (ShUM Cities)",
+    color: "#f59e0b",
+    fillColor: "#f59e0b",
+    coordinates: [
+      [51.0, 6.0], [51.2, 7.0], [50.8, 8.5], [50.0, 8.8],
+      [49.2, 8.5], [49.0, 7.5], [49.5, 6.5], [50.5, 6.0],
+      [51.0, 6.0]
+    ]
+  }
+};
+
 // Get color based on scholar's period/type
 const getScholarColor = (scholar: Scholar): string => {
-  if (scholar.id === 1) return '#c9a961'; // Rashi - gold
-  if (scholar.period === 'Rishonim (Early Sages)') return '#ea580c'; // Orange
-  if (scholar.period === 'Post-Tosafist France') return '#facc15'; // Yellow
-  if (scholar.period?.includes('Post-Black Death')) return '#22c55e'; // Green
-  if (scholar.commentariesOnRashi) return '#6366f1'; // Purple for commentators
-  return '#8b7355'; // Default sepia
+  if (scholar.id === 1) return '#c9a961';
+  if (scholar.period === 'Rishonim (Early Sages)') return '#ea580c';
+  if (scholar.period === 'Post-Tosafist France') return '#facc15';
+  if (scholar.period?.includes('Post-Black Death')) return '#22c55e';
+  if (scholar.commentariesOnRashi) return '#6366f1';
+  return '#8b7355';
 };
 
 // Create custom icon for scholar
@@ -49,6 +120,8 @@ const createScholarIcon = (scholar: Scholar, isHighlighted: boolean = false): L.
         font-size: ${size * 0.4}px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         ${isHighlighted ? 'transform: scale(1.2);' : ''}
+        position: relative;
+        z-index: 1000;
       ">
         ${scholar.hebrewName?.[0] || scholar.name[0]}
       </div>
@@ -71,7 +144,6 @@ const buildConnections = (scholars: Scholar[], allScholars: Scholar[]): Connecti
   const visibleIds = new Set(scholars.map(s => s.id));
 
   scholars.forEach(scholar => {
-    // Add connections from teachers
     if (scholar.teachers) {
       scholar.teachers.forEach(teacherId => {
         const teacher = scholarMap.get(teacherId);
@@ -90,9 +162,12 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: number]: L.Marker }>({});
   const linesRef = useRef<L.Polyline[]>([]);
+  const boundariesRef = useRef<L.Polygon[]>([]);
+  const labelsRef = useRef<L.Marker[]>([]);
   const layersRef = useRef<{ modern?: L.TileLayer; historical?: L.TileLayer }>({});
   const [mapStyle, setMapStyle] = useState<'modern' | 'historical'>('modern');
   const [showConnections, setShowConnections] = useState(true);
+  const [showBoundaries, setShowBoundaries] = useState(true);
 
   const connections = useMemo(() => buildConnections(scholars, allScholars), [scholars]);
 
@@ -108,7 +183,6 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
 
     mapRef.current = map;
 
-    // Modern base layer
     const modernLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 18,
@@ -116,7 +190,6 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
     modernLayer.addTo(map);
     layersRef.current.modern = modernLayer;
 
-    // Historical-style layer (grayscale)
     const historicalLayer = L.tileLayer('https://tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
       attribution: 'Historical style',
       maxZoom: 18,
@@ -132,11 +205,82 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
     };
   }, []);
 
+  // Draw historical boundaries
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Clear existing boundaries and labels
+    boundariesRef.current.forEach(boundary => {
+      mapRef.current?.removeLayer(boundary);
+    });
+    boundariesRef.current = [];
+    
+    labelsRef.current.forEach(label => {
+      mapRef.current?.removeLayer(label);
+    });
+    labelsRef.current = [];
+
+    if (!showBoundaries) return;
+
+    Object.values(historicalBoundaries).forEach((region) => {
+      const latLngs = region.coordinates.map(([lat, lng]) => [lat, lng] as L.LatLngTuple);
+      
+      const polygon = L.polygon(latLngs, {
+        color: region.color,
+        weight: 2,
+        opacity: 0.8,
+        fillColor: region.fillColor,
+        fillOpacity: 0.1,
+        dashArray: '5, 5',
+        className: 'historical-boundary'
+      });
+
+      polygon.bindTooltip(region.name, {
+        permanent: false,
+        direction: 'center',
+        className: 'boundary-tooltip'
+      });
+
+      polygon.addTo(mapRef.current!);
+      boundariesRef.current.push(polygon);
+
+      // Add region label at centroid
+      const centroid = polygon.getBounds().getCenter();
+      const labelIcon = L.divIcon({
+        className: 'region-label',
+        html: `
+          <div style="
+            font-family: 'Playfair Display', serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: ${region.color};
+            text-shadow: 
+              1px 1px 0 white,
+              -1px -1px 0 white,
+              1px -1px 0 white,
+              -1px 1px 0 white,
+              0 2px 4px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0.9;
+          ">
+            ${region.name}
+          </div>
+        `,
+        iconSize: [150, 20],
+        iconAnchor: [75, 10]
+      });
+
+      const label = L.marker(centroid, { icon: labelIcon, interactive: false });
+      label.addTo(mapRef.current!);
+      labelsRef.current.push(label);
+    });
+  }, [showBoundaries]);
+
   // Update connection lines
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Clear existing lines
     linesRef.current.forEach(line => {
       mapRef.current?.removeLayer(line);
     });
@@ -144,36 +288,27 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
 
     if (!showConnections) return;
 
-    // Draw connection lines with animation
-    connections.forEach((conn, index) => {
-      const fromLatLng: L.LatLngExpression = [conn.from.location.lat, conn.from.location.lng];
-      const toLatLng: L.LatLngExpression = [conn.to.location.lat, conn.to.location.lng];
-      
-      // Determine if this connection involves selected scholar
+    connections.forEach((conn) => {
       const isHighlighted = selectedScholar && 
         (conn.from.id === selectedScholar.id || conn.to.id === selectedScholar.id);
 
-      // Create curved path using quadratic bezier approximation
       const midLat = (conn.from.location.lat + conn.to.location.lat) / 2;
       const midLng = (conn.from.location.lng + conn.to.location.lng) / 2;
       
-      // Offset the midpoint for curve effect
       const dx = conn.to.location.lng - conn.from.location.lng;
       const dy = conn.to.location.lat - conn.from.location.lat;
-      const offset = Math.sqrt(dx * dx + dy * dy) * 0.15;
       
       const curvedMidLat = midLat + (dx * 0.1);
       const curvedMidLng = midLng - (dy * 0.1);
       
       const curvedPath: L.LatLngExpression[] = [
-        fromLatLng,
+        [conn.from.location.lat, conn.from.location.lng],
         [curvedMidLat, curvedMidLng],
-        toLatLng
+        [conn.to.location.lat, conn.to.location.lng]
       ];
 
       const baseColor = getScholarColor(conn.from);
       
-      // Background glow line (for highlighted connections)
       if (isHighlighted) {
         const glowLine = L.polyline(curvedPath, {
           color: baseColor,
@@ -186,7 +321,6 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         linesRef.current.push(glowLine);
       }
 
-      // Main connection line
       const line = L.polyline(curvedPath, {
         color: isHighlighted ? baseColor : '#8b7355',
         weight: isHighlighted ? 4 : 2,
@@ -196,7 +330,6 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         className: `connection-line ${isHighlighted ? 'highlighted' : ''}`
       });
 
-      // Add tooltip to line
       line.bindTooltip(`${conn.from.name.split('(')[0].trim()} → ${conn.to.name.split('(')[0].trim()}`, {
         sticky: true,
         className: 'connection-tooltip'
@@ -205,7 +338,6 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
       line.addTo(mapRef.current!);
       linesRef.current.push(line);
 
-      // Add animated arrow marker at the end
       if (isHighlighted) {
         const arrowIcon = L.divIcon({
           className: 'arrow-marker',
@@ -216,20 +348,17 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
               background: ${baseColor};
               clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
               transform: rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg);
-              animation: pulse-arrow 1.5s ease-in-out infinite;
             "></div>
           `,
           iconSize: [12, 12],
           iconAnchor: [6, 6]
         });
         
-        // Place arrow near the destination
         const arrowLat = conn.to.location.lat - dy * 0.15;
         const arrowLng = conn.to.location.lng - dx * 0.15;
         
         const arrowMarker = L.marker([arrowLat, arrowLng], { icon: arrowIcon, interactive: false });
         arrowMarker.addTo(mapRef.current!);
-        // Store in lines ref for cleanup (it's a marker but we clean it the same way)
         linesRef.current.push(arrowMarker as unknown as L.Polyline);
       }
     });
@@ -239,13 +368,11 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Clear existing markers
     Object.values(markersRef.current).forEach(marker => {
       mapRef.current?.removeLayer(marker);
     });
     markersRef.current = {};
 
-    // Add markers for scholars
     scholars.forEach(scholar => {
       const isHighlighted = selectedScholar && (
         selectedScholar.id === scholar.id ||
@@ -255,7 +382,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
 
       const marker = L.marker(
         [scholar.location.lat, scholar.location.lng],
-        { icon: createScholarIcon(scholar, !!isHighlighted), zIndexOffset: isHighlighted ? 1000 : 0 }
+        { icon: createScholarIcon(scholar, !!isHighlighted), zIndexOffset: isHighlighted ? 1000 : 500 }
       );
 
       const popupContent = `
@@ -334,7 +461,6 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
 
   return (
     <div className="relative h-[600px]">
-      {/* CSS for animations */}
       <style>{`
         @keyframes dash-flow {
           to {
@@ -342,14 +468,12 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
           }
         }
         
-        @keyframes pulse-arrow {
+        @keyframes boundary-pulse {
           0%, 100% {
-            opacity: 1;
-            transform: scale(1);
+            stroke-opacity: 0.8;
           }
           50% {
-            opacity: 0.7;
-            transform: scale(1.2);
+            stroke-opacity: 0.4;
           }
         }
         
@@ -366,7 +490,12 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
           filter: blur(4px);
         }
         
-        .connection-tooltip {
+        .historical-boundary {
+          animation: boundary-pulse 3s ease-in-out infinite;
+        }
+        
+        .connection-tooltip,
+        .boundary-tooltip {
           background: hsl(35 25% 20%) !important;
           color: hsl(40 30% 90%) !important;
           border: none !important;
@@ -377,12 +506,9 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
           box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
         }
         
-        .connection-tooltip::before {
-          border-top-color: hsl(35 25% 20%) !important;
-        }
-        
-        .arrow-marker div {
-          animation: pulse-arrow 1.5s ease-in-out infinite;
+        .boundary-tooltip {
+          font-family: 'Playfair Display', serif !important;
+          font-weight: 600 !important;
         }
       `}</style>
 
@@ -411,18 +537,28 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         
         <label className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-card cursor-pointer">
           <Checkbox
+            checked={showBoundaries}
+            onCheckedChange={(checked) => setShowBoundaries(checked as boolean)}
+            className="border-secondary data-[state=checked]:bg-secondary"
+          />
+          <MapIcon className="w-4 h-4 text-secondary" />
+          <span className="text-sm font-medium text-foreground">Kingdoms</span>
+        </label>
+        
+        <label className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 shadow-card cursor-pointer">
+          <Checkbox
             checked={showConnections}
             onCheckedChange={(checked) => setShowConnections(checked as boolean)}
             className="border-secondary data-[state=checked]:bg-secondary"
           />
           <GitBranch className="w-4 h-4 text-secondary" />
-          <span className="text-sm font-medium text-foreground">Show Lineages</span>
+          <span className="text-sm font-medium text-foreground">Lineages</span>
         </label>
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] bg-card/95 backdrop-blur-sm rounded-lg p-4 shadow-card border border-primary/20">
-        <h4 className="text-sm font-semibold text-foreground mb-2">Legend</h4>
+      <div className="absolute bottom-4 left-4 z-[1000] bg-card/95 backdrop-blur-sm rounded-lg p-4 shadow-card border border-primary/20 max-h-[400px] overflow-y-auto">
+        <h4 className="text-sm font-semibold text-foreground mb-2">Scholars</h4>
         <div className="space-y-1.5 text-xs">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-primary" />
@@ -430,7 +566,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-orange-500" />
-            <span className="text-muted-foreground">Rishonim Period</span>
+            <span className="text-muted-foreground">Rishonim</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -444,23 +580,43 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
             <span className="w-3 h-3 rounded-full bg-indigo-500" />
             <span className="text-muted-foreground">Commentators</span>
           </div>
-          
-          {showConnections && (
-            <>
-              <div className="border-t border-primary/20 my-2 pt-2">
-                <span className="text-muted-foreground font-medium">Connections</span>
+        </div>
+        
+        {showBoundaries && (
+          <>
+            <h4 className="text-sm font-semibold text-foreground mt-4 mb-2 pt-2 border-t border-primary/20">Medieval Kingdoms</h4>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#dc2626', opacity: 0.5 }} />
+                <span className="text-muted-foreground">Holy Roman Empire</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-6 h-0.5 bg-secondary" style={{ backgroundImage: 'repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px)' }} />
-                <span className="text-muted-foreground">Teacher → Student</span>
+                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#3b82f6', opacity: 0.5 }} />
+                <span className="text-muted-foreground">Kingdom of France</span>
               </div>
-            </>
-          )}
-          
-          <p className="text-muted-foreground/70 mt-2 pt-2 border-t border-primary/10">
-            Marker size = Importance
-          </p>
-        </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#16a34a', opacity: 0.5 }} />
+                <span className="text-muted-foreground">Ottoman Empire</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#9333ea', opacity: 0.5 }} />
+                <span className="text-muted-foreground">Polish-Lithuanian</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#c9a961', opacity: 0.5 }} />
+                <span className="text-muted-foreground">Champagne (Rashi)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#f59e0b', opacity: 0.5 }} />
+                <span className="text-muted-foreground">Rhineland (ShUM)</span>
+              </div>
+            </div>
+          </>
+        )}
+        
+        <p className="text-muted-foreground/70 mt-3 pt-2 border-t border-primary/10 text-xs">
+          Marker size = Importance
+        </p>
       </div>
 
       {/* Map Container */}
