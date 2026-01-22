@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Clock, ChevronDown, ChevronUp, Users, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, ChevronDown, ChevronUp, Users, Search, X, ChevronRight } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
+import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
 import { useScholars, useRelationships, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
@@ -16,8 +17,9 @@ const Index = () => {
   const [showConnections, setShowConnections] = useState(false);
   const [showMigrations, setShowMigrations] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
-  const [scholarsOverlayOpen, setScholarsOverlayOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
 
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();

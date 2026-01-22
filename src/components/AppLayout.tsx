@@ -1,14 +1,15 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { MapLegend } from '@/components/MapLegend';
 import { useRelationships } from '@/hooks/useScholars';
+import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
 const navItems = [
   { path: '/', label: 'Map', icon: Map },
-  { path: '/scholars', label: 'Scholars', icon: GraduationCap },
+  { path: '/scholars', label: 'Scholars', icon: GraduationCap, hasOverlay: true },
   { path: '/timeline', label: 'Timeline', icon: Clock },
   { path: '/network', label: 'Network', icon: Share2 },
   { path: '/context', label: 'Historical Context', icon: BookOpen },
@@ -17,9 +18,28 @@ const navItems = [
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
+  const { isOverlayOpen, setIsOverlayOpen } = useScholarsOverlay();
   
   const isMapPage = location.pathname === '/';
+
+  const handleScholarsClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (isMapPage) {
+      // On map page: toggle overlay, if already open go to full page
+      if (isOverlayOpen) {
+        setIsOverlayOpen(false);
+        navigate('/scholars');
+      } else {
+        setIsOverlayOpen(true);
+      }
+    } else {
+      // On other pages: just navigate to scholars
+      navigate('/scholars');
+    }
+  };
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
@@ -59,6 +79,35 @@ export function AppLayout() {
         <nav className="p-3 space-y-1">
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
+            const isScholars = item.path === '/scholars';
+            const showOverlayIndicator = isScholars && isMapPage && isOverlayOpen;
+            
+            if (isScholars) {
+              return (
+                <button
+                  key={item.path}
+                  onClick={handleScholarsClick}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "hover:bg-white/10 text-white/70 hover:text-white",
+                    !sidebarOpen && "justify-center px-2",
+                    showOverlayIndicator && "bg-accent/20 text-accent border border-accent/30"
+                  )}
+                >
+                  <item.icon className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="font-medium text-sm flex-1 text-left">{item.label}</span>
+                      <ChevronRight className={cn(
+                        "w-4 h-4 transition-transform",
+                        showOverlayIndicator && "rotate-90 text-accent"
+                      )} />
+                    </>
+                  )}
+                </button>
+              );
+            }
+
             return (
               <NavLink
                 key={item.path}
