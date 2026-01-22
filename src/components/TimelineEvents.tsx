@@ -2,15 +2,17 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin } from 'lucide-react';
-import type { DbHistoricalEvent } from '@/hooks/useScholars';
+import { MapPin, User } from 'lucide-react';
+import type { DbHistoricalEvent, DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 import type L from 'leaflet';
 
 interface TimelineEventsProps {
   events: DbHistoricalEvent[];
+  scholars?: DbScholar[];
   timeRange: [number, number];
   mapRef?: React.MutableRefObject<L.Map | null>;
+  onSelectScholar?: (scholar: DbScholar) => void;
 }
 
 const IMPORTANCE_CONFIG = {
@@ -24,22 +26,52 @@ const IMPORTANCE_CONFIG = {
 const TIMELINE_MIN = 1000;
 const TIMELINE_MAX = 1800;
 
-export function TimelineEvents({ events, timeRange, mapRef }: TimelineEventsProps) {
+export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSelectScholar }: TimelineEventsProps) {
   const [selectedEvent, setSelectedEvent] = useState<DbHistoricalEvent | null>(null);
+  const [selectedBirthScholar, setSelectedBirthScholar] = useState<DbScholar | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Sort events by year for consistent positioning
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => a.year - b.year);
-  }, [events]);
+  // Create birth events from scholars
+  const scholarBirthEvents = useMemo(() => {
+    return scholars
+      .filter(s => s.birth_year && s.latitude && s.longitude)
+      .map(s => ({
+        id: `birth-${s.id}`,
+        year: s.birth_year!,
+        name: `${s.name} born`,
+        type: 'birth' as const,
+        scholar: s,
+      }));
+  }, [scholars]);
 
-  const filteredEvents = useMemo(() => {
-    return sortedEvents.filter(e => e.year >= timeRange[0] && e.year <= timeRange[1]);
-  }, [sortedEvents, timeRange]);
+  // Combine and sort all events
+  const allTimelineItems = useMemo(() => {
+    const historicalItems = events.map(e => ({
+      id: e.id,
+      year: e.year,
+      name: e.name,
+      type: 'historical' as const,
+      event: e,
+    }));
+    
+    const birthItems = scholarBirthEvents.map(b => ({
+      id: b.id,
+      year: b.year,
+      name: b.name,
+      type: 'birth' as const,
+      scholar: b.scholar,
+    }));
+    
+    return [...historicalItems, ...birthItems].sort((a, b) => a.year - b.year);
+  }, [events, scholarBirthEvents]);
+
+  const filteredItems = useMemo(() => {
+    return allTimelineItems.filter(item => item.year >= timeRange[0] && item.year <= timeRange[1]);
+  }, [allTimelineItems, timeRange]);
 
   // Calculate scroll position based on timeline filter position
   useEffect(() => {
-    if (!scrollContainerRef.current || sortedEvents.length === 0) return;
+    if (!scrollContainerRef.current || allTimelineItems.length === 0) return;
 
     const container = scrollContainerRef.current;
     const scrollWidth = container.scrollWidth;
@@ -61,9 +93,19 @@ export function TimelineEvents({ events, timeRange, mapRef }: TimelineEventsProp
       left: targetScroll,
       behavior: 'smooth'
     });
-  }, [timeRange, sortedEvents]);
+  }, [timeRange, allTimelineItems]);
 
-  if (filteredEvents.length === 0) {
+  // Handle birth event click - fly to scholar location
+  const handleBirthClick = (scholar: DbScholar) => {
+    if (mapRef?.current && scholar.latitude && scholar.longitude) {
+      mapRef.current.flyTo([scholar.latitude, scholar.longitude], 10, { duration: 1.5 });
+    }
+    if (onSelectScholar) {
+      onSelectScholar(scholar);
+    }
+  };
+
+  if (filteredItems.length === 0) {
     return (
       <div className="text-xs text-white/40 text-center py-2">
         No events in selected time range
@@ -77,11 +119,38 @@ export function TimelineEvents({ events, timeRange, mapRef }: TimelineEventsProp
         ref={scrollContainerRef} 
         className="flex gap-2 pb-2 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30"
       >
-        {filteredEvents.map((event) => {
+        {filteredItems.map((item) => {
+          if (item.type === 'birth') {
+            const scholar = item.scholar as DbScholar;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleBirthClick(scholar)}
+                className={cn(
+                  "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all",
+                  "bg-rose-500/10 border-rose-500/30 hover:bg-rose-500/20 hover:border-rose-500/50",
+                  "text-left group"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <User className="w-3 h-3 text-rose-400" />
+                  <span className="text-xs font-medium text-white/80 group-hover:text-white">
+                    {item.year}
+                  </span>
+                </div>
+                <div className="text-[11px] text-rose-300/70 group-hover:text-rose-200 max-w-[150px] truncate">
+                  {scholar.name} born
+                </div>
+              </button>
+            );
+          }
+          
+          // Historical event
+          const event = item.event as DbHistoricalEvent;
           const config = IMPORTANCE_CONFIG[event.importance] || IMPORTANCE_CONFIG.scholarly;
           return (
             <button
-              key={event.id}
+              key={item.id}
               onClick={() => setSelectedEvent(event)}
               className={cn(
                 "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all",
