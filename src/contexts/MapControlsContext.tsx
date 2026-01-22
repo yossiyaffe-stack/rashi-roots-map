@@ -33,7 +33,15 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
 export function useMapControls() {
   const context = useContext(MapControlsContext);
   if (context === undefined) {
-    throw new Error('useMapControls must be used within a MapControlsProvider');
+    // Return default values if used outside provider (for non-map pages)
+    return {
+      showBoundaries: true,
+      setShowBoundaries: () => {},
+      showMigrations: false,
+      setShowMigrations: () => {},
+      showConnections: false,
+      setShowConnections: () => {},
+    };
   }
   return context;
 }
