@@ -34,6 +34,8 @@ const HISTORICAL_BOUNDARIES = {
   holyRomanEmpire: {
     name: "Holy Roman Empire",
     years: "962–1806",
+    startYear: 962,
+    endYear: 1806,
     color: "#dc2626",
     coordinates: [
       [54.5, 6.0], [54.8, 9.5], [54.0, 14.0], [52.5, 14.5], 
@@ -46,6 +48,8 @@ const HISTORICAL_BOUNDARIES = {
   kingdomOfFrance: {
     name: "Kingdom of France",
     years: "987–1792",
+    startYear: 987,
+    endYear: 1792,
     color: "#3b82f6",
     coordinates: [
       [51.0, 2.5], [50.0, 1.5], [49.5, -1.0], [48.5, -4.5],
@@ -58,6 +62,8 @@ const HISTORICAL_BOUNDARIES = {
   ottomanEmpire: {
     name: "Ottoman Empire",
     years: "1299–1922",
+    startYear: 1299,
+    endYear: 1922,
     color: "#16a34a",
     coordinates: [
       [42.0, 26.0], [41.5, 28.0], [41.0, 29.5], [40.5, 29.0],
@@ -70,6 +76,8 @@ const HISTORICAL_BOUNDARIES = {
   polishLithuanian: {
     name: "Polish-Lithuanian Commonwealth",
     years: "1569–1795",
+    startYear: 1569,
+    endYear: 1795,
     color: "#9333ea",
     coordinates: [
       [54.5, 14.5], [55.0, 17.0], [56.0, 21.0], [56.5, 24.0],
@@ -81,6 +89,8 @@ const HISTORICAL_BOUNDARIES = {
   iberianPeninsula: {
     name: "Iberian Kingdoms",
     years: "c. 1000–1492",
+    startYear: 1000,
+    endYear: 1492,
     color: "#f59e0b",
     coordinates: [
       [43.5, -8.0], [43.0, -3.0], [42.5, 0.0], [42.0, 3.0],
@@ -92,6 +102,8 @@ const HISTORICAL_BOUNDARIES = {
   champagne: {
     name: "Champagne",
     years: "Rashi era: 1040–1105",
+    startYear: 1040,
+    endYear: 1105,
     color: "#c9a961",
     coordinates: [
       [49.5, 3.0], [49.8, 4.0], [49.5, 5.0], [48.8, 5.2],
@@ -102,6 +114,8 @@ const HISTORICAL_BOUNDARIES = {
   rhineland: {
     name: "Rhineland (ShUM)",
     years: "c. 900–1350",
+    startYear: 900,
+    endYear: 1350,
     color: "#ea580c",
     coordinates: [
       [51.0, 6.0], [51.2, 7.0], [50.8, 8.5], [50.0, 8.8],
@@ -482,7 +496,14 @@ export function LeafletMap({
 
     if (!showBoundaries) return;
 
+    const currentYear = timeRange[1]; // Use the end of the time range as "current" viewing year
+
     (Object.entries(HISTORICAL_BOUNDARIES) as [RegionKey, typeof HISTORICAL_BOUNDARIES[RegionKey]][]).forEach(([key, region]) => {
+      // Check if this kingdom/region existed during the selected time period
+      const existedDuringPeriod = currentYear >= region.startYear && currentYear <= region.endYear;
+      
+      if (!existedDuringPeriod) return; // Skip regions that didn't exist yet or have ended
+
       const isSelected = selectedRegion === key;
       const polygon = L.polygon(region.coordinates, {
         color: region.color,
@@ -494,7 +515,7 @@ export function LeafletMap({
       });
 
       polygon.bindTooltip(
-        `${region.name}${isSelected ? ' (Click to clear filter)' : ' (Click to filter)'}`, 
+        `${region.name} (${region.years})${isSelected ? ' (Click to clear filter)' : ' (Click to filter)'}`, 
         {
           permanent: false,
           direction: 'center',
@@ -546,7 +567,7 @@ export function LeafletMap({
       label.addTo(leafletMap.current!);
       boundaryLabelsRef.current.push(label);
     });
-  }, [showBoundaries, selectedRegion]);
+  }, [showBoundaries, selectedRegion, timeRange]);
 
   // Draw migration paths
   useEffect(() => {
