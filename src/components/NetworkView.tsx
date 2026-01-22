@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Users, FileText, Lightbulb } from 'lucide-react';
+import { Users, FileText, Lightbulb, Filter } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface NetworkViewProps {
   scholars: DbScholar[];
@@ -28,6 +30,7 @@ export const NetworkView = ({
   onSelectScholar 
 }: NetworkViewProps) => {
   const { filters, shouldShowRelationship } = useRelationshipFilters();
+  const [showOnlyConnected, setShowOnlyConnected] = useState(false);
 
   // Filter biographical relationships based on filters
   const filteredBiographical = useMemo(() => {
@@ -54,6 +57,35 @@ export const NetworkView = ({
     );
   }, [intellectualRelationships, filters, shouldShowRelationship]);
 
+  // Get set of scholar IDs that have active relationships
+  const connectedScholarIds = useMemo(() => {
+    const ids = new Set<string>();
+    
+    filteredBiographical.forEach(rel => {
+      ids.add(rel.scholar_id);
+      ids.add(rel.related_scholar_id);
+    });
+    
+    filteredTextual.forEach(rel => {
+      const fromId = (rel as any).from_scholar_id;
+      const toId = (rel as any).to_scholar_id;
+      if (fromId) ids.add(fromId);
+      if (toId) ids.add(toId);
+    });
+    
+    filteredIntellectual.forEach(rel => {
+      ids.add(rel.scholar_id);
+    });
+    
+    return ids;
+  }, [filteredBiographical, filteredTextual, filteredIntellectual]);
+
+  // Filter scholars based on showOnlyConnected toggle
+  const displayedScholars = useMemo(() => {
+    if (!showOnlyConnected) return scholars;
+    return scholars.filter(s => connectedScholarIds.has(s.id));
+  }, [scholars, showOnlyConnected, connectedScholarIds]);
+
   const getNodeColor = (scholar: DbScholar): string => {
     if (scholar.name === 'Rashi') return '#e11d48';
     if (scholar.relationship_type === 'supercommentator') return '#3b82f6';
@@ -68,12 +100,12 @@ export const NetworkView = ({
 
   // Sort scholars chronologically by birth year
   const sortedScholars = useMemo(() => {
-    return [...scholars].sort((a, b) => {
+    return [...displayedScholars].sort((a, b) => {
       const yearA = a.birth_year ?? 9999;
       const yearB = b.birth_year ?? 9999;
       return yearA - yearB;
     });
-  }, [scholars]);
+  }, [displayedScholars]);
 
   // Timeline-based horizontal layout - scholars flow left-to-right by birth year
   const scholarPositions = useMemo(() => {
@@ -297,6 +329,29 @@ export const NetworkView = ({
           );
         })}
       </svg>
+
+      {/* Controls */}
+      <div className="absolute top-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="w-4 h-4 text-accent" />
+          <span className="font-bold text-accent uppercase tracking-wide">Display</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="show-connected" className="text-sm text-muted-foreground cursor-pointer">
+            Connected scholars only
+          </Label>
+          <Switch
+            id="show-connected"
+            checked={showOnlyConnected}
+            onCheckedChange={setShowOnlyConnected}
+          />
+        </div>
+        {showOnlyConnected && (
+          <div className="mt-2 text-muted-foreground/70">
+            Showing {displayedScholars.length} of {scholars.length} scholars
+          </div>
+        )}
+      </div>
 
       {/* Legend */}
       <div className="absolute bottom-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
