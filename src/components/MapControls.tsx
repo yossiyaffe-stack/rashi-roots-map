@@ -28,9 +28,8 @@ interface MapControlsProps {
 }
 
 const CITY_FILTER_OPTIONS: { value: CityFilter; label: string; description: string }[] = [
-  { value: 'all', label: 'All Cities', description: 'Show all cities' },
-  { value: 'major', label: 'Major Only', description: 'Importance ≥ 8' },
-  { value: 'minor', label: 'Minor & Major', description: 'Importance ≥ 5' },
+  { value: 'all', label: 'All', description: 'Show all cities' },
+  { value: 'major', label: 'Major', description: 'Importance ≥ 7' },
 ];
 
 export function MapControls({
@@ -80,9 +79,9 @@ export function MapControls({
           ? "opacity-100 translate-x-0 scale-x-100" 
           : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
       )}>
-        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[260px] max-w-[300px]">
-          <ScrollArea className="max-h-[70vh]">
-            <div className="space-y-4 pr-2">
+        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[240px] max-w-[280px]">
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-3 pr-2">
               {/* Layers Section */}
               <div>
                 <div className="text-sm font-semibold text-foreground/80 mb-3">

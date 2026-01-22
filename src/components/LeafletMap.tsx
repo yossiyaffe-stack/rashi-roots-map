@@ -679,10 +679,7 @@ export function LeafletMap({
     let minImportance: number;
     switch (cityFilter) {
       case 'major':
-        minImportance = 8;
-        break;
-      case 'minor':
-        minImportance = 5;
+        minImportance = 7;
         break;
       case 'all':
       default:
