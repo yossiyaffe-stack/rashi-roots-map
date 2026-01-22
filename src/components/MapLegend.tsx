@@ -17,7 +17,7 @@ const CONNECTION_TYPE_CONFIG: Record<string, { color: string; label: string; sty
 };
 
 export function MapLegend({ showConnections = false, showMigrations = false, relationships = [] }: MapLegendProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   const legendItems = [
     { color: 'bg-[#c9a961]', label: 'Rashi (Foundational)' },
@@ -45,7 +45,7 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
   ];
 
   return (
-    <div className="space-y-2">
+    <div className="relative">
       {/* Header with collapse toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -62,67 +62,71 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
         )}
       </button>
 
-      {/* Collapsible content */}
+      {/* Horizontal slide-out panel */}
       <div className={cn(
-        "transition-all duration-200 overflow-hidden",
-        expanded ? "max-h-80" : "max-h-0"
+        "absolute left-full top-0 ml-2 z-50 transition-all duration-300 origin-left",
+        expanded 
+          ? "opacity-100 translate-x-0 scale-x-100" 
+          : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
       )}>
-        <ScrollArea className="max-h-72">
-          <div className="space-y-4 pr-2">
-            {/* Scholar Types */}
-            <div>
-              <div className="text-sm font-semibold text-foreground/80 mb-2">
-                Scholar Types
+        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[200px] max-w-[280px]">
+          <ScrollArea className="max-h-72">
+            <div className="space-y-4 pr-2">
+              {/* Scholar Types */}
+              <div>
+                <div className="text-sm font-semibold text-foreground/80 mb-2">
+                  Scholar Types
+                </div>
+                <div className="space-y-2">
+                  {legendItems.map((item) => (
+                    <div key={item.label} className="flex items-center gap-3">
+                      <div className={`w-3.5 h-3.5 rounded-full ${item.color} shadow-sm shrink-0`} />
+                      <span className="text-sm text-muted-foreground">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                {legendItems.map((item) => (
-                  <div key={item.label} className="flex items-center gap-3">
-                    <div className={`w-3.5 h-3.5 rounded-full ${item.color} shadow-sm shrink-0`} />
-                    <span className="text-sm text-muted-foreground">{item.label}</span>
+
+              {/* Connection Types - Only show when enabled and has data */}
+              {showConnections && activeConnectionTypes.length > 0 && (
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-sm font-semibold text-foreground/80 mb-2">
+                    Connection Types
                   </div>
-                ))}
-              </div>
+                  <div className="space-y-2">
+                    {activeConnectionTypes.map((item) => (
+                      <div key={item.label} className="flex items-center gap-3">
+                        {item.style === 'dashed' ? (
+                          <div className="w-5 h-0 border-t-2 border-dashed border-[#3b82f6] shrink-0" />
+                        ) : (
+                          <div className={`w-5 h-0.5 ${item.color} shrink-0`} />
+                        )}
+                        <span className="text-sm text-muted-foreground">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Migration Causes - Only show when enabled */}
+              {showMigrations && (
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-sm font-semibold text-foreground/80 mb-2">
+                    Migration Causes
+                  </div>
+                  <div className="space-y-2">
+                    {migrationItems.map((item) => (
+                      <div key={item.label} className="flex items-center gap-3">
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        <span className="text-sm text-muted-foreground">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Connection Types - Only show when enabled and has data */}
-            {showConnections && activeConnectionTypes.length > 0 && (
-              <div className="pt-3 border-t border-white/10">
-                <div className="text-sm font-semibold text-foreground/80 mb-2">
-                  Connection Types
-                </div>
-                <div className="space-y-2">
-                  {activeConnectionTypes.map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      {item.style === 'dashed' ? (
-                        <div className="w-5 h-0 border-t-2 border-dashed border-[#3b82f6] shrink-0" />
-                      ) : (
-                        <div className={`w-5 h-0.5 ${item.color} shrink-0`} />
-                      )}
-                      <span className="text-sm text-muted-foreground">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Migration Causes - Only show when enabled */}
-            {showMigrations && (
-              <div className="pt-3 border-t border-white/10">
-                <div className="text-sm font-semibold text-foreground/80 mb-2">
-                  Migration Causes
-                </div>
-                <div className="space-y-2">
-                  {migrationItems.map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <span className="text-base shrink-0">{item.icon}</span>
-                      <span className="text-sm text-muted-foreground">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+          </ScrollArea>
+        </div>
       </div>
     </div>
   );
