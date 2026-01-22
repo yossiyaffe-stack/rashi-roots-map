@@ -24,8 +24,8 @@ const TILE_LAYERS = {
   historical: 'https://mapwarper.net/maps/tile/14686/{z}/{x}/{y}.png',
   topo: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  // Labels overlay for satellite
-  labels: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
+  // Labels overlay for satellite - using dark mode labels for better contrast
+  labels: 'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',
 };
 
 // Historical kingdom boundaries (medieval period ~1200-1500)
