@@ -85,39 +85,98 @@ export const WorksNetworkView = ({
     });
   }, [displayedWorks]);
 
-  // Position works in a hierarchical tree layout
-  const workPositions = useMemo(() => {
-    const positions: Record<string, { x: number; y: number }> = {};
-    
-    // Group by 50-year periods
-    const eraGroups: Record<number, WorkWithAuthor[]> = {};
-    sortedWorks.forEach(work => {
-      const year = work.year_written ?? 1100;
-      const era = Math.floor(year / 50) * 50;
-      if (!eraGroups[era]) eraGroups[era] = [];
-      eraGroups[era].push(work);
+  // Calculate depth levels for works based on relationships
+  const workDepthLevels = useMemo(() => {
+    const depths: Record<string, number> = {};
+    const parentMap = new Map<string, string>(); // child -> parent work
+
+    // Build parent map from relationships
+    relationships.forEach(rel => {
+      if (rel.work_id && rel.related_work_id) {
+        // work_id is the commentary/child, related_work_id is what it comments on (parent)
+        if (rel.relationship_category === 'commentary' || rel.relationship_category === 'supercommentary') {
+          parentMap.set(rel.work_id, rel.related_work_id);
+        }
+      }
     });
 
-    const eras = Object.keys(eraGroups).map(Number).sort((a, b) => a - b);
-    const eraSpacing = 200;
+    // Calculate depth for each work
+    const getDepth = (workId: string, visited = new Set<string>()): number => {
+      if (depths[workId] !== undefined) return depths[workId];
+      if (visited.has(workId)) return 0; // Prevent cycles
+      visited.add(workId);
+
+      const parentId = parentMap.get(workId);
+      if (!parentId) {
+        depths[workId] = 0; // Original text
+        return 0;
+      }
+      
+      const parentDepth = getDepth(parentId, visited);
+      depths[workId] = parentDepth + 1;
+      return depths[workId];
+    };
+
+    // Calculate depths for all displayed works
+    sortedWorks.forEach(work => getDepth(work.id));
+
+    return depths;
+  }, [sortedWorks, relationships]);
+
+  // Position works in a hierarchical tree layout by depth level
+  const workPositions = useMemo(() => {
+    const positions: Record<string, { x: number; y: number; depth: number }> = {};
+    
+    // Group works by depth level first, then by era within each level
+    const depthGroups: Record<number, Record<number, WorkWithAuthor[]>> = {};
+    
+    sortedWorks.forEach(work => {
+      const depth = workDepthLevels[work.id] ?? 0;
+      const year = work.year_written ?? 1100;
+      const era = Math.floor(year / 50) * 50;
+      
+      if (!depthGroups[depth]) depthGroups[depth] = {};
+      if (!depthGroups[depth][era]) depthGroups[depth][era] = [];
+      depthGroups[depth][era].push(work);
+    });
+
+    const depthLevels = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
+    const depthSpacing = 250; // Vertical spacing between depth levels
     const nodeSpacing = 180;
     
-    eras.forEach((era, eraIndex) => {
-      const worksInEra = eraGroups[era];
-      const eraWidth = worksInEra.length * nodeSpacing;
-      const startX = -eraWidth / 2 + nodeSpacing / 2;
-      const y = eraIndex * eraSpacing + 100;
+    let currentY = 100;
+    
+    depthLevels.forEach((depth) => {
+      const erasInDepth = depthGroups[depth];
+      const eras = Object.keys(erasInDepth).map(Number).sort((a, b) => a - b);
       
-      worksInEra.forEach((work, i) => {
-        positions[work.id] = {
-          x: startX + i * nodeSpacing,
-          y,
-        };
+      // Calculate total width needed for this depth level
+      let totalWorks = 0;
+      eras.forEach(era => {
+        totalWorks += erasInDepth[era].length;
       });
+      
+      const totalWidth = totalWorks * nodeSpacing;
+      let currentX = -totalWidth / 2 + nodeSpacing / 2;
+      
+      eras.forEach((era) => {
+        const worksInEra = erasInDepth[era];
+        
+        worksInEra.forEach((work) => {
+          positions[work.id] = {
+            x: currentX,
+            y: currentY,
+            depth,
+          };
+          currentX += nodeSpacing;
+        });
+      });
+      
+      currentY += depthSpacing;
     });
 
     return positions;
-  }, [sortedWorks]);
+  }, [sortedWorks, workDepthLevels]);
 
   // SVG dimensions
   const svgDimensions = useMemo(() => ({
@@ -169,21 +228,22 @@ export const WorksNetworkView = ({
     return rel.work_id === selectedWork.id || rel.related_work_id === selectedWork.id;
   };
 
+  // Depth level colors
+  const DEPTH_COLORS: Record<number, string> = {
+    0: '#8b5cf6', // violet - original texts
+    1: '#10b981', // emerald - direct commentaries
+    2: '#ec4899', // pink - supercommentaries
+    3: '#f59e0b', // amber - super-supercommentaries
+  };
+
   const getWorkColor = (work: WorkWithAuthor) => {
     if (selectedWork?.id === work.id) return 'hsl(var(--accent))';
     if (highlightSelected && selectedWork && !selectedWorkConnections.has(work.id)) {
       return 'hsl(var(--muted))';
     }
-    // Color by work type
-    switch (work.work_type) {
-      case 'commentary': return '#10b981';
-      case 'talmud_commentary': return '#3b82f6';
-      case 'halakha': return '#8b5cf6';
-      case 'responsa': return '#f59e0b';
-      case 'supercommentary': return '#ec4899';
-      case 'philosophy': return '#06b6d4';
-      default: return '#6b7280';
-    }
+    // Color by depth level
+    const depth = workDepthLevels[work.id] ?? 0;
+    return DEPTH_COLORS[depth] ?? DEPTH_COLORS[3];
   };
 
   return (
@@ -384,6 +444,25 @@ export const WorksNetworkView = ({
 
       {/* Legend */}
       <div className="absolute bottom-4 right-4 bg-card/95 backdrop-blur p-3 rounded-lg border border-border">
+        <h4 className="text-xs font-semibold text-foreground mb-2">Depth Levels</h4>
+        <div className="space-y-1.5 mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#8b5cf6' }} />
+            <span className="text-xs text-muted-foreground">Original Texts</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#10b981' }} />
+            <span className="text-xs text-muted-foreground">Commentaries</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ec4899' }} />
+            <span className="text-xs text-muted-foreground">Supercommentaries</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f59e0b' }} />
+            <span className="text-xs text-muted-foreground">Super-super</span>
+          </div>
+        </div>
         <h4 className="text-xs font-semibold text-foreground mb-2">Relationship Types</h4>
         <div className="space-y-1">
           {Object.entries(CATEGORY_COLORS).filter(([k]) => k !== 'default').map(([category, color]) => (
