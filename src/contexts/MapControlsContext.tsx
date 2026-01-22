@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
+import type { LocationReason } from '@/hooks/useScholars';
 
 export type CityFilter = 'all' | 'major';
 
@@ -21,6 +22,10 @@ interface MapControlsContextType {
   setCityFilter: (filter: CityFilter) => void;
   showOnlyScholarCities: boolean;
   setShowOnlyScholarCities: (show: boolean) => void;
+  showJourneyMarkers: boolean;
+  setShowJourneyMarkers: (show: boolean) => void;
+  journeyReasonFilter: LocationReason[];
+  setJourneyReasonFilter: (reasons: LocationReason[]) => void;
 }
 
 const MapControlsContext = createContext<MapControlsContextType | undefined>(undefined);
@@ -35,6 +40,8 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showScholarNamesHebrew, setShowScholarNamesHebrew] = useState(false);
   const [cityFilter, setCityFilter] = useState<CityFilter>('all');
   const [showOnlyScholarCities, setShowOnlyScholarCities] = useState(false);
+  const [showJourneyMarkers, setShowJourneyMarkers] = useState(false);
+  const [journeyReasonFilter, setJourneyReasonFilter] = useState<LocationReason[]>([]);
 
   return (
     <MapControlsContext.Provider value={{
@@ -56,6 +63,10 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
       setCityFilter,
       showOnlyScholarCities,
       setShowOnlyScholarCities,
+      showJourneyMarkers,
+      setShowJourneyMarkers,
+      journeyReasonFilter,
+      setJourneyReasonFilter,
     }}>
       {children}
     </MapControlsContext.Provider>
@@ -85,6 +96,10 @@ export function useMapControls() {
       setCityFilter: () => {},
       showOnlyScholarCities: false,
       setShowOnlyScholarCities: () => {},
+      showJourneyMarkers: false,
+      setShowJourneyMarkers: () => {},
+      journeyReasonFilter: [] as LocationReason[],
+      setJourneyReasonFilter: () => {},
     };
   }
   return context;

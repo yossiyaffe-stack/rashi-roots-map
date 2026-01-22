@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DbScholar, DbRelationship, DbPlace, DbLocationName, DbBiographicalRelationship, DbTextualRelationship } from '@/hooks/useScholars';
+import type { DbScholar, DbRelationship, DbPlace, DbLocationName, DbBiographicalRelationship, DbTextualRelationship, DbLocation, LocationReason } from '@/hooks/useScholars';
+import { LOCATION_REASON_CONFIG } from '@/hooks/useScholars';
 import type { CityFilter } from '@/contexts/MapControlsContext';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ interface LeafletMapProps {
   textualRelationships?: TextualRelationshipWithScholars[];
   places: DbPlace[];
   locationNames: DbLocationName[];
+  locations?: DbLocation[];
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
   timeRange: [number, number];
@@ -33,6 +35,8 @@ interface LeafletMapProps {
   showScholarNamesHebrew: boolean;
   cityFilter: CityFilter;
   showOnlyScholarCities: boolean;
+  showJourneyMarkers?: boolean;
+  journeyReasonFilter?: LocationReason[];
   mapRef?: React.MutableRefObject<L.Map | null>;
 }
 
@@ -403,6 +407,7 @@ export function LeafletMap({
   textualRelationships = [],
   places,
   locationNames,
+  locations = [],
   selectedScholar, 
   onSelectScholar, 
   timeRange,
@@ -415,6 +420,8 @@ export function LeafletMap({
   showScholarNamesHebrew,
   cityFilter,
   showOnlyScholarCities,
+  showJourneyMarkers = false,
+  journeyReasonFilter = [],
   mapRef: externalMapRef,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -428,6 +435,7 @@ export function LeafletMap({
   const boundaryLabelsRef = useRef<L.Marker[]>([]);
   const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
   const cityLabelsRef = useRef<L.Marker[]>([]);
+  const journeyMarkersRef = useRef<(L.Marker | L.Polyline)[]>([]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('satellite');
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);

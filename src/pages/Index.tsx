@@ -11,7 +11,7 @@ import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { PlaceSearch } from '@/components/PlaceSearch';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
-import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
+import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useLocations, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
 import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,8 @@ const Index = () => {
     showScholarNamesHebrew,
     cityFilter,
     showOnlyScholarCities,
+    showJourneyMarkers,
+    journeyReasonFilter,
   } = useMapControls();
 
   const { data: scholars = [], isLoading } = useScholars();
@@ -49,6 +51,7 @@ const Index = () => {
   const { data: historicalEvents = [] } = useHistoricalEvents();
   const { data: places = [] } = usePlaces();
   const { data: locationNames = [] } = useLocationNames();
+  const { data: locations = [] } = useLocations();
   const { data: biographicalRelationships = [] } = useBiographicalRelationships();
   const { data: textualRelationships = [] } = useTextualRelationships();
 
@@ -111,6 +114,9 @@ const Index = () => {
           showScholarNamesHebrew={showScholarNamesHebrew}
           cityFilter={cityFilter}
           showOnlyScholarCities={showOnlyScholarCities}
+          locations={locations}
+          showJourneyMarkers={showJourneyMarkers}
+          journeyReasonFilter={journeyReasonFilter}
           mapRef={mapRef}
         />
 
@@ -204,6 +210,11 @@ const Index = () => {
           <ScholarDetailPanel
             scholar={selectedScholar}
             onClose={() => setSelectedScholar(null)}
+            onFlyToLocation={(lat, lng) => {
+              if (mapRef.current) {
+                mapRef.current.flyTo([lat, lng], 10, { duration: 1.5 });
+              }
+            }}
           />
         )}
       </div>

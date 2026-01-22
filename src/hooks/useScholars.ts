@@ -8,7 +8,20 @@ export type DbRelationship = Tables<'relationships'>;
 export type DbHistoricalEvent = Tables<'historical_events'> & { category?: string };
 export type DbPlace = Tables<'places'>;
 export type DbLocationName = Tables<'location_names'>;
+export type DbLocation = Tables<'locations'>;
 
+// Location reason types and config
+export type LocationReason = 'birth' | 'study' | 'rabbinate' | 'exile' | 'refuge' | 'travel' | 'death';
+
+export const LOCATION_REASON_CONFIG: Record<LocationReason, { label: string; icon: string; color: string; bgColor: string }> = {
+  birth: { label: 'Birth', icon: '👶', color: 'text-rose-400', bgColor: 'bg-rose-500/20' },
+  study: { label: 'Study', icon: '📚', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  rabbinate: { label: 'Rabbinate', icon: '🏛️', color: 'text-amber-400', bgColor: 'bg-amber-500/20' },
+  exile: { label: 'Exile', icon: '🚶', color: 'text-red-500', bgColor: 'bg-red-500/20' },
+  refuge: { label: 'Refuge', icon: '🏠', color: 'text-green-400', bgColor: 'bg-green-500/20' },
+  travel: { label: 'Travel', icon: '🧭', color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
+  death: { label: 'Death', icon: '✝️', color: 'text-gray-400', bgColor: 'bg-gray-500/20' },
+};
 // Multi-dimensional relationship types (defined manually until types regenerate)
 export interface DbBiographicalRelationship {
   id: string;
@@ -252,6 +265,39 @@ export function useLocationNames() {
       if (error) throw error;
       return data as DbLocationName[];
     },
+  });
+}
+
+export function useLocations() {
+  return useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .order('start_year', { ascending: true });
+      
+      if (error) throw error;
+      return data as DbLocation[];
+    },
+  });
+}
+
+export function useScholarLocations(scholarId: string | null) {
+  return useQuery({
+    queryKey: ['scholar-locations', scholarId],
+    queryFn: async () => {
+      if (!scholarId) return [];
+      const { data, error } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('scholar_id', scholarId)
+        .order('start_year', { ascending: true });
+      
+      if (error) throw error;
+      return data as DbLocation[];
+    },
+    enabled: !!scholarId,
   });
 }
 
