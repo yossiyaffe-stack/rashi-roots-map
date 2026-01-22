@@ -1,184 +1,201 @@
-import { useState } from 'react';
-import { Search, Calendar, Users, MapPin, Filter, Info } from 'lucide-react';
-import { scholars, historicalEvents, type Scholar } from '@/data/scholars';
-import { TimelineView } from '@/components/TimelineView';
-import { NetworkView } from '@/components/NetworkView';
-import { MapView } from '@/components/MapView';
-import { ScholarDetail } from '@/components/ScholarDetail';
-import { Button } from '@/components/ui/button';
+import { useState, useMemo } from 'react';
+import { Search, Grape, Layers, Calendar, Users, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { LeafletMap } from '@/components/LeafletMap';
+import { ScholarListItem } from '@/components/ScholarListItem';
+import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
+import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
-type ViewType = 'timeline' | 'network' | 'map';
+type MapStyle = 'dark' | 'light' | 'terrain';
+type ViewMode = 'map' | 'timeline' | 'network';
 
 const Index = () => {
-  const [view, setView] = useState<ViewType>('timeline');
-  const [selectedScholar, setSelectedScholar] = useState<Scholar | null>(null);
-  const [timeFilter, setTimeFilter] = useState<[number, number]>([1000, 1900]);
+  const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
+  const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
+  const [mapStyle, setMapStyle] = useState<MapStyle>('dark');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showOnlyRashiCommentators, setShowOnlyRashiCommentators] = useState(false);
-  const [showHistoricalContext, setShowHistoricalContext] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>('map');
 
-  const filteredScholars = scholars.filter(s => {
-    const inTimeRange = s.birth >= timeFilter[0] && s.birth <= timeFilter[1];
-    const matchesSearch = searchTerm === '' ||
-      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.hebrewName.includes(searchTerm);
-    const matchesFilter = !showOnlyRashiCommentators || s.commentariesOnRashi;
-    return inTimeRange && matchesSearch && matchesFilter;
-  });
+  const { data: scholars = [], isLoading } = useScholars();
 
-  const viewButtons: { id: ViewType; label: string; icon: React.ReactNode }[] = [
-    { id: 'timeline', label: 'Timeline', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'network', label: 'Network', icon: <Users className="w-4 h-4" /> },
-    { id: 'map', label: 'Geography', icon: <MapPin className="w-4 h-4" /> },
-  ];
+  const filteredScholars = useMemo(() => {
+    return scholars.filter(s => {
+      const matchesSearch = searchTerm === '' ||
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.hebrew_name && s.hebrew_name.includes(searchTerm));
+      
+      const inTimeRange = !s.birth_year || 
+        (s.birth_year >= timeRange[0] && s.birth_year <= timeRange[1]);
+      
+      return matchesSearch && inTimeRange;
+    });
+  }, [scholars, searchTerm, timeRange]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-parchment to-parchment-dark">
-      {/* Header */}
-      <header className="gradient-header border-b-4 border-primary shadow-header px-8 py-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="mb-6">
-            <span className="block font-display text-5xl md:text-6xl font-bold gradient-gold tracking-tight mb-2">
-              Rashi's Legacy
+    <div className="w-screen h-screen flex bg-background text-foreground overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-[400px] flex flex-col z-50 gradient-sidebar shadow-2xl border-r border-sidebar-border">
+        {/* Header */}
+        <header className="p-8 bg-gradient-to-b from-[hsl(245_50%_25%)] to-transparent">
+          <div className="flex items-center gap-3 mb-2">
+            <Grape className="w-8 h-8 text-accent" />
+            <span className="text-xs tracking-[3px] uppercase text-muted-foreground">
+              The Vine of Wisdom
             </span>
-            <span className="block text-lg md:text-xl text-primary font-normal italic tracking-wide">
-              Mapping Jewish Intellectual History Through Time & Space
-            </span>
+          </div>
+          <h1 className="text-3xl font-extrabold leading-tight">
+            Rashi <span className="gradient-gold">Intellectual</span> History
           </h1>
+        </header>
 
-          {/* Search */}
-          <div className="relative max-w-lg">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+        {/* Search */}
+        <div className="px-8 pb-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
             <Input
               type="text"
-              placeholder="Search scholars..."
+              placeholder="Search the lineage..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 bg-parchment/90 border-2 border-secondary text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20"
+              className="pl-11 bg-white/5 border-white/10 text-foreground placeholder:text-muted-foreground focus:border-accent focus:ring-accent/20"
             />
           </div>
         </div>
-      </header>
 
-      {/* Controls */}
-      <div className="bg-foreground/5 border-b-2 border-primary/30 px-8 py-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-6">
-          {/* View Toggles */}
-          <div className="flex bg-card rounded-lg p-1 shadow-card">
-            {viewButtons.map(btn => (
+        {/* View Mode Tabs */}
+        <div className="px-8 pb-4">
+          <div className="flex gap-1 p-1 bg-white/5 rounded-lg">
+            {[
+              { id: 'map' as ViewMode, icon: MapPin, label: 'Map' },
+              { id: 'timeline' as ViewMode, icon: Calendar, label: 'Timeline' },
+              { id: 'network' as ViewMode, icon: Users, label: 'Network' },
+            ].map(({ id, icon: Icon, label }) => (
               <Button
-                key={btn.id}
+                key={id}
                 variant="ghost"
+                size="sm"
+                onClick={() => setViewMode(id)}
                 className={cn(
-                  "flex items-center gap-2 px-6 py-2 font-semibold transition-all",
-                  view === btn.id
-                    ? "gradient-button text-primary-foreground shadow-elevated"
-                    : "text-sepia hover:bg-primary/10 hover:text-secondary"
+                  "flex-1 gap-2 text-xs",
+                  viewMode === id
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 )}
-                onClick={() => setView(btn.id)}
               >
-                {btn.icon}
-                {btn.label}
+                <Icon className="w-3.5 h-3.5" />
+                {label}
               </Button>
             ))}
           </div>
+        </div>
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer font-medium text-brown-dark">
-              <Checkbox
-                checked={showOnlyRashiCommentators}
-                onCheckedChange={(checked) => setShowOnlyRashiCommentators(checked as boolean)}
-                className="border-secondary data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-              />
-              <Filter className="w-4 h-4 text-secondary" />
-              Show only Rashi commentators
-            </label>
+        {/* Scholar List */}
+        <div className="flex-1 px-8 overflow-hidden">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-accent mb-3">
+            Scholars ({filteredScholars.length})
+          </h3>
+          <ScrollArea className="h-[calc(100%-2rem)]">
+            <div className="flex flex-col gap-2 pr-4 pb-4">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-20 rounded-xl bg-white/5" />
+                ))
+              ) : (
+                filteredScholars.map(scholar => (
+                  <ScholarListItem
+                    key={scholar.id}
+                    scholar={scholar}
+                    isSelected={selectedScholar?.id === scholar.id}
+                    onClick={() => setSelectedScholar(scholar)}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </div>
 
-            <label className="flex items-center gap-2 cursor-pointer font-medium text-brown-dark">
-              <Checkbox
-                checked={showHistoricalContext}
-                onCheckedChange={(checked) => setShowHistoricalContext(checked as boolean)}
-                className="border-secondary data-[state=checked]:bg-secondary data-[state=checked]:border-secondary"
-              />
-              <Info className="w-4 h-4 text-secondary" />
-              Show historical events
-            </label>
+        {/* Timeline Slider Footer */}
+        <footer className="p-6 bg-[hsl(245_50%_12%)] border-t border-sidebar-border">
+          <div className="flex justify-between text-sm mb-3">
+            <span className="text-muted-foreground">{timeRange[0]} CE</span>
+            <span className="text-accent font-medium">{timeRange[1]} CE</span>
+          </div>
+          <Slider
+            value={[timeRange[1]]}
+            min={1000}
+            max={1800}
+            step={10}
+            onValueChange={([val]) => setTimeRange([timeRange[0], val])}
+            className="w-full"
+          />
+        </footer>
+      </aside>
 
-            {/* Time Range Slider */}
-            <div className="flex flex-col gap-2 min-w-[200px]">
-              <span className="text-sm font-semibold text-brown-dark">
-                Time Range: {timeFilter[0]} – {timeFilter[1]}
-              </span>
-              <div className="flex gap-2">
-                <Slider
-                  value={[timeFilter[0]]}
-                  min={1000}
-                  max={1900}
-                  step={10}
-                  onValueChange={([val]) => setTimeFilter([val, timeFilter[1]])}
-                  className="flex-1"
-                />
-                <Slider
-                  value={[timeFilter[1]]}
-                  min={1000}
-                  max={1900}
-                  step={10}
-                  onValueChange={([val]) => setTimeFilter([timeFilter[0], val])}
-                  className="flex-1"
-                />
-              </div>
+      {/* Main Map Area */}
+      <main className="flex-1 relative">
+        {viewMode === 'map' && (
+          <LeafletMap
+            scholars={filteredScholars}
+            selectedScholar={selectedScholar}
+            onSelectScholar={setSelectedScholar}
+            mapStyle={mapStyle}
+            timeRange={timeRange}
+          />
+        )}
+
+        {viewMode === 'timeline' && (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg">Timeline view coming soon</p>
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Main Content */}
-      <main className="max-w-[1800px] mx-auto p-8">
-        <div className={cn(
-          "grid gap-8",
-          selectedScholar ? "grid-cols-1 lg:grid-cols-[1fr_400px]" : "grid-cols-1"
-        )}>
-          {/* Visualization Area */}
-          <div className="bg-card rounded-xl p-8 shadow-card min-h-[600px] animate-fade-in">
-            {view === 'timeline' && (
-              <TimelineView
-                scholars={filteredScholars}
-                selectedScholar={selectedScholar}
-                onSelectScholar={setSelectedScholar}
-                showHistoricalContext={showHistoricalContext}
-                historicalEvents={historicalEvents}
-                timeFilter={timeFilter}
-              />
-            )}
-            {view === 'network' && (
-              <NetworkView
-                scholars={filteredScholars}
-                selectedScholar={selectedScholar}
-                onSelectScholar={setSelectedScholar}
-              />
-            )}
-            {view === 'map' && (
-              <MapView
-                scholars={filteredScholars}
-                selectedScholar={selectedScholar}
-                onSelectScholar={setSelectedScholar}
-              />
-            )}
+        {viewMode === 'network' && (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg">Network view coming soon</p>
+            </div>
           </div>
+        )}
 
-          {/* Scholar Detail Panel */}
-          {selectedScholar && (
-            <ScholarDetail
-              scholar={selectedScholar}
-              onClose={() => setSelectedScholar(null)}
-            />
-          )}
-        </div>
+        {/* Map Style Switcher */}
+        {viewMode === 'map' && (
+          <div className="absolute top-5 left-5 z-[1000] flex gap-2">
+            {(['dark', 'light', 'terrain'] as MapStyle[]).map(style => (
+              <Button
+                key={style}
+                variant="ghost"
+                size="sm"
+                onClick={() => setMapStyle(style)}
+                className={cn(
+                  "px-4 py-2 backdrop-blur-md border transition-all capitalize",
+                  mapStyle === style
+                    ? "bg-accent text-accent-foreground border-accent"
+                    : "bg-black/40 text-white/80 border-white/20 hover:bg-black/60 hover:text-white"
+                )}
+              >
+                <Layers className="w-4 h-4 mr-2" />
+                {style}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Scholar Detail Panel */}
+        {selectedScholar && (
+          <ScholarDetailPanel
+            scholar={selectedScholar}
+            onClose={() => setSelectedScholar(null)}
+          />
+        )}
       </main>
     </div>
   );
