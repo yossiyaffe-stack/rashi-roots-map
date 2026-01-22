@@ -468,6 +468,11 @@ export function LeafletMap({
         attribution: 'Historical Map via NYPL Map Warper',
         opacity: 0.9,
       }).addTo(leafletMap.current);
+      // Add clear reference labels on top
+      labelsLayerRef.current = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© Esri',
+        pane: 'overlayPane',
+      }).addTo(leafletMap.current);
     }
   }, [viewMode]);
 
