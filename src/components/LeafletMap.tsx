@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import type { DbScholar, DbRelationship, DbPlace, DbLocationName, DbBiographicalRelationship, DbTextualRelationship, DbLocation, LocationReason } from '@/hooks/useScholars';
 import { LOCATION_REASON_CONFIG } from '@/hooks/useScholars';
 import type { CityFilter } from '@/contexts/MapControlsContext';
+import type { CircleFilter } from '@/contexts/CircleFilterContext';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +40,10 @@ interface LeafletMapProps {
   showJourneyMarkers?: boolean;
   journeyReasonFilter?: LocationReason[];
   mapRef?: React.MutableRefObject<L.Map | null>;
+  // Circle filter props
+  isDrawingCircle?: boolean;
+  onCircleDrawn?: (center: [number, number], radius: number) => void;
+  circleFilter?: CircleFilter | null;
 }
 
 // Tile layer definitions
@@ -425,6 +430,9 @@ export function LeafletMap({
   showJourneyMarkers = false,
   journeyReasonFilter = [],
   mapRef: externalMapRef,
+  isDrawingCircle = false,
+  onCircleDrawn,
+  circleFilter,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -438,6 +446,8 @@ export function LeafletMap({
   const migrationLinesRef = useRef<(L.Polyline | L.Marker)[]>([]);
   const cityLabelsRef = useRef<L.Marker[]>([]);
   const journeyMarkersRef = useRef<(L.Marker | L.Polyline)[]>([]);
+  const circleRef = useRef<L.Circle | null>(null);
+  const drawingStartRef = useRef<L.LatLng | null>(null);
   
   const [viewMode, setViewMode] = useState<ViewMode>('satellite');
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
@@ -1544,6 +1554,88 @@ export function LeafletMap({
 
     // Note: Removed auto-pan to selected scholar - map only moves on user interaction
   }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew, zoomLevel]);
+
+  // Circle drawing functionality
+  useEffect(() => {
+    if (!leafletMap.current) return;
+    const map = leafletMap.current;
+
+    // Clear existing circle
+    if (circleRef.current) {
+      circleRef.current.remove();
+      circleRef.current = null;
+    }
+
+    // Draw existing circle filter
+    if (circleFilter && !isDrawingCircle) {
+      const circle = L.circle(circleFilter.center, {
+        radius: circleFilter.radius,
+        color: '#a855f7',
+        fillColor: '#a855f7',
+        fillOpacity: 0.15,
+        weight: 2,
+        dashArray: '5, 5',
+      });
+      circle.addTo(map);
+      circleRef.current = circle;
+    }
+
+    // Handle drawing mode
+    if (isDrawingCircle) {
+      map.getContainer().style.cursor = 'crosshair';
+      
+      const handleMouseDown = (e: L.LeafletMouseEvent) => {
+        drawingStartRef.current = e.latlng;
+        
+        // Create initial circle
+        const circle = L.circle(e.latlng, {
+          radius: 0,
+          color: '#a855f7',
+          fillColor: '#a855f7',
+          fillOpacity: 0.2,
+          weight: 2,
+        });
+        circle.addTo(map);
+        circleRef.current = circle;
+      };
+
+      const handleMouseMove = (e: L.LeafletMouseEvent) => {
+        if (!drawingStartRef.current || !circleRef.current) return;
+        
+        const start = drawingStartRef.current;
+        const radius = start.distanceTo(e.latlng);
+        circleRef.current.setRadius(radius);
+      };
+
+      const handleMouseUp = (e: L.LeafletMouseEvent) => {
+        if (!drawingStartRef.current) return;
+        
+        const start = drawingStartRef.current;
+        const radius = start.distanceTo(e.latlng);
+        
+        if (radius > 1000 && onCircleDrawn) { // Min 1km radius
+          onCircleDrawn([start.lat, start.lng], radius);
+        } else if (circleRef.current) {
+          circleRef.current.remove();
+          circleRef.current = null;
+        }
+        
+        drawingStartRef.current = null;
+        map.getContainer().style.cursor = '';
+      };
+
+      map.on('mousedown', handleMouseDown);
+      map.on('mousemove', handleMouseMove);
+      map.on('mouseup', handleMouseUp);
+
+      return () => {
+        map.off('mousedown', handleMouseDown);
+        map.off('mousemove', handleMouseMove);
+        map.off('mouseup', handleMouseUp);
+        map.getContainer().style.cursor = '';
+      };
+    }
+  }, [isDrawingCircle, circleFilter, onCircleDrawn]);
 
   return (
     <div className="relative w-full h-full">

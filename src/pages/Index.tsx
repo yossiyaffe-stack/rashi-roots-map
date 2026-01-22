@@ -9,7 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { PlaceSearch } from '@/components/PlaceSearch';
+import { ScholarSearch } from '@/components/ScholarSearch';
+import { CircleFilterPanel } from '@/components/CircleFilterPanel';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
+import { useCircleFilter } from '@/contexts/CircleFilterContext';
 
 import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useLocations, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
 import { TimelineEvents } from '@/components/TimelineEvents';
@@ -32,6 +35,7 @@ const Index = () => {
   const mapRef = useRef<L.Map | null>(null);
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
+  const { circleFilter, isDrawingCircle, setCircleFilter, setIsDrawingCircle } = useCircleFilter();
   const { 
     showBoundaries, setShowBoundaries,
     showBoundaryShading,
@@ -92,6 +96,14 @@ const Index = () => {
     }
   };
 
+  // Handle scholar selection from search
+  const handleScholarSelect = (scholar: DbScholar) => {
+    setSelectedScholar(scholar);
+    if (scholar.latitude && scholar.longitude && mapRef.current) {
+      mapRef.current.flyTo([scholar.latitude, scholar.longitude], 8, { duration: 1.5 });
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
       {/* Map Content - Full screen behind overlays */}
@@ -120,12 +132,27 @@ const Index = () => {
           showJourneyMarkers={showJourneyMarkers}
           journeyReasonFilter={journeyReasonFilter}
           mapRef={mapRef}
+          isDrawingCircle={isDrawingCircle}
+          onCircleDrawn={(center, radius) => {
+            setCircleFilter({ center, radius });
+            setIsDrawingCircle(false);
+          }}
+          circleFilter={circleFilter}
         />
 
-        {/* Place Search - Top Right */}
-        <div className="absolute top-6 right-24 z-[1000]">
+        {/* Search Controls - Top Right */}
+        <div className="absolute top-6 right-24 z-[1000] flex gap-2">
+          <ScholarSearch onScholarSelect={handleScholarSelect} />
           <PlaceSearch onPlaceSelect={handlePlaceSelect} />
         </div>
+
+        {/* Circle Filter Panel */}
+        <CircleFilterPanel
+          scholars={scholars}
+          timeRange={timeRange}
+          onSelectScholar={handleScholarSelect}
+          selectedScholar={selectedScholar}
+        />
 
         {/* Scholars Overlay Panel - Left side */}
         <div className={cn(
