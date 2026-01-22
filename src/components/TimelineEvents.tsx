@@ -1,0 +1,95 @@
+import { useMemo, useState } from 'react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import type { DbHistoricalEvent } from '@/hooks/useScholars';
+import { cn } from '@/lib/utils';
+
+interface TimelineEventsProps {
+  events: DbHistoricalEvent[];
+  timeRange: [number, number];
+}
+
+const IMPORTANCE_CONFIG = {
+  critical: { color: 'bg-red-500', label: 'Critical' },
+  major: { color: 'bg-amber-500', label: 'Major' },
+  foundational: { color: 'bg-accent', label: 'Foundational' },
+  scholarly: { color: 'bg-blue-500', label: 'Scholarly' },
+};
+
+export function TimelineEvents({ events, timeRange }: TimelineEventsProps) {
+  const [selectedEvent, setSelectedEvent] = useState<DbHistoricalEvent | null>(null);
+
+  const filteredEvents = useMemo(() => {
+    return events.filter(e => e.year >= timeRange[0] && e.year <= timeRange[1]);
+  }, [events, timeRange]);
+
+  if (filteredEvents.length === 0) {
+    return (
+      <div className="text-xs text-white/40 text-center py-2">
+        No events in selected time range
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <ScrollArea className="w-full">
+        <div className="flex gap-2 pb-2">
+          {filteredEvents.map((event) => {
+            const config = IMPORTANCE_CONFIG[event.importance] || IMPORTANCE_CONFIG.scholarly;
+            return (
+              <button
+                key={event.id}
+                onClick={() => setSelectedEvent(event)}
+                className={cn(
+                  "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all",
+                  "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20",
+                  "text-left group"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <div className={cn("w-2 h-2 rounded-full", config.color)} />
+                  <span className="text-xs font-medium text-white/80 group-hover:text-white">
+                    {event.year}
+                  </span>
+                </div>
+                <div className="text-[11px] text-white/50 group-hover:text-white/70 max-w-[150px] truncate">
+                  {event.name}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+
+      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+        <DialogContent className="bg-sidebar border-white/10">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              {selectedEvent && (
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "text-[10px] uppercase",
+                    IMPORTANCE_CONFIG[selectedEvent.importance]?.color || 'bg-blue-500',
+                    "text-white border-none"
+                  )}
+                >
+                  {selectedEvent.year} CE
+                </Badge>
+              )}
+            </div>
+            <DialogTitle className="text-lg text-foreground">
+              {selectedEvent?.name}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground pt-2">
+              {selectedEvent?.description}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}

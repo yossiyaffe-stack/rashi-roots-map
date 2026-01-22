@@ -8,7 +8,8 @@ import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
-import { useScholars, useRelationships, type DbScholar } from '@/hooks/useScholars';
+import { useScholars, useRelationships, useHistoricalEvents, type DbScholar } from '@/hooks/useScholars';
+import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ const Index = () => {
 
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();
+  const { data: historicalEvents = [] } = useHistoricalEvents();
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
@@ -167,9 +169,9 @@ const Index = () => {
         
         <div className={cn(
           "transition-all duration-200 overflow-hidden",
-          timelineExpanded ? "max-h-20 px-4 pb-4" : "max-h-0"
+          timelineExpanded ? "max-h-40 px-4 pb-4" : "max-h-0"
         )}>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3">
             <span className="text-sm text-white/50 w-20">{timeRange[0]} CE</span>
             <Slider
               value={timeRange}
@@ -183,6 +185,9 @@ const Index = () => {
             />
             <span className="text-sm text-accent font-medium w-20 text-right">{timeRange[1]} CE</span>
           </div>
+          
+          {/* Historical Events Row */}
+          <TimelineEvents events={historicalEvents} timeRange={timeRange} />
         </div>
       </footer>
     </div>
