@@ -202,7 +202,6 @@ const Index = () => {
               className="flex-1"
               showTooltip
               formatValue={(val) => `${val} CE`}
-              markers={eventMarkers}
             />
             <span className="text-sm text-accent font-medium w-20 text-right">{timeRange[1]} CE</span>
           </div>
