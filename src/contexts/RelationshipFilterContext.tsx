@@ -22,16 +22,12 @@ export interface RelationshipFilters {
       social: boolean;
       institutional: boolean;
     };
-    // Family subtypes for granular filtering
+    // Family subtypes for granular filtering (simplified)
     familyTypes: {
       son: boolean;
       son_in_law: boolean;
       daughter: boolean;
       daughter_in_law: boolean;
-      grandchild: boolean;
-      grandfather: boolean;
-      sibling: boolean;
-      spouse: boolean;
     };
   };
   
@@ -87,10 +83,6 @@ const DEFAULT_FILTERS: RelationshipFilters = {
       son_in_law: true,
       daughter: true,
       daughter_in_law: true,
-      grandchild: true,
-      grandfather: true,
-      sibling: true,
-      spouse: true,
     },
   },
   textual: {
