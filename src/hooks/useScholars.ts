@@ -6,6 +6,7 @@ export type DbScholar = Tables<'scholars'>;
 export type DbWork = Tables<'works'>;
 export type DbRelationship = Tables<'relationships'>;
 export type DbHistoricalEvent = Tables<'historical_events'>;
+export type DbPlace = Tables<'places'>;
 
 export interface ScholarWithDetails extends DbScholar {
   works?: DbWork[];
@@ -76,6 +77,21 @@ export function useRelationships() {
       
       if (error) throw error;
       return data as DbRelationship[];
+    },
+  });
+}
+
+export function usePlaces() {
+  return useQuery({
+    queryKey: ['places'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('places')
+        .select('*')
+        .order('importance', { ascending: false });
+      
+      if (error) throw error;
+      return data as DbPlace[];
     },
   });
 }

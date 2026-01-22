@@ -9,7 +9,7 @@ import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 
-import { useScholars, useRelationships, useHistoricalEvents, type DbScholar } from '@/hooks/useScholars';
+import { useScholars, useRelationships, useHistoricalEvents, usePlaces, type DbScholar } from '@/hooks/useScholars';
 import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ const Index = () => {
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();
   const { data: historicalEvents = [] } = useHistoricalEvents();
+  const { data: places = [] } = usePlaces();
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
@@ -72,6 +73,7 @@ const Index = () => {
         <LeafletMap
           scholars={filteredScholars}
           relationships={relationships}
+          places={places}
           selectedScholar={selectedScholar}
           onSelectScholar={setSelectedScholar}
           timeRange={timeRange}
