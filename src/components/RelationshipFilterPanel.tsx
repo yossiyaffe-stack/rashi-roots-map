@@ -1,5 +1,4 @@
-import { RotateCcw, Users, FileText, Lightbulb } from 'lucide-react';
-import { useState } from 'react';
+import { RotateCcw, Users, FileText, Lightbulb, Heart } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -39,6 +38,18 @@ const CATEGORY_LABELS = {
     school: 'School',
     transmission: 'Transmission',
   },
+};
+
+// Family type labels
+const FAMILY_TYPE_LABELS: Record<string, string> = {
+  son: 'Son',
+  son_in_law: 'Son-in-Law',
+  daughter: 'Daughter',
+  daughter_in_law: 'Daughter-in-Law',
+  grandchild: 'Grandchild',
+  grandfather: 'Grandfather',
+  sibling: 'Sibling',
+  spouse: 'Spouse',
 };
 
 interface DomainSectionProps {
@@ -115,6 +126,7 @@ export function RelationshipFilterPanel() {
     filters,
     toggleDomain,
     toggleBiographicalCategory,
+    toggleFamilyType,
     toggleTextualCategory,
     toggleIntellectualCategory,
     toggleCertainty,
@@ -155,6 +167,34 @@ export function RelationshipFilterPanel() {
             onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
             labels={CATEGORY_LABELS.biographical}
           />
+          
+          {/* Family Types Sub-section */}
+          {filters.domains.biographical && filters.biographical.categories.family && (
+            <div className="pl-4 space-y-1 border-l-2 border-rose-500/30 ml-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Heart className="w-3 h-3 text-rose-400" />
+                <span className="text-xs font-medium text-rose-400">Family Types</span>
+              </div>
+              {Object.entries(filters.biographical.familyTypes).map(([key, enabled]) => (
+                <div
+                  key={key}
+                  onClick={() => toggleFamilyType(key as keyof RelationshipFilters['biographical']['familyTypes'])}
+                  className={cn(
+                    "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
+                    "hover:bg-white/5"
+                  )}
+                >
+                  <span className="text-xs text-muted-foreground">{FAMILY_TYPE_LABELS[key] || key}</span>
+                  <div className={cn(
+                    "w-3 h-3 rounded-sm border transition-colors",
+                    enabled ? 'bg-rose-500/20 border-rose-500' : 'border-white/30'
+                  )}>
+                    {enabled && <div className="w-full h-full rounded-sm bg-rose-500/60" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="border-t border-white/10" />
 
