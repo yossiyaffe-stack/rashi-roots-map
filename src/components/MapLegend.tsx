@@ -1,14 +1,22 @@
 import { Info, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import type { DbRelationship } from '@/hooks/useScholars';
 
 interface MapLegendProps {
   showConnections?: boolean;
   showMigrations?: boolean;
+  relationships?: DbRelationship[];
 }
 
-export function MapLegend({ showConnections = false, showMigrations = false }: MapLegendProps) {
+const CONNECTION_TYPE_CONFIG: Record<string, { color: string; label: string; style: 'solid' | 'dashed' }> = {
+  educational: { color: 'bg-[#22c55e]', label: 'Educational', style: 'solid' },
+  family: { color: 'bg-[#f59e0b]', label: 'Family', style: 'solid' },
+  literary: { color: 'bg-[#3b82f6]', label: 'Literary', style: 'dashed' },
+};
+
+export function MapLegend({ showConnections = false, showMigrations = false, relationships = [] }: MapLegendProps) {
   const [expanded, setExpanded] = useState(true);
 
   const legendItems = [
@@ -21,11 +29,13 @@ export function MapLegend({ showConnections = false, showMigrations = false }: M
     { color: 'bg-[#8b7355]', label: 'Other Scholars' },
   ];
 
-  const connectionItems = [
-    { color: 'bg-[#22c55e]', label: 'Educational', style: 'solid' },
-    { color: 'bg-[#f59e0b]', label: 'Family', style: 'solid' },
-    { color: 'bg-[#3b82f6]', label: 'Literary', style: 'dashed' },
-  ];
+  // Dynamically determine which connection types exist in the data
+  const activeConnectionTypes = useMemo(() => {
+    const types = new Set(relationships.map(r => r.type));
+    return Array.from(types)
+      .filter(type => CONNECTION_TYPE_CONFIG[type])
+      .map(type => CONNECTION_TYPE_CONFIG[type]);
+  }, [relationships]);
 
   const migrationItems = [
     { icon: '⚠️', label: 'Expulsion' },
@@ -74,14 +84,14 @@ export function MapLegend({ showConnections = false, showMigrations = false }: M
               </div>
             </div>
 
-            {/* Connection Types - Only show when enabled */}
-            {showConnections && (
+            {/* Connection Types - Only show when enabled and has data */}
+            {showConnections && activeConnectionTypes.length > 0 && (
               <div className="pt-3 border-t border-white/10">
                 <div className="text-sm font-semibold text-foreground/80 mb-2">
                   Connection Types
                 </div>
                 <div className="space-y-2">
-                  {connectionItems.map((item) => (
+                  {activeConnectionTypes.map((item) => (
                     <div key={item.label} className="flex items-center gap-3">
                       {item.style === 'dashed' ? (
                         <div className="w-5 h-0 border-t-2 border-dashed border-[#3b82f6] shrink-0" />
