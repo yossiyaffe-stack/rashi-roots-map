@@ -4,8 +4,6 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import type { CityFilter } from '@/contexts/MapControlsContext';
-import { LOCATION_REASON_CONFIG, type LocationReason } from '@/hooks/useScholars';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface MapControlsPanelProps {
   showBoundaries: boolean;
@@ -28,18 +26,12 @@ interface MapControlsPanelProps {
   onCityFilterChange: (filter: CityFilter) => void;
   showOnlyScholarCities: boolean;
   onShowOnlyScholarCitiesChange: (show: boolean) => void;
-  showJourneyMarkers: boolean;
-  onShowJourneyMarkersChange: (show: boolean) => void;
-  journeyReasonFilter: LocationReason[];
-  onJourneyReasonFilterChange: (reasons: LocationReason[]) => void;
 }
 
 const CITY_FILTER_OPTIONS: { value: CityFilter; label: string; description: string }[] = [
   { value: 'all', label: 'All', description: 'Show all cities' },
   { value: 'major', label: 'Major', description: 'Importance ≥ 7' },
 ];
-
-const ALL_REASONS: LocationReason[] = ['birth', 'study', 'rabbinate', 'exile', 'refuge', 'travel', 'death'];
 
 export function MapControlsPanel({
   showBoundaries,
@@ -62,18 +54,7 @@ export function MapControlsPanel({
   onCityFilterChange,
   showOnlyScholarCities,
   onShowOnlyScholarCitiesChange,
-  showJourneyMarkers,
-  onShowJourneyMarkersChange,
-  journeyReasonFilter,
-  onJourneyReasonFilterChange,
 }: MapControlsPanelProps) {
-  const toggleReason = (reason: LocationReason) => {
-    if (journeyReasonFilter.includes(reason)) {
-      onJourneyReasonFilterChange(journeyReasonFilter.filter(r => r !== reason));
-    } else {
-      onJourneyReasonFilterChange([...journeyReasonFilter, reason]);
-    }
-  };
   return (
     <div className="flex flex-col h-full w-[280px]">
       {/* Header */}
@@ -145,64 +126,6 @@ export function MapControlsPanel({
             </div>
           </div>
 
-          {/* Scholar Journeys Section */}
-          <div className="pt-3 border-t border-white/10">
-            <div className="text-sm font-semibold text-foreground/80 mb-3">
-              Scholar Journeys
-            </div>
-            <div className="space-y-3">
-              {/* Show Journey Markers Toggle */}
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-journey-markers-panel" className="text-sm text-muted-foreground cursor-pointer">
-                  Show Journey Markers
-                </Label>
-                <Switch
-                  id="show-journey-markers-panel"
-                  checked={showJourneyMarkers}
-                  onCheckedChange={onShowJourneyMarkersChange}
-                />
-              </div>
-
-              {/* Journey Reason Filters */}
-              {showJourneyMarkers && (
-                <div className="space-y-2 pl-2 border-l-2 border-accent/30">
-                  <Label className="text-xs text-muted-foreground/70 uppercase tracking-wide">
-                    Filter by Life Event
-                  </Label>
-                  <div className="space-y-1.5">
-                    {ALL_REASONS.map(reason => {
-                      const config = LOCATION_REASON_CONFIG[reason];
-                      const isChecked = journeyReasonFilter.length === 0 || journeyReasonFilter.includes(reason);
-                      
-                      return (
-                        <label
-                          key={reason}
-                          className={cn(
-                            "flex items-center gap-2 p-1.5 rounded cursor-pointer transition-all",
-                            "hover:bg-white/5",
-                            isChecked && journeyReasonFilter.length > 0 && config.bgColor
-                          )}
-                        >
-                          <Checkbox
-                            checked={isChecked}
-                            onCheckedChange={() => toggleReason(reason)}
-                            className="border-white/30 h-3.5 w-3.5"
-                          />
-                          <span className="text-sm">{config.icon}</span>
-                          <span className={cn(
-                            "text-xs flex-1",
-                            isChecked && journeyReasonFilter.length > 0 ? config.color : "text-muted-foreground"
-                          )}>
-                            {config.label}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* City Labels Section */}
           <div className="pt-3 border-t border-white/10">

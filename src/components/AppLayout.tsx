@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -7,6 +7,7 @@ import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
 import { MapControlsPanel } from '@/components/MapControlsPanel';
 import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
+import { ScholarJourneysPanel } from '@/components/ScholarJourneysPanel';
 
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
@@ -18,6 +19,7 @@ export function AppLayout() {
   const [mapControlsPanelOpen, setMapControlsPanelOpen] = useState(false);
   const [legendsPanelOpen, setLegendsPanelOpen] = useState(false);
   const [kingdomsPanelOpen, setKingdomsPanelOpen] = useState(false);
+  const [journeysPanelOpen, setJourneysPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
@@ -130,6 +132,7 @@ export function AppLayout() {
                       setRelationshipsPanelOpen(false);
                       setLegendsPanelOpen(false);
                       setKingdomsPanelOpen(false);
+                      setJourneysPanelOpen(false);
                     }
                   }}
                   className={cn(
@@ -158,6 +161,7 @@ export function AppLayout() {
                       setMapControlsPanelOpen(false);
                       setRelationshipsPanelOpen(false);
                       setKingdomsPanelOpen(false);
+                      setJourneysPanelOpen(false);
                     }
                   }}
                   className={cn(
@@ -186,6 +190,7 @@ export function AppLayout() {
                       setMapControlsPanelOpen(false);
                       setRelationshipsPanelOpen(false);
                       setLegendsPanelOpen(false);
+                      setJourneysPanelOpen(false);
                     }
                   }}
                   className={cn(
@@ -248,6 +253,7 @@ export function AppLayout() {
                       setMapControlsPanelOpen(false);
                       setLegendsPanelOpen(false);
                       setKingdomsPanelOpen(false);
+                      setJourneysPanelOpen(false);
                     }
                   }}
                   className={cn(
@@ -334,6 +340,35 @@ export function AppLayout() {
                 <BookOpen className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="font-medium text-sm">Historical Context</span>}
               </NavLink>
+
+              {/* Scholar Journeys - only on map page */}
+              {isMapPage && (
+                <button
+                  onClick={() => {
+                    setJourneysPanelOpen(!journeysPanelOpen);
+                    if (!journeysPanelOpen) {
+                      setMapControlsPanelOpen(false);
+                      setRelationshipsPanelOpen(false);
+                      setLegendsPanelOpen(false);
+                      setKingdomsPanelOpen(false);
+                    }
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                    "hover:bg-white/10 text-white/70 hover:text-white",
+                    !sidebarOpen && "justify-center px-2",
+                    journeysPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                  )}
+                >
+                  <Route className="w-5 h-5 shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="font-medium text-sm flex-1 text-left">Scholar Journeys</span>
+                      {journeysPanelOpen ? <ChevronLeft className="w-4 h-4 text-accent" /> : <ChevronRight className="w-4 h-4" />}
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </nav>
 
@@ -385,10 +420,6 @@ export function AppLayout() {
               onCityFilterChange={setCityFilter}
               showOnlyScholarCities={showOnlyScholarCities}
               onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
-              showJourneyMarkers={showJourneyMarkers}
-              onShowJourneyMarkersChange={setShowJourneyMarkers}
-              journeyReasonFilter={journeyReasonFilter}
-              onJourneyReasonFilterChange={setJourneyReasonFilter}
             />
           </div>
         )}
@@ -424,6 +455,22 @@ export function AppLayout() {
               <span>Medieval Kingdoms</span>
             </button>
             <KingdomsLegend isEmbedded />
+          </div>
+        )}
+
+        {/* Slide-out Panel for Scholar Journeys - Full height */}
+        {isMapPage && journeysPanelOpen && (
+          <div className={cn(
+            "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
+            "flex flex-col"
+          )}>
+            <ScholarJourneysPanel
+              showJourneyMarkers={showJourneyMarkers}
+              onShowJourneyMarkersChange={setShowJourneyMarkers}
+              journeyReasonFilter={journeyReasonFilter}
+              onJourneyReasonFilterChange={setJourneyReasonFilter}
+              onClose={() => setJourneysPanelOpen(false)}
+            />
           </div>
         )}
       </div>
