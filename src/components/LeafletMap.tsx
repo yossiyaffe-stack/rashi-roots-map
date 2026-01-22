@@ -16,6 +16,10 @@ interface LeafletMapProps {
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
   timeRange: [number, number];
+  showConnections: boolean;
+  onShowConnectionsChange: (show: boolean) => void;
+  showMigrations: boolean;
+  onShowMigrationsChange: (show: boolean) => void;
 }
 
 // Tile layer definitions
@@ -383,7 +387,11 @@ export function LeafletMap({
   relationships,
   selectedScholar, 
   onSelectScholar, 
-  timeRange 
+  timeRange,
+  showConnections,
+  onShowConnectionsChange,
+  showMigrations,
+  onShowMigrationsChange,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -398,11 +406,14 @@ export function LeafletMap({
   
   const [viewMode, setViewMode] = useState<ViewMode>('combined');
   const [overlayOpacity, setOverlayOpacity] = useState(0.5);
-  const [showLines, setShowLines] = useState(false);
   const [showBoundaries, setShowBoundaries] = useState(true);
-  const [showMigrations, setShowMigrations] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
   const [controlsExpanded, setControlsExpanded] = useState(false);
+
+  // Alias props for internal use
+  const showLines = showConnections;
+  const setShowLines = onShowConnectionsChange;
+  const setShowMigrations = onShowMigrationsChange;
 
   // Initialize map
   useEffect(() => {
@@ -969,56 +980,6 @@ export function LeafletMap({
               </div>
             )}
 
-            {/* Migration Legend - Only show when migrations are on */}
-            {showMigrations && (
-              <div className="pt-3 border-t border-slate-200">
-                <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-                  Migration Causes
-                </div>
-                <div className="space-y-1.5 text-[10px]">
-                  <div className="flex items-center gap-2">
-                    <span>⚠️</span>
-                    <span className="text-slate-600">Expulsion</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>🔥</span>
-                    <span className="text-slate-600">Persecution</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>🏃</span>
-                    <span className="text-slate-600">Flight</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>📚</span>
-                    <span className="text-slate-600">Scholarly Movement</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-
-            {/* Connection Legend - Only show when lines are on */}
-            {showLines && (
-              <div className="pt-3 border-t border-slate-200">
-                <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-                  Connection Types
-                </div>
-                <div className="space-y-1.5 text-[10px]">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-green-500"></div>
-                    <span className="text-slate-600">Educational</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-amber-500"></div>
-                    <span className="text-slate-600">Family</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-blue-500 border-dashed" style={{ borderTop: '2px dashed #3b82f6', height: 0 }}></div>
-                    <span className="text-slate-600">Literary</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

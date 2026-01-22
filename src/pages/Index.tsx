@@ -16,6 +16,8 @@ const Index = () => {
   const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showConnections, setShowConnections] = useState(false);
+  const [showMigrations, setShowMigrations] = useState(false);
 
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();
@@ -145,11 +147,15 @@ const Index = () => {
           selectedScholar={selectedScholar}
           onSelectScholar={setSelectedScholar}
           timeRange={timeRange}
+          showConnections={showConnections}
+          onShowConnectionsChange={setShowConnections}
+          showMigrations={showMigrations}
+          onShowMigrationsChange={setShowMigrations}
         />
 
         {/* Legend - Bottom Left of Map */}
         <div className="absolute bottom-6 left-6 z-[1000] bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4">
-          <MapLegend />
+          <MapLegend showConnections={showConnections} showMigrations={showMigrations} />
         </div>
 
         {/* Scholar Detail Panel */}
