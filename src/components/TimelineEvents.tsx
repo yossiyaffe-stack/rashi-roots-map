@@ -189,23 +189,37 @@ export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSel
           // Historical event
           const event = item.event as DbHistoricalEvent;
           const config = IMPORTANCE_CONFIG[event.importance] || IMPORTANCE_CONFIG.scholarly;
+          const isSecular = item.category === 'secular';
           return (
             <button
               key={item.id}
               onClick={() => setSelectedEvent(event)}
               className={cn(
-                "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all",
-                "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20",
-                "text-left group"
+                "flex-shrink-0 px-3 py-1.5 rounded-lg border transition-all text-left group",
+                isSecular
+                  ? "bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40"
+                  : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20"
               )}
             >
               <div className="flex items-center gap-2">
-                <div className={cn("w-2 h-2 rounded-full", config.color)} />
-                <span className="text-xs font-medium text-white/80 group-hover:text-white">
+                {isSecular ? (
+                  <Globe className="w-3 h-3 text-blue-400" />
+                ) : (
+                  <div className={cn("w-2 h-2 rounded-full", config.color)} />
+                )}
+                <span className={cn(
+                  "text-xs font-medium group-hover:text-white",
+                  isSecular ? "text-blue-300" : "text-white/80"
+                )}>
                   {event.year}
                 </span>
               </div>
-              <div className="text-[11px] text-white/50 group-hover:text-white/70 max-w-[150px] truncate">
+              <div className={cn(
+                "text-[11px] max-w-[150px] truncate",
+                isSecular 
+                  ? "text-blue-300/70 group-hover:text-blue-200" 
+                  : "text-white/50 group-hover:text-white/70"
+              )}>
                 {event.name}
               </div>
             </button>
