@@ -24,9 +24,9 @@ const IMPORTANCE_CONFIG = {
   scholarly: { color: 'bg-blue-500', label: 'Scholarly' },
 };
 
-// Timeline bounds matching the slider
-const TIMELINE_MIN = 1000;
-const TIMELINE_MAX = 1800;
+// Timeline bounds matching the slider (BCE represented as negative numbers)
+const TIMELINE_MIN = -2000;
+const TIMELINE_MAX = 2026;
 
 export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSelectScholar, showSecularHistory = false, onToggleSecularHistory }: TimelineEventsProps) {
   const [selectedEvent, setSelectedEvent] = useState<DbHistoricalEvent | null>(null);
