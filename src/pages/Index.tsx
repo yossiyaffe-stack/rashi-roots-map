@@ -174,7 +174,7 @@ const Index = () => {
           >
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-accent" />
-              <span className="text-xs uppercase tracking-widest text-accent font-bold">Timeline Filter</span>
+              <span className="text-xs uppercase tracking-widest text-accent font-bold">Time Frame Filter</span>
               <span className="text-xs text-muted-foreground ml-2">
                 {timeRange[0]} – {timeRange[1]} CE
               </span>
