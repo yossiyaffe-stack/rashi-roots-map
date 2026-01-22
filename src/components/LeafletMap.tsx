@@ -598,26 +598,28 @@ export function LeafletMap({
           ">
             <div style="
               font-family: 'David Libre', 'Times New Roman', serif;
-              font-size: ${isMajor ? '12px' : '10px'};
-              font-weight: 500;
+              font-size: ${isMajor ? '16px' : '13px'};
+              font-weight: 600;
               color: #fff;
               text-shadow: 
                 -1px -1px 0 #1a1a1a,
                 1px -1px 0 #1a1a1a,
                 -1px 1px 0 #1a1a1a,
-                1px 1px 0 #1a1a1a;
+                1px 1px 0 #1a1a1a,
+                0 0 4px rgba(0,0,0,0.8);
               direction: rtl;
             ">${city.hebrew}</div>
             <div style="
               font-family: 'Crimson Text', Georgia, serif;
-              font-size: ${isMajor ? '11px' : '9px'};
-              font-weight: ${isMajor ? '500' : '400'};
+              font-size: ${isMajor ? '14px' : '11px'};
+              font-weight: ${isMajor ? '600' : '500'};
               color: #fff;
               text-shadow: 
                 -1px -1px 0 #1a1a1a,
                 1px -1px 0 #1a1a1a,
                 -1px 1px 0 #1a1a1a,
-                1px 1px 0 #1a1a1a;
+                1px 1px 0 #1a1a1a,
+                0 0 4px rgba(0,0,0,0.8);
               margin-top: -2px;
             ">${city.name}</div>
           </div>`,
@@ -803,11 +805,11 @@ export function LeafletMap({
               class="marker-dot ${isRashi ? 'marker-rashi-dot' : ''}" 
               style="
                 background: ${color}; 
-                width: ${isRashi ? '22px' : '14px'};
-                height: ${isRashi ? '22px' : '14px'};
+                width: ${isRashi ? '18px' : '10px'};
+                height: ${isRashi ? '18px' : '10px'};
                 border-radius: 50%;
-                border: ${isRashi ? '3px solid #fbbf24' : '2px solid #fff'};
-                box-shadow: 0 0 ${isSelected ? '20px' : '10px'} ${color}, 0 2px 6px rgba(0,0,0,0.4);
+                border: ${isRashi ? '2px solid #fbbf24' : '1.5px solid #fff'};
+                box-shadow: 0 0 ${isSelected ? '16px' : '8px'} ${color}, 0 1px 4px rgba(0,0,0,0.4);
                 transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
                 ${isSelected ? 'transform: scale(1.4);' : ''}
                 ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
@@ -816,17 +818,17 @@ export function LeafletMap({
             <div class="marker-label" style="
               background: #1a1408;
               color: #ffd700;
-              padding: 5px 12px;
-              border-radius: 4px;
-              font-size: ${isRashi ? '14px' : '12px'};
-              font-weight: 700;
-              letter-spacing: 0.5px;
+              padding: 3px 8px;
+              border-radius: 3px;
+              font-size: ${isRashi ? '11px' : '9px'};
+              font-weight: 600;
+              letter-spacing: 0.3px;
               white-space: nowrap;
-              max-width: 160px;
+              max-width: 120px;
               overflow: hidden;
               text-overflow: ellipsis;
-              box-shadow: 0 2px 10px rgba(0,0,0,0.8), 0 0 0 2px #1a1408;
-              border: 2px solid #c9a961;
+              box-shadow: 0 1px 6px rgba(0,0,0,0.7), 0 0 0 1px #1a1408;
+              border: 1.5px solid #c9a961;
               text-shadow: 0 1px 2px rgba(0,0,0,0.5);
               ${isDimmed ? 'opacity: 0.4;' : ''}
               ${isRashi ? 'background: #c9a961; color: #1a1408; border-color: #ffd700; text-shadow: none;' : ''}
