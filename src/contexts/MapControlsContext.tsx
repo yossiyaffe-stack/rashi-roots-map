@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
+export type CityFilter = 'all' | 'major' | 'minor' | 'scholar-only';
+
 interface MapControlsContextType {
   showBoundaries: boolean;
   setShowBoundaries: (show: boolean) => void;
@@ -15,6 +17,10 @@ interface MapControlsContextType {
   setShowScholarNamesEnglish: (show: boolean) => void;
   showScholarNamesHebrew: boolean;
   setShowScholarNamesHebrew: (show: boolean) => void;
+  cityFilter: CityFilter;
+  setCityFilter: (filter: CityFilter) => void;
+  showOnlyScholarCities: boolean;
+  setShowOnlyScholarCities: (show: boolean) => void;
 }
 
 const MapControlsContext = createContext<MapControlsContextType | undefined>(undefined);
@@ -27,6 +33,8 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showPlaceNamesHebrew, setShowPlaceNamesHebrew] = useState(true);
   const [showScholarNamesEnglish, setShowScholarNamesEnglish] = useState(true);
   const [showScholarNamesHebrew, setShowScholarNamesHebrew] = useState(false);
+  const [cityFilter, setCityFilter] = useState<CityFilter>('all');
+  const [showOnlyScholarCities, setShowOnlyScholarCities] = useState(false);
 
   return (
     <MapControlsContext.Provider value={{
@@ -44,6 +52,10 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
       setShowScholarNamesEnglish,
       showScholarNamesHebrew,
       setShowScholarNamesHebrew,
+      cityFilter,
+      setCityFilter,
+      showOnlyScholarCities,
+      setShowOnlyScholarCities,
     }}>
       {children}
     </MapControlsContext.Provider>
@@ -69,6 +81,10 @@ export function useMapControls() {
       setShowScholarNamesEnglish: () => {},
       showScholarNamesHebrew: false,
       setShowScholarNamesHebrew: () => {},
+      cityFilter: 'all' as CityFilter,
+      setCityFilter: () => {},
+      showOnlyScholarCities: false,
+      setShowOnlyScholarCities: () => {},
     };
   }
   return context;

@@ -34,6 +34,8 @@ export function AppLayout() {
     showPlaceNamesHebrew, setShowPlaceNamesHebrew,
     showScholarNamesEnglish, setShowScholarNamesEnglish,
     showScholarNamesHebrew, setShowScholarNamesHebrew,
+    cityFilter, setCityFilter,
+    showOnlyScholarCities, setShowOnlyScholarCities,
   } = useMapControls();
   
   const isMapPage = location.pathname === '/';
@@ -168,6 +170,10 @@ export function AppLayout() {
                 onShowScholarNamesEnglishChange={setShowScholarNamesEnglish}
                 showScholarNamesHebrew={showScholarNamesHebrew}
                 onShowScholarNamesHebrewChange={setShowScholarNamesHebrew}
+                cityFilter={cityFilter}
+                onCityFilterChange={setCityFilter}
+                showOnlyScholarCities={showOnlyScholarCities}
+                onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
               />
               
               {/* Relationship Filters */}
