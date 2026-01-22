@@ -38,7 +38,7 @@ export const WorksNetworkView = ({
 }: WorksNetworkViewProps) => {
   const [showOnlyConnected, setShowOnlyConnected] = useState(true);
   const [highlightSelected, setHighlightSelected] = useState(true);
-  const [zoom, setZoom] = useState(0.8);
+  const [zoom, setZoom] = useState(1.2);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
@@ -141,8 +141,8 @@ export const WorksNetworkView = ({
     });
 
     const depthLevels = Object.keys(depthGroups).map(Number).sort((a, b) => a - b);
-    const depthSpacing = 250; // Vertical spacing between depth levels
-    const nodeSpacing = 180;
+    const depthSpacing = 350; // Vertical spacing between depth levels
+    const nodeSpacing = 280; // Horizontal spacing between nodes
     
     let currentY = 100;
     
@@ -180,15 +180,15 @@ export const WorksNetworkView = ({
 
   // SVG dimensions
   const svgDimensions = useMemo(() => ({
-    width: 3000,
-    height: Math.max(2000, Object.keys(workPositions).length * 50),
+    width: 5000,
+    height: Math.max(3000, Object.keys(workPositions).length * 80),
   }), [workPositions]);
 
   // Zoom handlers
-  const handleZoomIn = () => setZoom(z => Math.min(z + 0.2, 2));
-  const handleZoomOut = () => setZoom(z => Math.max(z - 0.2, 0.3));
+  const handleZoomIn = () => setZoom(z => Math.min(z + 0.2, 3));
+  const handleZoomOut = () => setZoom(z => Math.max(z - 0.2, 0.5));
   const handleResetView = () => {
-    setZoom(0.8);
+    setZoom(1.2);
     setPan({ x: 0, y: 0 });
   };
 
@@ -341,35 +341,35 @@ export const WorksNetworkView = ({
             >
               {/* Background rectangle */}
               <rect
-                x={-70}
-                y={-25}
-                width={140}
-                height={50}
-                rx={8}
+                x={-100}
+                y={-40}
+                width={200}
+                height={80}
+                rx={10}
                 fill={isSelected ? color : 'hsl(var(--card))'}
                 stroke={color}
-                strokeWidth={isSelected ? 3 : 1.5}
+                strokeWidth={isSelected ? 4 : 2}
                 opacity={dimmed ? 0.3 : 1}
               />
               
               {/* Work title */}
               <text
                 textAnchor="middle"
-                dy={-5}
+                dy={-8}
                 fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--foreground))'}
-                fontSize={11}
+                fontSize={16}
                 fontWeight={600}
                 opacity={dimmed ? 0.3 : 1}
               >
-                {work.title.length > 18 ? work.title.slice(0, 16) + '...' : work.title}
+                {work.title.length > 22 ? work.title.slice(0, 20) + '...' : work.title}
               </text>
               
               {/* Author name */}
               <text
                 textAnchor="middle"
-                dy={12}
+                dy={14}
                 fill={isSelected ? 'hsl(var(--card))' : 'hsl(var(--muted-foreground))'}
-                fontSize={9}
+                fontSize={13}
                 opacity={dimmed ? 0.3 : 0.8}
               >
                 {work.author_name}
