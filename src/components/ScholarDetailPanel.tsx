@@ -97,7 +97,7 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
   const relationships = scholarDetails?.relationships || [];
 
   return (
-    <div className="absolute bottom-6 left-6 right-6 md:left-auto md:right-6 md:top-6 md:bottom-6 md:w-[400px] z-[1000]">
+    <div className="absolute bottom-6 left-6 right-6 max-h-[45vh] md:max-h-none md:left-auto md:right-6 md:top-6 md:bottom-6 md:w-[400px] z-[1000]">
       <div className="bg-sidebar/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl h-full flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-6 bg-gradient-to-b from-accent/20 to-transparent border-b border-white/10">
