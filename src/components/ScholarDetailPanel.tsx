@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useScholarWithWorks, type DbScholar } from '@/hooks/useScholars';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { WorkWithTextualRelationships } from '@/hooks/useScholars';
+import { ScholarJourney } from '@/components/ScholarJourney';
 
 interface WorkCardProps {
   work: WorkWithTextualRelationships;
@@ -86,9 +87,10 @@ function WorkCard({ work, supercommentaries, hasSupercommentaries }: WorkCardPro
 interface ScholarDetailPanelProps {
   scholar: DbScholar;
   onClose: () => void;
+  onFlyToLocation?: (lat: number, lng: number) => void;
 }
 
-export function ScholarDetailPanel({ scholar, onClose }: ScholarDetailPanelProps) {
+export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: ScholarDetailPanelProps) {
   const { data: scholarDetails, isLoading } = useScholarWithWorks(scholar.id);
 
   const works = scholarDetails?.works || [];
@@ -159,6 +161,12 @@ export function ScholarDetailPanel({ scholar, onClose }: ScholarDetailPanelProps
               <p className="text-sm text-muted-foreground leading-relaxed">{scholar.bio}</p>
             </div>
           )}
+
+          {/* Life Journey */}
+          <ScholarJourney 
+            scholarId={scholar.id} 
+            onLocationClick={onFlyToLocation}
+          />
 
           {/* Works with Supercommentaries */}
           {works.length > 0 && (
