@@ -1195,8 +1195,12 @@ export function LeafletMap({
       toCoords: [number, number], 
       color: string, 
       tooltip: string,
-      dashed: boolean = false
+      dashed: boolean = false,
+      weight: number = 2
     ) => {
+      // Skip if coordinates are the same (would create invisible line)
+      if (fromCoords[0] === toCoords[0] && fromCoords[1] === toCoords[1]) return;
+      
       const midLat = (fromCoords[0] + toCoords[0]) / 2;
       const midLng = (fromCoords[1] + toCoords[1]) / 2;
       const offset = Math.abs(fromCoords[1] - toCoords[1]) * 0.15;
@@ -1209,8 +1213,8 @@ export function LeafletMap({
 
       const line = L.polyline(curvePoints, {
         color,
-        weight: 2,
-        opacity: 0.6,
+        weight,
+        opacity: 0.7,
         dashArray: dashed ? '5, 5' : undefined,
         smoothFactor: 1,
       });
@@ -1241,7 +1245,8 @@ export function LeafletMap({
 
       if (fromCoords && toCoords) {
         const color = getRelationshipColor(rel.type);
-        drawLine(fromCoords, toCoords, color, `${rel.type} relationship`, rel.type === 'literary');
+        const weight = rel.type === 'literary' ? 2 : 3;
+        drawLine(fromCoords, toCoords, color, `${rel.type} relationship`, rel.type === 'literary', weight);
       }
     });
 
@@ -1277,7 +1282,8 @@ export function LeafletMap({
           label = `Social: ${rel.relationship_type}`;
         }
         
-        drawLine(fromCoords, toCoords, color, label, dashed);
+        // Use thicker lines (weight 3) for biographical relationships
+        drawLine(fromCoords, toCoords, color, label, dashed, 3);
       }
     });
 
@@ -1292,9 +1298,9 @@ export function LeafletMap({
       const toCoords = scholarCoords.get(rel.to_scholar_id);
 
       if (fromCoords && toCoords) {
-        // Textual relationships are shown as blue dashed lines
+        // Textual relationships are shown as blue dashed lines (thinner weight 2)
         const label = `Textual: ${rel.relationship_type}`;
-        drawLine(fromCoords, toCoords, '#3b82f6', label, true);
+        drawLine(fromCoords, toCoords, '#3b82f6', label, true, 2);
       }
     });
 
