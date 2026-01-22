@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DbScholar } from '@/hooks/useScholars';
+import type { DbScholar, DbRelationship } from '@/hooks/useScholars';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 type ViewMode = 'modern' | 'combined' | 'historical' | 'satellite';
 
 interface LeafletMapProps {
   scholars: DbScholar[];
+  relationships: DbRelationship[];
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
   timeRange: [number, number];
@@ -15,16 +18,13 @@ interface LeafletMapProps {
 
 // Tile layer definitions
 const TILE_LAYERS = {
-  // CartoDB Voyager - Parchment-like modern base
   voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-  // Dark base for contrast
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  // Historical map overlay (17th century Champagne region from Map Warper)
   historical: 'https://mapwarper.net/maps/tile/14686/{z}/{x}/{y}.png',
-  // Topo for manuscript feel
   topo: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-  // Satellite imagery
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  // Labels overlay for satellite
+  labels: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
 };
 
 const getScholarColor = (scholar: DbScholar): string => {
@@ -34,8 +34,18 @@ const getScholarColor = (scholar: DbScholar): string => {
   return '#8b5cf6';
 };
 
+const getRelationshipColor = (type: string): string => {
+  switch (type) {
+    case 'educational': return '#22c55e';
+    case 'family': return '#f59e0b';
+    case 'literary': return '#3b82f6';
+    default: return '#8b5cf6';
+  }
+};
+
 export function LeafletMap({ 
   scholars, 
+  relationships,
   selectedScholar, 
   onSelectScholar, 
   timeRange 
@@ -44,17 +54,20 @@ export function LeafletMap({
   const leafletMap = useRef<L.Map | null>(null);
   const baseLayerRef = useRef<L.TileLayer | null>(null);
   const historicalLayerRef = useRef<L.TileLayer | null>(null);
+  const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const linesRef = useRef<L.Polyline[]>([]);
   
   const [viewMode, setViewMode] = useState<ViewMode>('combined');
-  const [overlayOpacity, setOverlayOpacity] = useState(0.6);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.5);
+  const [showLines, setShowLines] = useState(false);
 
   // Initialize map
   useEffect(() => {
     if (!mapRef.current || leafletMap.current) return;
 
     const map = L.map(mapRef.current, {
-      center: [48.3, 8.0], // Centered on Champagne/Central Europe
+      center: [48.3, 8.0],
       zoom: 6,
       zoomControl: false,
     });
@@ -62,9 +75,9 @@ export function LeafletMap({
     L.control.zoom({ position: 'topright' }).addTo(map);
     leafletMap.current = map;
 
-    // Add base layer (voyager - parchment-like)
-    baseLayerRef.current = L.tileLayer(TILE_LAYERS.voyager, {
-      attribution: '© OpenStreetMap, © CARTO',
+    // Add initial base layer
+    baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
+      attribution: '© Esri, Maxar, Earthstar Geographics',
     }).addTo(map);
 
     return () => {
@@ -86,8 +99,11 @@ export function LeafletMap({
     if (historicalLayerRef.current) {
       leafletMap.current.removeLayer(historicalLayerRef.current);
     }
+    if (labelsLayerRef.current) {
+      leafletMap.current.removeLayer(labelsLayerRef.current);
+    }
 
-    // Add base layer based on mode
+    // Add layers based on mode
     if (viewMode === 'modern') {
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.voyager, {
         attribution: '© OpenStreetMap, © CARTO',
@@ -96,8 +112,11 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
+      // Add labels on top
+      labelsLayerRef.current = L.tileLayer(TILE_LAYERS.labels, {
+        attribution: '© CARTO',
+      }).addTo(leafletMap.current);
     } else if (viewMode === 'historical') {
-      // Use topo as a subtle base, then full opacity historical
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.topo, {
         attribution: '© OpenTopoMap',
         opacity: 0.4,
@@ -107,7 +126,7 @@ export function LeafletMap({
         opacity: 0.9,
       }).addTo(leafletMap.current);
     } else {
-      // Combined mode - satellite base + historical overlay
+      // Combined mode - satellite + historical overlay
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
@@ -115,8 +134,69 @@ export function LeafletMap({
         attribution: 'Historical Map via NYPL Map Warper',
         opacity: overlayOpacity,
       }).addTo(leafletMap.current);
+      // Add labels on top for readability
+      labelsLayerRef.current = L.tileLayer(TILE_LAYERS.labels, {
+        attribution: '© CARTO',
+        opacity: 0.8,
+      }).addTo(leafletMap.current);
     }
   }, [viewMode, overlayOpacity]);
+
+  // Draw relationship lines
+  useEffect(() => {
+    if (!leafletMap.current) return;
+
+    // Clear existing lines
+    linesRef.current.forEach(line => line.remove());
+    linesRef.current = [];
+
+    if (!showLines) return;
+
+    // Create a map of scholar IDs to their coordinates
+    const scholarCoords = new Map<string, [number, number]>();
+    scholars.forEach(s => {
+      if (s.latitude && s.longitude) {
+        scholarCoords.set(s.id, [s.latitude, s.longitude]);
+      }
+    });
+
+    // Draw lines for each relationship
+    relationships.forEach(rel => {
+      const fromCoords = rel.from_scholar_id ? scholarCoords.get(rel.from_scholar_id) : null;
+      const toCoords = rel.to_scholar_id ? scholarCoords.get(rel.to_scholar_id) : null;
+
+      if (fromCoords && toCoords) {
+        const color = getRelationshipColor(rel.type);
+        
+        // Create curved line using quadratic bezier approximation
+        const midLat = (fromCoords[0] + toCoords[0]) / 2;
+        const midLng = (fromCoords[1] + toCoords[1]) / 2;
+        const offset = Math.abs(fromCoords[1] - toCoords[1]) * 0.15;
+        
+        const curvePoints: L.LatLngExpression[] = [
+          fromCoords,
+          [midLat + offset, midLng],
+          toCoords,
+        ];
+
+        const line = L.polyline(curvePoints, {
+          color,
+          weight: 2,
+          opacity: 0.6,
+          dashArray: rel.type === 'literary' ? '5, 5' : undefined,
+          smoothFactor: 1,
+        });
+
+        line.bindTooltip(`${rel.type} relationship`, { 
+          className: 'historical-tooltip',
+          sticky: true 
+        });
+
+        line.addTo(leafletMap.current!);
+        linesRef.current.push(line);
+      }
+    });
+  }, [showLines, relationships, scholars]);
 
   // Update markers when scholars or time range changes
   useEffect(() => {
@@ -139,7 +219,6 @@ export function LeafletMap({
       const isRashi = scholar.name === 'Rashi';
       const isSelected = selectedScholar?.id === scholar.id;
       
-      // Create custom historical-style marker
       const icon = L.divIcon({
         className: 'historical-marker',
         html: `
@@ -215,27 +294,65 @@ export function LeafletMap({
         ))}
       </div>
 
-      {/* Historical Overlay Controls - Only show in combined mode */}
-      {viewMode === 'combined' && (
-        <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-56">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-3">
-            Historical Overlay
-          </label>
-          <Slider
-            value={[overlayOpacity * 100]}
-            min={0}
-            max={100}
-            step={5}
-            onValueChange={([val]) => setOverlayOpacity(val / 100)}
-            className="w-full"
+      {/* Controls Panel */}
+      <div className="absolute top-6 right-20 z-[1000] bg-white/95 backdrop-blur-md rounded-lg p-4 shadow-lg border border-slate-200 w-60 space-y-4">
+        {/* Show Lines Toggle */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="show-lines" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+            Show Connections
+          </Label>
+          <Switch
+            id="show-lines"
+            checked={showLines}
+            onCheckedChange={setShowLines}
           />
-          <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
-            <span>Satellite</span>
-            <span>{Math.round(overlayOpacity * 100)}%</span>
-            <span>17th C.</span>
-          </div>
         </div>
-      )}
+
+        {/* Historical Overlay - Only show in combined mode */}
+        {viewMode === 'combined' && (
+          <div className="pt-3 border-t border-slate-200">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block mb-3">
+              Historical Overlay
+            </label>
+            <Slider
+              value={[overlayOpacity * 100]}
+              min={0}
+              max={100}
+              step={5}
+              onValueChange={([val]) => setOverlayOpacity(val / 100)}
+              className="w-full"
+            />
+            <div className="flex justify-between text-[10px] text-slate-400 mt-2 font-medium">
+              <span>Satellite</span>
+              <span>{Math.round(overlayOpacity * 100)}%</span>
+              <span>17th C.</span>
+            </div>
+          </div>
+        )}
+
+        {/* Line Legend - Only show when lines are on */}
+        {showLines && (
+          <div className="pt-3 border-t border-slate-200">
+            <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
+              Connection Types
+            </div>
+            <div className="space-y-1.5 text-[10px]">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-green-500"></div>
+                <span className="text-slate-600">Educational</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-amber-500"></div>
+                <span className="text-slate-600">Family</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-blue-500 border-dashed" style={{ borderTop: '2px dashed #3b82f6', height: 0 }}></div>
+                <span className="text-slate-600">Literary</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -177,6 +177,7 @@ const Index = () => {
         {viewMode === 'map' && (
           <LeafletMap
             scholars={filteredScholars}
+            relationships={relationships}
             selectedScholar={selectedScholar}
             onSelectScholar={setSelectedScholar}
             timeRange={timeRange}
