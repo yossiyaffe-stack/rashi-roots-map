@@ -3,6 +3,8 @@ import { Map, Clock, Users, Grape, Menu, X } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { HistoricalEventsList } from '@/components/HistoricalEventsList';
+import { useHistoricalEvents } from '@/hooks/useScholars';
 
 const navItems = [
   { path: '/', label: 'Map', icon: Map },
@@ -12,7 +14,10 @@ const navItems = [
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [timeRange] = useState<[number, number]>([1000, 1800]);
   const location = useLocation();
+  
+  const { data: historicalEvents = [] } = useHistoricalEvents();
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
@@ -49,7 +54,7 @@ export function AppLayout() {
         </header>
 
         {/* Navigation */}
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="p-3 space-y-1">
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
             return (
@@ -71,6 +76,15 @@ export function AppLayout() {
             );
           })}
         </nav>
+
+        {/* Historical Events Section */}
+        {sidebarOpen && (
+          <div className="flex-1 p-3 pt-0 overflow-hidden">
+            <div className="border-t border-white/10 pt-3">
+              <HistoricalEventsList events={historicalEvents} timeRange={timeRange} />
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         {sidebarOpen && (
