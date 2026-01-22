@@ -594,12 +594,15 @@ export function LeafletMap({
     // Clear existing city labels
     cityLabelsRef.current.forEach(label => label.remove());
     cityLabelsRef.current = [];
-
-    // Only show city labels on satellite and historical views
-    if (viewMode === 'modern') return;
     
     // Don't render if both languages are hidden
     if (!showPlaceNamesEnglish && !showPlaceNamesHebrew) return;
+
+    // Adjust text styling based on map mode (modern map is lighter)
+    const isLightMap = viewMode === 'modern';
+    const textColor = isLightMap ? '#1a1a1a' : '#fff';
+    const shadowColor = isLightMap ? 'rgba(255,255,255,0.9)' : '#1a1a1a';
+    const glowColor = isLightMap ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)';
 
     CITY_LABELS.forEach(city => {
       const isMajor = city.importance === 'major';
@@ -609,13 +612,13 @@ export function LeafletMap({
         font-family: 'David Libre', 'Times New Roman', serif;
         font-size: ${isMajor ? '16px' : '13px'};
         font-weight: 600;
-        color: #fff;
+        color: ${textColor};
         text-shadow: 
-          -1px -1px 0 #1a1a1a,
-          1px -1px 0 #1a1a1a,
-          -1px 1px 0 #1a1a1a,
-          1px 1px 0 #1a1a1a,
-          0 0 4px rgba(0,0,0,0.8);
+          -1px -1px 0 ${shadowColor},
+          1px -1px 0 ${shadowColor},
+          -1px 1px 0 ${shadowColor},
+          1px 1px 0 ${shadowColor},
+          0 0 4px ${glowColor};
         direction: rtl;
       ">${city.hebrew}</div>` : '';
       
@@ -623,13 +626,13 @@ export function LeafletMap({
         font-family: 'Crimson Text', Georgia, serif;
         font-size: ${isMajor ? '14px' : '11px'};
         font-weight: ${isMajor ? '600' : '500'};
-        color: #fff;
+        color: ${textColor};
         text-shadow: 
-          -1px -1px 0 #1a1a1a,
-          1px -1px 0 #1a1a1a,
-          -1px 1px 0 #1a1a1a,
-          1px 1px 0 #1a1a1a,
-          0 0 4px rgba(0,0,0,0.8);
+          -1px -1px 0 ${shadowColor},
+          1px -1px 0 ${shadowColor},
+          -1px 1px 0 ${shadowColor},
+          1px 1px 0 ${shadowColor},
+          0 0 4px ${glowColor};
         margin-top: ${showPlaceNamesHebrew ? '-2px' : '0'};
       ">${city.name}</div>` : '';
       
