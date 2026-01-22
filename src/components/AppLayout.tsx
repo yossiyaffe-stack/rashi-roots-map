@@ -399,8 +399,14 @@ export function AppLayout() {
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col w-72 p-4"
           )}>
-            <div className="text-sm font-semibold text-white/80 mb-3">Map Legend</div>
-            <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
+            <button 
+              onClick={() => setLegendsPanelOpen(false)}
+              className="flex items-center gap-2 text-sm font-semibold text-white/80 mb-3 hover:text-accent transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Map Legend</span>
+            </button>
+            <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} isEmbedded />
           </div>
         )}
 
@@ -410,8 +416,14 @@ export function AppLayout() {
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col w-72 p-4"
           )}>
-            <div className="text-sm font-semibold text-white/80 mb-3">Medieval Kingdoms</div>
-            <KingdomsLegend />
+            <button 
+              onClick={() => setKingdomsPanelOpen(false)}
+              className="flex items-center gap-2 text-sm font-semibold text-white/80 mb-3 hover:text-accent transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Medieval Kingdoms</span>
+            </button>
+            <KingdomsLegend isEmbedded />
           </div>
         )}
       </div>

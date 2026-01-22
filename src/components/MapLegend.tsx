@@ -9,6 +9,7 @@ interface MapLegendProps {
   showConnections?: boolean;
   showMigrations?: boolean;
   relationships?: DbRelationship[];
+  isEmbedded?: boolean;
 }
 
 // Multi-dimensional relationship domain colors
@@ -25,7 +26,7 @@ const CONNECTION_TYPE_CONFIG: Record<string, { color: string; label: string; sty
   literary: { color: 'bg-[#3b82f6]', label: 'Literary', style: 'dashed' },
 };
 
-export function MapLegend({ showConnections = false, showMigrations = false, relationships = [] }: MapLegendProps) {
+export function MapLegend({ showConnections = false, showMigrations = false, relationships = [], isEmbedded = false }: MapLegendProps) {
   const [expanded, setExpanded] = useState(false);
   const { filters } = useRelationshipFilters();
 
@@ -39,14 +40,12 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
     { color: 'bg-[#8b7355]', label: 'Other Scholars' },
   ];
 
-  // Active domains based on filters
   const activeDomains = useMemo(() => {
     return Object.entries(filters.domains)
       .filter(([_, enabled]) => enabled)
       .map(([domain]) => DOMAIN_COLORS[domain as keyof typeof DOMAIN_COLORS]);
   }, [filters.domains]);
 
-  // Dynamically determine which connection types exist in the data (legacy)
   const activeConnectionTypes = useMemo(() => {
     const types = new Set(relationships.map(r => r.type));
     return Array.from(types)
@@ -61,9 +60,91 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
     { icon: '📚', label: 'Scholarly Movement' },
   ];
 
+  const legendContent = (
+    <ScrollArea className="max-h-[calc(100vh-200px)]">
+      <div className="space-y-4 pr-2">
+        {/* Scholar Types */}
+        <div>
+          <div className="text-sm font-semibold text-foreground/80 mb-2">
+            Scholar Types
+          </div>
+          <div className="space-y-2">
+            {legendItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-3">
+                <div className={`w-3.5 h-3.5 rounded-full ${item.color} shadow-sm shrink-0`} />
+                <span className="text-sm text-muted-foreground">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Relationship Domains - Multi-dimensional */}
+        {showConnections && activeDomains.length > 0 && (
+          <div className="pt-3 border-t border-white/10">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              Relationship Types
+            </div>
+            <div className="space-y-2">
+              {activeDomains.map((item) => (
+                <div key={item.label} className="flex items-center gap-3">
+                  <div className={cn("w-5 h-0.5 rounded", item.color)} />
+                  <item.Icon className="w-3.5 h-3.5 text-white/60" />
+                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Legacy Connection Types */}
+        {showConnections && activeDomains.length === 0 && activeConnectionTypes.length > 0 && (
+          <div className="pt-3 border-t border-white/10">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              Connection Types
+            </div>
+            <div className="space-y-2">
+              {activeConnectionTypes.map((item) => (
+                <div key={item.label} className="flex items-center gap-3">
+                  {item.style === 'dashed' ? (
+                    <div className="w-5 h-0 border-t-2 border-dashed border-[#3b82f6] shrink-0" />
+                  ) : (
+                    <div className={`w-5 h-0.5 ${item.color} shrink-0`} />
+                  )}
+                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Migration Causes */}
+        {showMigrations && (
+          <div className="pt-3 border-t border-white/10">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              Migration Causes
+            </div>
+            <div className="space-y-2">
+              {migrationItems.map((item) => (
+                <div key={item.label} className="flex items-center gap-3">
+                  <span className="text-base shrink-0">{item.icon}</span>
+                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  );
+
+  // Embedded mode - render content directly without toggle
+  if (isEmbedded) {
+    return legendContent;
+  }
+
+  // Standalone mode with toggle
   return (
     <div className="relative">
-      {/* Header with collapse toggle */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center justify-between w-full gap-2 text-xs uppercase tracking-widest text-accent font-bold hover:text-accent/80 transition-colors"
@@ -79,7 +160,6 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
         )}
       </button>
 
-      {/* Horizontal slide-out panel */}
       <div className={cn(
         "absolute left-full top-0 ml-2 z-50 transition-all duration-300 origin-left",
         expanded 
@@ -87,80 +167,7 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
           : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
       )}>
         <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[200px] max-w-[280px]">
-          <ScrollArea className="max-h-72">
-            <div className="space-y-4 pr-2">
-              {/* Scholar Types */}
-              <div>
-                <div className="text-sm font-semibold text-foreground/80 mb-2">
-                  Scholar Types
-                </div>
-                <div className="space-y-2">
-                  {legendItems.map((item) => (
-                    <div key={item.label} className="flex items-center gap-3">
-                      <div className={`w-3.5 h-3.5 rounded-full ${item.color} shadow-sm shrink-0`} />
-                      <span className="text-sm text-muted-foreground">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Relationship Domains - Multi-dimensional */}
-              {showConnections && activeDomains.length > 0 && (
-                <div className="pt-3 border-t border-white/10">
-                  <div className="text-sm font-semibold text-foreground/80 mb-2">
-                    Relationship Types
-                  </div>
-                  <div className="space-y-2">
-                    {activeDomains.map((item) => (
-                      <div key={item.label} className="flex items-center gap-3">
-                        <div className={cn("w-5 h-0.5 rounded", item.color)} />
-                        <item.Icon className="w-3.5 h-3.5 text-white/60" />
-                        <span className="text-sm text-muted-foreground">{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Legacy Connection Types - Only show if multi-dimensional domains are all disabled */}
-              {showConnections && activeDomains.length === 0 && activeConnectionTypes.length > 0 && (
-                <div className="pt-3 border-t border-white/10">
-                  <div className="text-sm font-semibold text-foreground/80 mb-2">
-                    Connection Types
-                  </div>
-                  <div className="space-y-2">
-                    {activeConnectionTypes.map((item) => (
-                      <div key={item.label} className="flex items-center gap-3">
-                        {item.style === 'dashed' ? (
-                          <div className="w-5 h-0 border-t-2 border-dashed border-[#3b82f6] shrink-0" />
-                        ) : (
-                          <div className={`w-5 h-0.5 ${item.color} shrink-0`} />
-                        )}
-                        <span className="text-sm text-muted-foreground">{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Migration Causes - Only show when enabled */}
-              {showMigrations && (
-                <div className="pt-3 border-t border-white/10">
-                  <div className="text-sm font-semibold text-foreground/80 mb-2">
-                    Migration Causes
-                  </div>
-                  <div className="space-y-2">
-                    {migrationItems.map((item) => (
-                      <div key={item.label} className="flex items-center gap-3">
-                        <span className="text-base shrink-0">{item.icon}</span>
-                        <span className="text-sm text-muted-foreground">{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+          {legendContent}
         </div>
       </div>
     </div>
