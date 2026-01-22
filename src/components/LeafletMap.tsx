@@ -454,9 +454,9 @@ export function LeafletMap({
       baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
         attribution: '© Esri, Maxar, Earthstar Geographics',
       }).addTo(leafletMap.current);
-      // Add dark labels for contrast on satellite imagery
-      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-        attribution: '© CARTO',
+      // Add crisp Stamen Toner labels - sharp black text
+      labelsLayerRef.current = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png', {
+        attribution: '© Stadia Maps, © Stamen Design',
         pane: 'overlayPane',
       }).addTo(leafletMap.current);
     } else if (viewMode === 'historical') {
@@ -469,9 +469,9 @@ export function LeafletMap({
         opacity: 0.9,
       }).addTo(leafletMap.current);
       // Add clear reference labels on top
-      // Add dark labels for contrast on historical map
-      labelsLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-        attribution: '© CARTO',
+      // Add crisp Stamen Toner labels - sharp black text
+      labelsLayerRef.current = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png', {
+        attribution: '© Stadia Maps, © Stamen Design',
         pane: 'overlayPane',
       }).addTo(leafletMap.current);
     }
