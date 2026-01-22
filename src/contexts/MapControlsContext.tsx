@@ -34,7 +34,7 @@ const MapControlsContext = createContext<MapControlsContextType | undefined>(und
 
 export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showBoundaries, setShowBoundaries] = useState(true);
-  const [showBoundaryShading, setShowBoundaryShading] = useState(true);
+  const [showBoundaryShading, setShowBoundaryShading] = useState(false);
   const [showMigrations, setShowMigrations] = useState(false);
   const [showConnections, setShowConnections] = useState(false);
   const [showPlaceNamesEnglish, setShowPlaceNamesEnglish] = useState(true);
