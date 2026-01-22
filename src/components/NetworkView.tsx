@@ -192,7 +192,7 @@ export const NetworkView = ({
 
   const getNodeRadius = (scholar: DbScholar): number => {
     const importance = scholar.importance || 50;
-    return Math.max(8, importance / 8);
+    return Math.max(12, importance / 6);
   };
 
   // Sort scholars chronologically by birth year
@@ -210,9 +210,9 @@ export const NetworkView = ({
     const count = sortedScholars.length;
     if (count === 0) return positions;
     
-    // Viewport dimensions for vertical layout
-    const viewWidth = 900;
-    const viewHeight = 600;
+    // Viewport dimensions for vertical layout - expanded for readability
+    const viewWidth = 1600;
+    const viewHeight = 900;
     
     // Group scholars by approximate era (every 50 years = one generation/row)
     const eras: Record<number, DbScholar[]> = {};
@@ -228,8 +228,8 @@ export const NetworkView = ({
     const maxPerRow = Math.max(...eraKeys.map(k => eras[k].length));
     
     // Dynamic spacing - vertical layout (rows = generations, columns = scholars in same era)
-    const rowSpacing = Math.min(100, (viewHeight - 80) / (numRows + 1));
-    const colSpacing = Math.min(120, viewWidth / (maxPerRow + 1));
+    const rowSpacing = Math.min(140, (viewHeight - 100) / (numRows + 1));
+    const colSpacing = Math.min(180, viewWidth / (maxPerRow + 1));
     
     eraKeys.forEach((era, rowIdx) => {
       const scholarsInEra = eras[era];
@@ -239,7 +239,7 @@ export const NetworkView = ({
       scholarsInEra.forEach((s, colIdx) => {
         positions[s.id] = {
           x: startX + colIdx * colSpacing,
-          y: 60 + rowIdx * rowSpacing  // Start from top, go down
+          y: 80 + rowIdx * rowSpacing  // Start from top, go down
         };
       });
     });
@@ -247,9 +247,9 @@ export const NetworkView = ({
     return positions;
   }, [sortedScholars]);
 
-  // Fixed viewport dimensions
+  // Fixed viewport dimensions - expanded for readability
   const svgDimensions = useMemo(() => {
-    return { width: 1000, height: 600 };
+    return { width: 1600, height: 900 };
   }, []);
 
   // Count connections for legend
@@ -273,7 +273,7 @@ export const NetworkView = ({
       <svg 
         width="100%" 
         height="100%" 
-        viewBox="0 0 1000 600"
+        viewBox="0 0 1600 900"
         preserveAspectRatio="xMidYMid meet"
         style={{ 
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
@@ -440,9 +440,10 @@ export const NetworkView = ({
               {/* Label */}
               <text
                 x={pos.x}
-                y={pos.y + radius + 18}
+                y={pos.y + radius + 20}
                 textAnchor="middle"
-                className="fill-foreground text-xs font-medium pointer-events-none"
+                className="fill-foreground font-medium pointer-events-none"
+                style={{ fontSize: '14px' }}
               >
                 {scholar.name.split('(')[0].trim()}
               </text>
@@ -451,9 +452,10 @@ export const NetworkView = ({
               {scholar.hebrew_name && (
                 <text
                   x={pos.x}
-                  y={pos.y + radius + 32}
+                  y={pos.y + radius + 36}
                   textAnchor="middle"
-                  className="fill-accent/70 text-[10px] font-hebrew pointer-events-none"
+                  className="fill-accent/70 font-hebrew pointer-events-none"
+                  style={{ fontSize: '12px' }}
                 >
                   {scholar.hebrew_name}
                 </text>
