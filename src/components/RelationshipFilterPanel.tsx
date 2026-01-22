@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RotateCcw, Users, FileText, Lightbulb, ChevronDown, ChevronRight } from 'lucide-react';
+import { RotateCcw, Users, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 const DOMAIN_COLORS = {
   biographical: { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-400', icon: Users },
   textual: { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-400', icon: FileText },
-  intellectual: { bg: 'bg-violet-500/20', border: 'border-violet-500', text: 'text-violet-400', icon: Lightbulb },
 };
 
 // Category labels - simplified to direct relationships only
@@ -26,14 +25,6 @@ const CATEGORY_LABELS = {
     citation: 'Citation',
     influence: 'Influence',
     response: 'Response',
-    transmission: 'Transmission',
-  },
-  intellectual: {
-    methodology: 'Methodology',
-    influence: 'Influence',
-    authorship: 'Authorship',
-    study: 'Study',
-    school: 'School',
     transmission: 'Transmission',
   },
 };
@@ -134,7 +125,6 @@ export function RelationshipFilterPanel() {
     toggleBiographicalCategory,
     toggleFamilyType,
     toggleTextualCategory,
-    toggleIntellectualCategory,
     toggleCertainty,
     resetFilters,
     activeFilterCount,
@@ -218,19 +208,6 @@ export function RelationshipFilterPanel() {
             categories={filters.textual.categories}
             onToggleCategory={(cat) => toggleTextualCategory(cat as keyof RelationshipFilters['textual']['categories'])}
             labels={CATEGORY_LABELS.textual}
-          />
-
-          <div className="border-t border-white/10" />
-
-          {/* Intellectual Section */}
-          <DomainSection
-            title="Intellectual"
-            domain="intellectual"
-            isEnabled={filters.domains.intellectual}
-            onToggleDomain={() => toggleDomain('intellectual')}
-            categories={filters.intellectual.categories}
-            onToggleCategory={(cat) => toggleIntellectualCategory(cat as keyof RelationshipFilters['intellectual']['categories'])}
-            labels={CATEGORY_LABELS.intellectual}
           />
 
           {/* Certainty Filter */}
