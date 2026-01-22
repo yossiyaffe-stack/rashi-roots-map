@@ -20,7 +20,7 @@ export const LOCATION_REASON_CONFIG: Record<LocationReason, { label: string; ico
   exile: { label: 'Exile', icon: '🚶', color: 'text-red-500', bgColor: 'bg-red-500/20' },
   refuge: { label: 'Refuge', icon: '🏠', color: 'text-green-400', bgColor: 'bg-green-500/20' },
   travel: { label: 'Travel', icon: '🧭', color: 'text-purple-400', bgColor: 'bg-purple-500/20' },
-  death: { label: 'Death', icon: '✝️', color: 'text-gray-400', bgColor: 'bg-gray-500/20' },
+  death: { label: 'Death', icon: '🪦', color: 'text-gray-400', bgColor: 'bg-gray-500/20' },
 };
 // Multi-dimensional relationship types (defined manually until types regenerate)
 export interface DbBiographicalRelationship {
