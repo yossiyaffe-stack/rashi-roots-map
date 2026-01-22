@@ -12,17 +12,13 @@ export interface RelationshipFilters {
     intellectual: boolean;
   };
   
-  // Biographical filters - aligned with actual database categories
+  // Biographical filters - simplified to direct relationships only
   biographical: {
     categories: {
       family: boolean;
-      educational: boolean;  // teacher-student in DB
-      pedagogical: boolean;  // also used in DB
-      professional: boolean;
-      social: boolean;
-      institutional: boolean;
+      teacherStudent: boolean;  // combines educational/pedagogical
     };
-    // Family subtypes for granular filtering (simplified)
+    // Family subtypes for granular filtering
     familyTypes: {
       son: boolean;
       son_in_law: boolean;
@@ -72,11 +68,7 @@ const DEFAULT_FILTERS: RelationshipFilters = {
   biographical: {
     categories: {
       family: true,
-      educational: true,
-      pedagogical: true,
-      professional: true,
-      social: true,
-      institutional: true,
+      teacherStudent: true,
     },
     familyTypes: {
       son: true,
@@ -230,24 +222,40 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     // Check domain is enabled
     if (!filters.domains[domain]) return false;
     
-    // Check category is enabled (normalize to lowercase for matching)
+    // Normalize category for matching
     const normalizedCategory = category.toLowerCase();
-    const domainCategories = filters[domain].categories as Record<string, boolean>;
     
-    // Find matching category key
-    const categoryKey = Object.keys(domainCategories).find(
-      key => key.toLowerCase() === normalizedCategory
-    );
-    if (categoryKey && !domainCategories[categoryKey]) return false;
-    
-    // For biographical family relationships, also check specific family type
-    if (domain === 'biographical' && normalizedCategory === 'family' && relationshipType) {
-      const normalizedType = relationshipType.toLowerCase().replace('-', '_').replace(' ', '_');
-      const familyTypes = filters.biographical.familyTypes as Record<string, boolean>;
-      const familyTypeKey = Object.keys(familyTypes).find(
-        key => key.toLowerCase() === normalizedType
+    // For biographical, map DB categories to our simplified structure
+    if (domain === 'biographical') {
+      // Family category
+      if (normalizedCategory === 'family') {
+        if (!filters.biographical.categories.family) return false;
+        
+        // Check specific family type if provided
+        if (relationshipType) {
+          const normalizedType = relationshipType.toLowerCase().replace('-', '_').replace(' ', '_');
+          const familyTypes = filters.biographical.familyTypes as Record<string, boolean>;
+          const familyTypeKey = Object.keys(familyTypes).find(
+            key => key.toLowerCase() === normalizedType
+          );
+          if (familyTypeKey && !familyTypes[familyTypeKey]) return false;
+        }
+      }
+      // Teacher-Student category (combines educational + pedagogical from DB)
+      else if (normalizedCategory === 'educational' || normalizedCategory === 'pedagogical') {
+        if (!filters.biographical.categories.teacherStudent) return false;
+      }
+      // Hide all other biographical categories (professional, social, institutional)
+      else {
+        return false;
+      }
+    } else {
+      // For textual/intellectual, use standard category matching
+      const domainCategories = filters[domain].categories as Record<string, boolean>;
+      const categoryKey = Object.keys(domainCategories).find(
+        key => key.toLowerCase() === normalizedCategory
       );
-      if (familyTypeKey && !familyTypes[familyTypeKey]) return false;
+      if (categoryKey && !domainCategories[categoryKey]) return false;
     }
     
     // Check certainty is enabled

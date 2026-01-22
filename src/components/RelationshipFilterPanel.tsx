@@ -15,15 +15,11 @@ const DOMAIN_COLORS = {
   intellectual: { bg: 'bg-violet-500/20', border: 'border-violet-500', text: 'text-violet-400', icon: Lightbulb },
 };
 
-// Category labels - aligned with database categories
+// Category labels - simplified to direct relationships only
 const CATEGORY_LABELS = {
   biographical: {
     family: 'Family',
-    educational: 'Educational',
-    pedagogical: 'Teacher-Student',
-    professional: 'Professional',
-    social: 'Social',
-    institutional: 'Institutional',
+    teacherStudent: 'Teacher-Student',
   },
   textual: {
     commentary: 'Commentary',
