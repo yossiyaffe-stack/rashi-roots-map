@@ -1,24 +1,19 @@
 import { Outlet, useLocation } from 'react-router-dom';
-import { Map, Clock, Users, Grape, Menu, X, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Map, Clock, Users, Grape, Menu, X, BookOpen } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { HistoricalEventsList } from '@/components/HistoricalEventsList';
-import { useHistoricalEvents } from '@/hooks/useScholars';
 
 const navItems = [
   { path: '/', label: 'Map', icon: Map },
   { path: '/timeline', label: 'Timeline', icon: Clock },
   { path: '/network', label: 'Network', icon: Users },
+  { path: '/context', label: 'Historical Context', icon: BookOpen },
 ];
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showEvents, setShowEvents] = useState(false);
-  const [timeRange] = useState<[number, number]>([1000, 1800]);
   const location = useLocation();
-  
-  const { data: historicalEvents = [] } = useHistoricalEvents();
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
@@ -55,7 +50,7 @@ export function AppLayout() {
         </header>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 flex-1">
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
             return (
@@ -76,43 +71,11 @@ export function AppLayout() {
               </NavLink>
             );
           })}
-
-          {/* Historical Events Toggle */}
-          <button
-            onClick={() => setShowEvents(!showEvents)}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all w-full",
-              "hover:bg-white/10 text-white/70 hover:text-white",
-              !sidebarOpen && "justify-center px-2",
-              showEvents && "bg-accent/20 text-accent border border-accent/30"
-            )}
-          >
-            <Calendar className="w-5 h-5 shrink-0" />
-            {sidebarOpen && (
-              <>
-                <span className="font-medium text-sm flex-1 text-left">Events</span>
-                {showEvents ? (
-                  <ChevronUp className="w-4 h-4 text-white/40" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-white/40" />
-                )}
-              </>
-            )}
-          </button>
         </nav>
-
-        {/* Historical Events Section - Expandable */}
-        {sidebarOpen && showEvents && (
-          <div className="flex-1 p-3 pt-0 overflow-hidden">
-            <div className="border-t border-white/10 pt-3">
-              <HistoricalEventsList events={historicalEvents} timeRange={timeRange} />
-            </div>
-          </div>
-        )}
 
         {/* Footer */}
         {sidebarOpen && (
-          <footer className="p-4 border-t border-white/10 text-xs text-white/40 mt-auto">
+          <footer className="p-4 border-t border-white/10 text-xs text-white/40">
             Medieval Jewish Scholarship
           </footer>
         )}
