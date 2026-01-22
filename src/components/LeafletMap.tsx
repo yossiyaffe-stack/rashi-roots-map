@@ -20,6 +20,7 @@ interface LeafletMapProps {
   showPlaceNamesHebrew: boolean;
   showScholarNamesEnglish: boolean;
   showScholarNamesHebrew: boolean;
+  mapRef?: React.MutableRefObject<L.Map | null>;
 }
 
 // Tile layer definitions
@@ -396,8 +397,9 @@ export function LeafletMap({
   showPlaceNamesHebrew,
   showScholarNamesEnglish,
   showScholarNamesHebrew,
+  mapRef: externalMapRef,
 }: LeafletMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const baseLayerRef = useRef<L.TileLayer | null>(null);
   const historicalLayerRef = useRef<L.TileLayer | null>(null);
@@ -418,9 +420,9 @@ export function LeafletMap({
 
   // Initialize map
   useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
+    if (!containerRef.current || leafletMap.current) return;
 
-    const map = L.map(mapRef.current, {
+    const map = L.map(containerRef.current, {
       center: [48.3, 8.0],
       zoom: 6,
       zoomControl: false,
@@ -428,6 +430,11 @@ export function LeafletMap({
 
     L.control.zoom({ position: 'topright' }).addTo(map);
     leafletMap.current = map;
+    
+    // Expose map to parent via ref
+    if (externalMapRef) {
+      externalMapRef.current = map;
+    }
 
     // Create custom pane for city labels with higher z-index (above markers)
     map.createPane('cityLabelsPane');
@@ -1111,7 +1118,7 @@ export function LeafletMap({
   return (
     <div className="relative w-full h-full">
       {/* Map Container */}
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={containerRef} className="w-full h-full" />
       
       {/* View Mode Toggle */}
       <div className="absolute top-6 left-6 z-[1000] flex gap-2">
