@@ -1,35 +1,20 @@
 import { useState } from 'react';
-import { RotateCcw, Users, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { RotateCcw, Heart, GraduationCap, FileText, ChevronDown, ChevronRight } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
-// Domain colors for visual identification
+// Domain colors for visual identification - 3 distinct domains
 const DOMAIN_COLORS = {
-  biographical: { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-400', icon: Users },
-  textual: { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-400', icon: FileText },
+  family: { bg: 'bg-amber-500/20', border: 'border-amber-500', text: 'text-amber-400' },
+  teacherStudent: { bg: 'bg-green-500/20', border: 'border-green-500', text: 'text-green-400' },
+  textual: { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-400' },
 };
 
-// Category labels - simplified to direct relationships only
-const CATEGORY_LABELS = {
-  biographical: {
-    family: 'Family',
-    teacherStudent: 'Teacher-Student',
-  },
-  textual: {
-    commentary: 'Commentary',
-    citation: 'Citation',
-    influence: 'Influence',
-    response: 'Response',
-    transmission: 'Transmission',
-  },
-};
-
-// Family type labels (simplified)
+// Family type labels
 const FAMILY_TYPE_LABELS: Record<string, { label: string; isDotted?: boolean }> = {
   son: { label: 'Son' },
   son_in_law: { label: 'Son-in-Law', isDotted: true },
@@ -37,98 +22,31 @@ const FAMILY_TYPE_LABELS: Record<string, { label: string; isDotted?: boolean }> 
   daughter_in_law: { label: 'Daughter-in-Law', isDotted: true },
 };
 
-interface DomainSectionProps {
-  title: string;
-  domain: 'biographical' | 'textual' | 'intellectual';
-  isEnabled: boolean;
-  onToggleDomain: () => void;
-  categories: Record<string, boolean>;
-  onToggleCategory: (category: string) => void;
-  labels: Record<string, string>;
-  children?: React.ReactNode;
-}
-
-function DomainSection({ 
-  title, 
-  domain, 
-  isEnabled, 
-  onToggleDomain, 
-  categories, 
-  onToggleCategory,
-  labels,
-  children
-}: DomainSectionProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const colors = DOMAIN_COLORS[domain];
-  const Icon = colors.icon;
-  
-  const enabledCount = Object.values(categories).filter(Boolean).length;
-  const totalCount = Object.keys(categories).length;
-
-  return (
-    <div className="space-y-1">
-      {/* Domain header with toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className={cn("w-4 h-4", colors.text)} />
-          <Label className="text-sm text-foreground/80 cursor-pointer">{title}</Label>
-          <Badge variant="outline" className={cn("text-[10px] px-1.5", colors.text, colors.bg)}>
-            {enabledCount}/{totalCount}
-          </Badge>
-        </div>
-        <Switch
-          checked={isEnabled}
-          onCheckedChange={onToggleDomain}
-        />
-      </div>
-      
-      {/* Collapsible category section */}
-      {isEnabled && (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-          <CollapsibleTrigger className="flex items-center gap-1 pl-6 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
-            {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            <span>Categories</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="pl-6 space-y-1">
-              {Object.entries(categories).map(([key, enabled]) => (
-                <div
-                  key={key}
-                  onClick={() => onToggleCategory(key)}
-                  className={cn(
-                    "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
-                    "hover:bg-white/5"
-                  )}
-                >
-                  <span className="text-xs text-muted-foreground">{labels[key]}</span>
-                  <div className={cn(
-                    "w-3 h-3 rounded-sm border transition-colors",
-                    enabled ? `${colors.bg} ${colors.border}` : 'border-white/30'
-                  )}>
-                    {enabled && <div className={cn("w-full h-full rounded-sm", colors.bg.replace('/20', '/60'))} />}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {children}
-          </CollapsibleContent>
-        </Collapsible>
-      )}
-    </div>
-  );
-}
+// Textual category labels
+const TEXTUAL_CATEGORY_LABELS: Record<string, string> = {
+  commentary: 'Commentary',
+  citation: 'Citation',
+  influence: 'Influence',
+  response: 'Response',
+  transmission: 'Transmission',
+};
 
 export function RelationshipFilterPanel() {
   const {
     filters,
     toggleDomain,
-    toggleBiographicalCategory,
     toggleFamilyType,
     toggleTextualCategory,
     toggleCertainty,
     resetFilters,
     activeFilterCount,
   } = useRelationshipFilters();
+
+  const [familyOpen, setFamilyOpen] = useState(false);
+  const [textualOpen, setTextualOpen] = useState(false);
+
+  const familyTypesEnabledCount = Object.values(filters.familyTypes).filter(Boolean).length;
+  const textualCategoriesEnabledCount = Object.values(filters.textual.categories).filter(Boolean).length;
 
   return (
     <div className="h-full flex flex-col w-[280px]">
@@ -153,62 +71,121 @@ export function RelationshipFilterPanel() {
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">
-          {/* Biographical Section */}
-          <DomainSection
-            title="Biographical"
-            domain="biographical"
-            isEnabled={filters.domains.biographical}
-            onToggleDomain={() => toggleDomain('biographical')}
-            categories={filters.biographical.categories}
-            onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
-            labels={CATEGORY_LABELS.biographical}
-          >
-            {/* Family Types Sub-section */}
-            {filters.biographical.categories.family && (
-              <div className="pl-2 mt-2 space-y-1 border-l-2 border-rose-500/30 ml-4">
-                <span className="text-[10px] font-medium text-rose-400 uppercase tracking-wide">Family Types</span>
-                {Object.entries(filters.biographical.familyTypes).map(([key, enabled]) => {
-                  const typeInfo = FAMILY_TYPE_LABELS[key];
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => toggleFamilyType(key as keyof RelationshipFilters['biographical']['familyTypes'])}
-                      className={cn(
-                        "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
-                        "hover:bg-white/5"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{typeInfo?.label || key}</span>
-                        {typeInfo?.isDotted && (
-                          <span className="text-[9px] text-white/30 border border-dashed border-white/30 px-1 rounded">in-law</span>
-                        )}
-                      </div>
-                      <div className={cn(
-                        "w-3 h-3 rounded-sm border transition-colors",
-                        enabled ? 'bg-rose-500/20 border-rose-500' : 'border-white/30'
-                      )}>
-                        {enabled && <div className="w-full h-full rounded-sm bg-rose-500/60" />}
-                      </div>
-                    </div>
-                  );
-                })}
+          {/* 1. Family Section */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Heart className={cn("w-4 h-4", DOMAIN_COLORS.family.text)} />
+                <Label className="text-sm text-foreground/80 cursor-pointer">Family</Label>
               </div>
+              <Switch
+                checked={filters.domains.family}
+                onCheckedChange={() => toggleDomain('family')}
+              />
+            </div>
+            
+            {filters.domains.family && (
+              <Collapsible open={familyOpen} onOpenChange={setFamilyOpen}>
+                <CollapsibleTrigger className="flex items-center gap-1 pl-6 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
+                  {familyOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <span>Types ({familyTypesEnabledCount}/{Object.keys(filters.familyTypes).length})</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="pl-6 space-y-1">
+                    {Object.entries(filters.familyTypes).map(([key, enabled]) => {
+                      const typeInfo = FAMILY_TYPE_LABELS[key];
+                      return (
+                        <div
+                          key={key}
+                          onClick={() => toggleFamilyType(key as keyof RelationshipFilters['familyTypes'])}
+                          className={cn(
+                            "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
+                            "hover:bg-white/5"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{typeInfo?.label || key}</span>
+                            {typeInfo?.isDotted && (
+                              <span className="text-[9px] text-white/30 border border-dashed border-white/30 px-1 rounded">in-law</span>
+                            )}
+                          </div>
+                          <div className={cn(
+                            "w-3 h-3 rounded-sm border transition-colors",
+                            enabled ? `${DOMAIN_COLORS.family.bg} ${DOMAIN_COLORS.family.border}` : 'border-white/30'
+                          )}>
+                            {enabled && <div className="w-full h-full rounded-sm bg-amber-500/60" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
-          </DomainSection>
+          </div>
 
           <div className="border-t border-white/10" />
 
-          {/* Textual Section */}
-          <DomainSection
-            title="Textual"
-            domain="textual"
-            isEnabled={filters.domains.textual}
-            onToggleDomain={() => toggleDomain('textual')}
-            categories={filters.textual.categories}
-            onToggleCategory={(cat) => toggleTextualCategory(cat as keyof RelationshipFilters['textual']['categories'])}
-            labels={CATEGORY_LABELS.textual}
-          />
+          {/* 2. Teacher-Student Section */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <GraduationCap className={cn("w-4 h-4", DOMAIN_COLORS.teacherStudent.text)} />
+                <Label className="text-sm text-foreground/80 cursor-pointer">Teacher-Student</Label>
+              </div>
+              <Switch
+                checked={filters.domains.teacherStudent}
+                onCheckedChange={() => toggleDomain('teacherStudent')}
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-white/10" />
+
+          {/* 3. Textual Section */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className={cn("w-4 h-4", DOMAIN_COLORS.textual.text)} />
+                <Label className="text-sm text-foreground/80 cursor-pointer">Textual</Label>
+              </div>
+              <Switch
+                checked={filters.domains.textual}
+                onCheckedChange={() => toggleDomain('textual')}
+              />
+            </div>
+            
+            {filters.domains.textual && (
+              <Collapsible open={textualOpen} onOpenChange={setTextualOpen}>
+                <CollapsibleTrigger className="flex items-center gap-1 pl-6 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
+                  {textualOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <span>Categories ({textualCategoriesEnabledCount}/{Object.keys(filters.textual.categories).length})</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="pl-6 space-y-1">
+                    {Object.entries(filters.textual.categories).map(([key, enabled]) => (
+                      <div
+                        key={key}
+                        onClick={() => toggleTextualCategory(key as keyof RelationshipFilters['textual']['categories'])}
+                        className={cn(
+                          "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
+                          "hover:bg-white/5"
+                        )}
+                      >
+                        <span className="text-xs text-muted-foreground">{TEXTUAL_CATEGORY_LABELS[key]}</span>
+                        <div className={cn(
+                          "w-3 h-3 rounded-sm border transition-colors",
+                          enabled ? `${DOMAIN_COLORS.textual.bg} ${DOMAIN_COLORS.textual.border}` : 'border-white/30'
+                        )}>
+                          {enabled && <div className="w-full h-full rounded-sm bg-blue-500/60" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
 
           {/* Certainty Filter */}
           <div className="pt-2 border-t border-white/10">

@@ -1230,12 +1230,17 @@ export function LeafletMap({
 
     // 1. Draw legacy relationships (from 'relationships' table)
     relationships.forEach(rel => {
-      // Map legacy relationship types to domains
-      const domain = rel.type === 'family' || rel.type === 'educational' 
-        ? 'biographical' 
-        : rel.type === 'literary' 
-          ? 'textual' 
-          : 'biographical';
+      // Map legacy relationship types to new domains
+      let domain: 'family' | 'teacherStudent' | 'textual';
+      if (rel.type === 'family') {
+        domain = 'family';
+      } else if (rel.type === 'educational') {
+        domain = 'teacherStudent';
+      } else if (rel.type === 'literary') {
+        domain = 'textual';
+      } else {
+        return; // Skip unknown types
+      }
       
       // Check if this relationship should be shown based on filters
       if (!shouldShowRelationship(domain, rel.type, null, null)) return;
@@ -1250,39 +1255,42 @@ export function LeafletMap({
       }
     });
 
-    // 2. Draw biographical relationships (family, educational, etc.)
+    // 2. Draw biographical relationships - split into family and teacher-student
     biographicalRelationships.forEach(rel => {
+      // Determine domain based on category
+      let domain: 'family' | 'teacherStudent';
+      if (rel.relationship_category === 'family') {
+        domain = 'family';
+      } else if (rel.relationship_category === 'educational' || rel.relationship_category === 'pedagogical') {
+        domain = 'teacherStudent';
+      } else {
+        return; // Skip other categories
+      }
+      
       // Check if this relationship should be shown based on filters
-      if (!shouldShowRelationship('biographical', rel.relationship_category, rel.relationship_type, rel.certainty)) return;
+      if (!shouldShowRelationship(domain, rel.relationship_category, rel.relationship_type, rel.certainty)) return;
       
       const fromCoords = scholarCoords.get(rel.scholar_id);
       const toCoords = scholarCoords.get(rel.related_scholar_id);
 
       if (fromCoords && toCoords) {
-        // Color based on category
-        let color = '#8b5cf6'; // default purple
-        let label = rel.relationship_category;
+        let color: string;
+        let label: string;
         let dashed = false;
         
-        if (rel.relationship_category === 'family') {
+        if (domain === 'family') {
           color = '#f59e0b'; // amber
           label = `Family: ${rel.relationship_type}`;
           // In-law relationships shown as dashed
           if (rel.relationship_type?.includes('in_law') || rel.relationship_type?.includes('in-law')) {
             dashed = true;
           }
-        } else if (rel.relationship_category === 'educational' || rel.relationship_category === 'pedagogical') {
+        } else {
           color = '#22c55e'; // green
-          label = `Educational: ${rel.relationship_type}`;
-        } else if (rel.relationship_category === 'professional') {
-          color = '#6366f1'; // indigo
-          label = `Professional: ${rel.relationship_type}`;
-        } else if (rel.relationship_category === 'social') {
-          color = '#ec4899'; // pink
-          label = `Social: ${rel.relationship_type}`;
+          label = `Teacher-Student: ${rel.relationship_type}`;
         }
         
-        // Use thicker lines (weight 3) for biographical relationships
+        // Use thicker lines (weight 3) for these relationships
         drawLine(fromCoords, toCoords, color, label, dashed, 3);
       }
     });

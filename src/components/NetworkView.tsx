@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Users, FileText, Filter, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Heart, GraduationCap, FileText, Filter, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,11 @@ interface NetworkViewProps {
   onSelectScholar: (scholar: DbScholar) => void;
 }
 
-// Domain colors matching the filter panel
+// Domain colors matching the filter panel - 3 separate domains
 const DOMAIN_COLORS = {
-  biographical: '#f43f5e', // rose-500
-  textual: '#10b981', // emerald-500
+  family: '#f59e0b', // amber-500
+  teacherStudent: '#22c55e', // green-500
+  textual: '#3b82f6', // blue-500
 };
 
 export const NetworkView = ({ 
@@ -41,11 +42,20 @@ export const NetworkView = ({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Filter biographical relationships based on filters
-  const filteredBiographical = useMemo(() => {
-    if (!filters.domains.biographical) return [];
+  // Filter biographical relationships - split into family and teacher-student
+  const filteredFamily = useMemo(() => {
+    if (!filters.domains.family) return [];
     return biographicalRelationships.filter(rel => 
-      shouldShowRelationship('biographical', rel.relationship_category, rel.relationship_type, rel.certainty)
+      rel.relationship_category === 'family' &&
+      shouldShowRelationship('family', rel.relationship_category, rel.relationship_type, rel.certainty)
+    );
+  }, [biographicalRelationships, filters, shouldShowRelationship]);
+
+  const filteredTeacherStudent = useMemo(() => {
+    if (!filters.domains.teacherStudent) return [];
+    return biographicalRelationships.filter(rel => 
+      (rel.relationship_category === 'educational' || rel.relationship_category === 'pedagogical') &&
+      shouldShowRelationship('teacherStudent', rel.relationship_category, rel.relationship_type, rel.certainty)
     );
   }, [biographicalRelationships, filters, shouldShowRelationship]);
 
@@ -67,7 +77,12 @@ export const NetworkView = ({
     const ids = new Set<string>();
     ids.add(selectedScholar.id); // Include the selected scholar
     
-    filteredBiographical.forEach(rel => {
+    filteredFamily.forEach(rel => {
+      if (rel.scholar_id === selectedScholar.id) ids.add(rel.related_scholar_id);
+      if (rel.related_scholar_id === selectedScholar.id) ids.add(rel.scholar_id);
+    });
+    
+    filteredTeacherStudent.forEach(rel => {
       if (rel.scholar_id === selectedScholar.id) ids.add(rel.related_scholar_id);
       if (rel.related_scholar_id === selectedScholar.id) ids.add(rel.scholar_id);
     });
@@ -80,13 +95,18 @@ export const NetworkView = ({
     });
     
     return ids;
-  }, [selectedScholar, filteredBiographical, filteredTextual]);
+  }, [selectedScholar, filteredFamily, filteredTeacherStudent, filteredTextual]);
 
   // Get set of scholar IDs that have active relationships
   const connectedScholarIds = useMemo(() => {
     const ids = new Set<string>();
     
-    filteredBiographical.forEach(rel => {
+    filteredFamily.forEach(rel => {
+      ids.add(rel.scholar_id);
+      ids.add(rel.related_scholar_id);
+    });
+    
+    filteredTeacherStudent.forEach(rel => {
       ids.add(rel.scholar_id);
       ids.add(rel.related_scholar_id);
     });
@@ -99,7 +119,7 @@ export const NetworkView = ({
     });
     
     return ids;
-  }, [filteredBiographical, filteredTextual]);
+  }, [filteredFamily, filteredTeacherStudent, filteredTextual]);
 
   // Filter scholars based on toggles
   const displayedScholars = useMemo(() => {
@@ -239,9 +259,10 @@ export const NetworkView = ({
 
   // Count connections for legend
   const connectionCounts = useMemo(() => ({
-    biographical: filteredBiographical.length,
+    family: filteredFamily.length,
+    teacherStudent: filteredTeacherStudent.length,
     textual: filteredTextual.length,
-  }), [filteredBiographical, filteredTextual]);
+  }), [filteredFamily, filteredTeacherStudent, filteredTextual]);
 
   return (
     <div 
@@ -267,8 +288,11 @@ export const NetworkView = ({
       >
         <g>
         <defs>
-          <marker id="arrowhead-bio" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.biographical} />
+          <marker id="arrowhead-family" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.family} />
+          </marker>
+          <marker id="arrowhead-teacher" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.teacherStudent} />
           </marker>
           <marker id="arrowhead-text" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.textual} />
@@ -282,8 +306,8 @@ export const NetworkView = ({
           </filter>
         </defs>
 
-        {/* Draw biographical connections (person-to-person) */}
-        {filteredBiographical.map((conn, idx) => {
+        {/* Draw family connections */}
+        {filteredFamily.map((conn, idx) => {
           const fromPos = scholarPositions[conn.scholar_id];
           const toPos = scholarPositions[conn.related_scholar_id];
           
@@ -298,15 +322,41 @@ export const NetworkView = ({
           
           return (
             <line
-              key={`bio-${conn.id}`}
+              key={`family-${conn.id}`}
               x1={fromPos.x + offset}
               y1={fromPos.y}
               x2={toPos.x + offset}
               y2={toPos.y}
-              stroke={DOMAIN_COLORS.biographical}
+              stroke={DOMAIN_COLORS.family}
               strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
               strokeDasharray={isInLaw ? "4,4" : undefined}
-              markerEnd="url(#arrowhead-bio)"
+              markerEnd="url(#arrowhead-family)"
+              opacity={isHighlighted ? 0.8 : 0.15}
+              className="transition-all duration-200"
+            />
+          );
+        })}
+
+        {/* Draw teacher-student connections */}
+        {filteredTeacherStudent.map((conn, idx) => {
+          const fromPos = scholarPositions[conn.scholar_id];
+          const toPos = scholarPositions[conn.related_scholar_id];
+          
+          if (!fromPos || !toPos) return null;
+          
+          const isHighlighted = isRelationshipHighlighted(conn.scholar_id, conn.related_scholar_id);
+          const offset = -2 - (idx % 3) * 2;
+          
+          return (
+            <line
+              key={`teacher-${conn.id}`}
+              x1={fromPos.x + offset}
+              y1={fromPos.y}
+              x2={toPos.x + offset}
+              y2={toPos.y}
+              stroke={DOMAIN_COLORS.teacherStudent}
+              strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
+              markerEnd="url(#arrowhead-teacher)"
               opacity={isHighlighted ? 0.8 : 0.15}
               className="transition-all duration-200"
             />
@@ -523,14 +573,24 @@ export const NetworkView = ({
 
       {/* Legend */}
       <div className="absolute bottom-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
-        <div className="font-bold text-accent mb-2">Relationship Domains</div>
+        <div className="font-bold text-accent mb-2">Relationship Types</div>
         
-        {connectionCounts.biographical > 0 && (
+        {connectionCounts.family > 0 && (
           <div className="flex items-center gap-2">
-            <Users className="w-3 h-3" style={{ color: DOMAIN_COLORS.biographical }} />
-            <div className="w-6 h-0.5" style={{ backgroundColor: DOMAIN_COLORS.biographical }} />
+            <Heart className="w-3 h-3" style={{ color: DOMAIN_COLORS.family }} />
+            <div className="w-6 h-0.5" style={{ backgroundColor: DOMAIN_COLORS.family }} />
             <span className="text-muted-foreground">
-              Biographical ({connectionCounts.biographical})
+              Family ({connectionCounts.family})
+            </span>
+          </div>
+        )}
+        
+        {connectionCounts.teacherStudent > 0 && (
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-3 h-3" style={{ color: DOMAIN_COLORS.teacherStudent }} />
+            <div className="w-6 h-0.5" style={{ backgroundColor: DOMAIN_COLORS.teacherStudent }} />
+            <span className="text-muted-foreground">
+              Teacher-Student ({connectionCounts.teacherStudent})
             </span>
           </div>
         )}
@@ -546,7 +606,7 @@ export const NetworkView = ({
         )}
         
         
-        {connectionCounts.biographical === 0 && connectionCounts.textual === 0 && (
+        {connectionCounts.family === 0 && connectionCounts.teacherStudent === 0 && connectionCounts.textual === 0 && (
           <div className="text-muted-foreground italic">No relationships to display</div>
         )}
       </div>
