@@ -94,6 +94,78 @@ export type Database = {
           },
         ]
       }
+      places: {
+        Row: {
+          created_at: string
+          historical_context: string | null
+          id: string
+          importance: number | null
+          is_archbishopric: boolean | null
+          is_bishopric: boolean | null
+          is_shum_city: boolean | null
+          latitude: number
+          location_type: string | null
+          longitude: number
+          medieval_region: string | null
+          modern_country: string | null
+          modern_name: string
+          name_english: string
+          name_hebrew: string | null
+          name_historical: string | null
+          notes: string | null
+          significance_end_year: number | null
+          significance_start_year: number | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          historical_context?: string | null
+          id?: string
+          importance?: number | null
+          is_archbishopric?: boolean | null
+          is_bishopric?: boolean | null
+          is_shum_city?: boolean | null
+          latitude: number
+          location_type?: string | null
+          longitude: number
+          medieval_region?: string | null
+          modern_country?: string | null
+          modern_name: string
+          name_english: string
+          name_hebrew?: string | null
+          name_historical?: string | null
+          notes?: string | null
+          significance_end_year?: number | null
+          significance_start_year?: number | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          historical_context?: string | null
+          id?: string
+          importance?: number | null
+          is_archbishopric?: boolean | null
+          is_bishopric?: boolean | null
+          is_shum_city?: boolean | null
+          latitude?: number
+          location_type?: string | null
+          longitude?: number
+          medieval_region?: string | null
+          modern_country?: string | null
+          modern_name?: string
+          name_english?: string
+          name_hebrew?: string | null
+          name_historical?: string | null
+          notes?: string | null
+          significance_end_year?: number | null
+          significance_start_year?: number | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relationships: {
         Row: {
           created_at: string
