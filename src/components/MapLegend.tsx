@@ -1,4 +1,4 @@
-import { Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { Info, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -56,9 +56,9 @@ export function MapLegend({ showConnections = false, showMigrations = false, rel
           <span>Legend</span>
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 text-white/40" />
+          <ChevronLeft className="w-4 h-4 text-white/40" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-white/40" />
+          <ChevronRight className="w-4 h-4 text-white/40" />
         )}
       </button>
 

@@ -1,4 +1,4 @@
-import { Settings2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -35,9 +35,9 @@ export function MapControls({
           <span>Map Controls</span>
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 text-white/40" />
+          <ChevronLeft className="w-4 h-4 text-white/40" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-white/40" />
+          <ChevronRight className="w-4 h-4 text-white/40" />
         )}
       </button>
 
