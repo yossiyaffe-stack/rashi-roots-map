@@ -95,27 +95,85 @@
     background-clip: text;
   }
 
-  /* Leaflet tooltip styling */
-  .scholar-tooltip {
-    background: hsl(230 30% 12% / 0.95) !important;
-    border: 1px solid hsl(45 90% 55% / 0.3) !important;
-    border-radius: 8px !important;
-    padding: 8px 12px !important;
-    color: white !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 13px !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
-  }
-
-  .scholar-tooltip::before {
-    border-top-color: hsl(230 30% 12% / 0.95) !important;
-  }
-
+  /* Leaflet container - parchment background */
   .leaflet-container {
-    background: hsl(230 25% 8%);
+    background: hsl(40 30% 94%);
+    font-family: 'Inter', sans-serif;
   }
 
-  /* Custom pulsing markers */
+  /* Historical tooltip styling */
+  .historical-tooltip {
+    background: hsl(0 0% 100% / 0.97) !important;
+    border: 1px solid hsl(35 30% 80%) !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+    color: hsl(230 25% 15%) !important;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+  }
+
+  .historical-tooltip::before {
+    border-top-color: hsl(0 0% 100% / 0.97) !important;
+  }
+
+  .historical-tooltip-content {
+    padding: 10px 14px;
+    text-align: center;
+  }
+
+  .historical-tooltip-content strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: hsl(245 50% 25%);
+    margin-bottom: 2px;
+  }
+
+  .historical-tooltip-content .hebrew-text {
+    display: block;
+    font-family: 'David Libre', serif;
+    direction: rtl;
+    font-size: 18px;
+    color: hsl(45 90% 40%);
+    margin: 4px 0;
+  }
+
+  .historical-tooltip-content .scholar-meta {
+    display: block;
+    font-size: 11px;
+    color: hsl(230 15% 50%);
+    margin-top: 4px;
+  }
+
+  /* Historical marker styling */
+  .historical-marker {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .historical-marker:hover .marker-dot {
+    transform: scale(1.3) !important;
+  }
+
+  .marker-dot {
+    cursor: pointer;
+  }
+
+  /* Rashi special marker glow */
+  .marker-rashi-dot {
+    animation: rashi-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes rashi-glow {
+    0%, 100% { 
+      box-shadow: 0 0 10px #e11d48, 0 0 20px #e11d48, 0 2px 6px rgba(0,0,0,0.4); 
+    }
+    50% { 
+      box-shadow: 0 0 15px #e11d48, 0 0 30px #e11d48, 0 0 45px #e11d48, 0 2px 6px rgba(0,0,0,0.4); 
+    }
+  }
+
+  /* Legacy marker styles for backward compatibility */
   .custom-marker {
     background: transparent;
     border: none;
@@ -129,33 +187,9 @@
     animation: pulse 2s infinite;
   }
 
-  .marker-pulse::before {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    background: inherit;
-    opacity: 0.4;
-    animation: pulse-ring 2s infinite;
-  }
-
   @keyframes pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
-  }
-
-  @keyframes pulse-ring {
-    0% { transform: scale(1); opacity: 0.4; }
-    100% { transform: scale(2); opacity: 0; }
-  }
-
-  /* Rashi special marker */
-  .marker-rashi {
-    width: 28px;
-    height: 28px;
-    background: #e11d48;
-    border: 3px solid #fbbf24;
-    box-shadow: 0 0 20px #e11d48, 0 0 40px #e11d48;
   }
 }
 
