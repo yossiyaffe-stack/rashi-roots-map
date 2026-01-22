@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -17,12 +17,48 @@ const IMPORTANCE_CONFIG = {
   scholarly: { color: 'bg-blue-500', label: 'Scholarly' },
 };
 
+// Timeline bounds matching the slider
+const TIMELINE_MIN = 1000;
+const TIMELINE_MAX = 1800;
+
 export function TimelineEvents({ events, timeRange }: TimelineEventsProps) {
   const [selectedEvent, setSelectedEvent] = useState<DbHistoricalEvent | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Sort events by year for consistent positioning
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => a.year - b.year);
+  }, [events]);
 
   const filteredEvents = useMemo(() => {
-    return events.filter(e => e.year >= timeRange[0] && e.year <= timeRange[1]);
-  }, [events, timeRange]);
+    return sortedEvents.filter(e => e.year >= timeRange[0] && e.year <= timeRange[1]);
+  }, [sortedEvents, timeRange]);
+
+  // Calculate scroll position based on timeline filter position
+  useEffect(() => {
+    if (!scrollContainerRef.current || sortedEvents.length === 0) return;
+
+    const container = scrollContainerRef.current;
+    const scrollWidth = container.scrollWidth;
+    const clientWidth = container.clientWidth;
+    const maxScroll = scrollWidth - clientWidth;
+
+    if (maxScroll <= 0) return;
+
+    // Calculate the center of the time range
+    const timeCenter = (timeRange[0] + timeRange[1]) / 2;
+    
+    // Calculate the position as a ratio within the full timeline
+    const ratio = (timeCenter - TIMELINE_MIN) / (TIMELINE_MAX - TIMELINE_MIN);
+    
+    // Scroll to the corresponding position
+    const targetScroll = Math.max(0, Math.min(maxScroll, ratio * maxScroll));
+    
+    container.scrollTo({
+      left: targetScroll,
+      behavior: 'smooth'
+    });
+  }, [timeRange, sortedEvents]);
 
   if (filteredEvents.length === 0) {
     return (
@@ -35,7 +71,7 @@ export function TimelineEvents({ events, timeRange }: TimelineEventsProps) {
   return (
     <>
       <ScrollArea className="w-full">
-        <div className="flex gap-2 pb-2">
+        <div ref={scrollContainerRef} className="flex gap-2 pb-2 overflow-x-auto scrollbar-none">
           {filteredEvents.map((event) => {
             const config = IMPORTANCE_CONFIG[event.importance] || IMPORTANCE_CONFIG.scholarly;
             return (
