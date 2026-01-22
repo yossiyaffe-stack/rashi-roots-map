@@ -6,9 +6,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Helper to format year with BCE/CE
+const formatYear = (year: number): string => {
+  if (year < 0) return `${Math.abs(year)} BCE`;
+  return `${year} CE`;
+};
+
 const Timeline = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
-  const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
+  const [timeRange, setTimeRange] = useState<[number, number]>([-500, 1650]);
   const [showSecularHistory, setShowSecularHistory] = useState(false);
 
   const { data: scholars = [], isLoading: scholarsLoading } = useScholars();
@@ -74,16 +80,16 @@ const Timeline = () => {
           </div>
           
           <div className="flex items-center gap-6">
-            <span className="text-sm text-muted-foreground w-20">{timeRange[0]} CE</span>
+            <span className="text-sm text-muted-foreground w-24">{formatYear(timeRange[0])}</span>
             <Slider
               value={timeRange}
-              min={900}
-              max={1900}
+              min={-2000}
+              max={2026}
               step={10}
               onValueChange={(val) => setTimeRange(val as [number, number])}
               className="flex-1"
             />
-            <span className="text-sm text-muted-foreground w-20 text-right">{timeRange[1]} CE</span>
+            <span className="text-sm text-muted-foreground w-24 text-right">{formatYear(timeRange[1])}</span>
           </div>
         </div>
       </header>

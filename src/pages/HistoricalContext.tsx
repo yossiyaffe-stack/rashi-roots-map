@@ -5,6 +5,12 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useHistoricalEvents } from '@/hooks/useScholars';
 
+// Helper to format year with BCE/CE
+const formatYear = (year: number): string => {
+  if (year < 0) return `${Math.abs(year)} BCE`;
+  return `${year} CE`;
+};
+
 type ViewMode = 'timeline' | 'importance' | 'location';
 
 const IMPORTANCE_ORDER = ['critical', 'major', 'foundational', 'scholarly'] as const;
@@ -18,7 +24,7 @@ const IMPORTANCE_STYLES: Record<string, { label: string; bgColor: string; textCo
 
 export default function HistoricalContext() {
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
-  const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1800]);
+  const [timeRange, setTimeRange] = useState<[number, number]>([-500, 1800]);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
 
   const { data: events = [], isLoading } = useHistoricalEvents();
@@ -207,7 +213,7 @@ export default function HistoricalContext() {
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-accent" />
             <span className="text-xs uppercase tracking-widest text-accent font-bold">Time Filter</span>
-            <span className="text-xs text-muted-foreground">({timeRange[0]} – {timeRange[1]} CE)</span>
+            <span className="text-xs text-muted-foreground">({formatYear(timeRange[0])} – {formatYear(timeRange[1])})</span>
           </div>
           {timelineExpanded ? (
             <ChevronDown className="w-4 h-4 text-white/40" />
@@ -221,13 +227,13 @@ export default function HistoricalContext() {
           timelineExpanded ? "max-h-24 px-4 pb-4" : "max-h-0"
         )}>
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-white/50">{timeRange[0]} CE</span>
-            <span className="text-accent font-medium">{timeRange[1]} CE</span>
+            <span className="text-white/50">{formatYear(timeRange[0])}</span>
+            <span className="text-accent font-medium">{formatYear(timeRange[1])}</span>
           </div>
           <Slider
             value={[timeRange[1]]}
-            min={1000}
-            max={1800}
+            min={-2000}
+            max={2026}
             step={10}
             onValueChange={([val]) => setTimeRange([timeRange[0], val])}
             className="w-full"

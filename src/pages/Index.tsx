@@ -16,9 +16,15 @@ import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
+// Helper to format year with BCE/CE
+const formatYear = (year: number): string => {
+  if (year < 0) return `${Math.abs(year)} BCE`;
+  return `${year} CE`;
+};
+
 const Index = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
-  const [timeRange, setTimeRange] = useState<[number, number]>([1000, 1650]);
+  const [timeRange, setTimeRange] = useState<[number, number]>([-500, 1650]);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [timelineFullscreen, setTimelineFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -229,18 +235,18 @@ const Index = () => {
           timelineExpanded ? "max-h-40 px-4 pb-4" : "max-h-0"
         )}>
           <div className="flex items-center gap-4 mb-3">
-            <span className="text-sm text-white/50 w-20">{timeRange[0]} CE</span>
+            <span className="text-sm text-white/50 w-24">{formatYear(timeRange[0])}</span>
             <Slider
               value={timeRange}
-              min={1000}
-              max={1800}
+              min={-2000}
+              max={2026}
               step={10}
               onValueChange={([start, end]) => setTimeRange([start, end])}
               className="flex-1"
               showTooltip
-              formatValue={(val) => `${val} CE`}
+              formatValue={(val) => formatYear(val)}
             />
-            <span className="text-sm text-accent font-medium w-20 text-right">{timeRange[1]} CE</span>
+            <span className="text-sm text-accent font-medium w-24 text-right">{formatYear(timeRange[1])}</span>
           </div>
           
           {/* Historical Events Row */}
@@ -277,19 +283,19 @@ const Index = () => {
           <div className="space-y-6 h-full overflow-hidden flex flex-col">
             {/* Large Slider */}
             <div className="flex items-center gap-4">
-              <span className="text-lg text-white/50 w-24">{timeRange[0]} CE</span>
+              <span className="text-lg text-white/50 w-28">{formatYear(timeRange[0])}</span>
               <Slider
                 value={timeRange}
-                min={1000}
-                max={1800}
+                min={-2000}
+                max={2026}
                 step={10}
                 onValueChange={([start, end]) => setTimeRange([start, end])}
                 className="flex-1"
                 showTooltip
-                formatValue={(val) => `${val} CE`}
+                formatValue={(val) => formatYear(val)}
                 markers={eventMarkers}
               />
-              <span className="text-lg text-accent font-medium w-24 text-right">{timeRange[1]} CE</span>
+              <span className="text-lg text-accent font-medium w-28 text-right">{formatYear(timeRange[1])}</span>
             </div>
             
             {/* Expanded Events Grid */}

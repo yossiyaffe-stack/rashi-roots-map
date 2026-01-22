@@ -2,6 +2,22 @@ import { Calendar, Globe, BookOpen } from 'lucide-react';
 import type { DbScholar, DbHistoricalEvent } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 
+// Helper to format year with BCE/CE
+const formatYear = (year: number): string => {
+  if (year < 0) return `${Math.abs(year)} BCE`;
+  return `${year} CE`;
+};
+
+// Helper to format century range
+const formatCenturyRange = (century: number): string => {
+  if (century < 0) {
+    const start = Math.abs(century);
+    const end = Math.abs(century) - 99;
+    return `${start}s – ${end} BCE`;
+  }
+  return `${century}s – ${century + 99} CE`;
+};
+
 interface TimelineViewProps {
   scholars: DbScholar[];
   selectedScholar: DbScholar | null;
@@ -92,7 +108,7 @@ export const TimelineView = ({
                       "font-bold text-lg mr-4",
                       isSecular ? "text-blue-400" : "text-accent"
                     )}>
-                      {event.year}
+                      {formatYear(event.year)}
                     </span>
                     <span className="font-semibold text-foreground text-lg">{event.name}</span>
                     {isSecular && (
@@ -118,7 +134,7 @@ export const TimelineView = ({
           <div key={century} className="relative pl-8 border-l-4 border-accent">
             <div className="flex items-center gap-2 mb-4 font-display text-xl font-bold text-accent">
               <Calendar className="w-5 h-5" />
-              {century}s – {Number(century) + 99}
+              {formatCenturyRange(Number(century))}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {centuryGroups[Number(century)].map(scholar => (
