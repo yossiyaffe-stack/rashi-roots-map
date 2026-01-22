@@ -47,6 +47,68 @@ export type Database = {
         }
         Relationships: []
       }
+      location_names: {
+        Row: {
+          created_at: string
+          id: string
+          is_preferred: boolean | null
+          language: string
+          name: string
+          name_origin: string | null
+          name_type: string
+          normalized_name: string | null
+          notes: string | null
+          place_id: string
+          script: string | null
+          source: string | null
+          updated_at: string
+          valid_from: number | null
+          valid_to: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_preferred?: boolean | null
+          language: string
+          name: string
+          name_origin?: string | null
+          name_type: string
+          normalized_name?: string | null
+          notes?: string | null
+          place_id: string
+          script?: string | null
+          source?: string | null
+          updated_at?: string
+          valid_from?: number | null
+          valid_to?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_preferred?: boolean | null
+          language?: string
+          name?: string
+          name_origin?: string | null
+          name_type?: string
+          normalized_name?: string | null
+          notes?: string | null
+          place_id?: string
+          script?: string | null
+          source?: string | null
+          updated_at?: string
+          valid_from?: number | null
+          valid_to?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_names_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           created_at: string
@@ -392,6 +454,7 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      normalize_place_name: { Args: { input_name: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "editor" | "user"
