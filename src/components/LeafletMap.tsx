@@ -438,6 +438,10 @@ export function LeafletMap({
     L.control.zoom({ position: 'topright' }).addTo(map);
     leafletMap.current = map;
 
+    // Create custom pane for city labels with higher z-index (above markers)
+    map.createPane('cityLabelsPane');
+    map.getPane('cityLabelsPane')!.style.zIndex = '650';
+
     // Add initial base layer
     baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {
       attribution: '© Esri, Maxar, Earthstar Geographics',
@@ -627,13 +631,13 @@ export function LeafletMap({
           iconAnchor: [0, -8],
         }),
         interactive: false,
-        pane: 'overlayPane',
+        pane: 'cityLabelsPane',
       });
 
       label.addTo(leafletMap.current!);
       cityLabelsRef.current.push(label);
     });
-  }, [viewMode]);
+  }, [viewMode, leafletMap.current]);
 
   // Draw migration paths
   useEffect(() => {
@@ -866,13 +870,7 @@ export function LeafletMap({
       markersRef.current.push(marker);
     });
 
-    // Pan to selected scholar
-    if (selectedScholar?.latitude && selectedScholar?.longitude) {
-      leafletMap.current.setView([selectedScholar.latitude, selectedScholar.longitude], 7, {
-        animate: true,
-        duration: 0.5,
-      });
-    }
+    // Note: Removed auto-pan to selected scholar - map only moves on user interaction
   }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion]);
 
   return (
