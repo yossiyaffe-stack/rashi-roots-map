@@ -1,122 +1,178 @@
-import type { Scholar } from '@/data/scholars';
-import { scholars as allScholars } from '@/data/scholars';
+import { useMemo } from 'react';
+import type { DbScholar, DbRelationship } from '@/hooks/useScholars';
 
 interface NetworkViewProps {
-  scholars: Scholar[];
-  selectedScholar: Scholar | null;
-  onSelectScholar: (scholar: Scholar) => void;
+  scholars: DbScholar[];
+  relationships: DbRelationship[];
+  selectedScholar: DbScholar | null;
+  onSelectScholar: (scholar: DbScholar) => void;
 }
 
-export const NetworkView = ({ scholars, selectedScholar, onSelectScholar }: NetworkViewProps) => {
-  const getConnections = (scholarId: number) => {
-    const scholar = allScholars.find(s => s.id === scholarId);
-    const connections: { from: number; to: number; type: string }[] = [];
-    
-    if (scholar?.teachers) {
-      scholar.teachers.forEach(teacherId => {
-        connections.push({ from: teacherId, to: scholarId, type: 'teacher' });
-      });
-    }
-    if (scholar?.students) {
-      scholar.students.forEach(studentId => {
-        connections.push({ from: scholarId, to: studentId, type: 'student' });
-      });
-    }
-    
-    return connections;
+export const NetworkView = ({ 
+  scholars, 
+  relationships, 
+  selectedScholar, 
+  onSelectScholar 
+}: NetworkViewProps) => {
+  
+  const connections = useMemo(() => {
+    return relationships.filter(r => r.from_scholar_id && r.to_scholar_id);
+  }, [relationships]);
+
+  const getNodeColor = (scholar: DbScholar): string => {
+    if (scholar.name === 'Rashi') return '#e11d48';
+    if (scholar.relationship_type === 'supercommentator') return '#3b82f6';
+    if (scholar.period === 'Rishonim') return '#f59e0b';
+    return '#8b5cf6';
   };
 
+  const getNodeRadius = (scholar: DbScholar): number => {
+    const importance = scholar.importance || 50;
+    return Math.max(15, importance / 4);
+  };
+
+  // Simple grid layout
+  const getNodePosition = (idx: number, total: number) => {
+    const cols = Math.ceil(Math.sqrt(total));
+    const row = Math.floor(idx / cols);
+    const col = idx % cols;
+    const spacing = 180;
+    const x = 120 + col * spacing;
+    const y = 80 + row * spacing;
+    return { x, y };
+  };
+
+  const scholarPositions = useMemo(() => {
+    const positions: Record<string, { x: number; y: number }> = {};
+    scholars.forEach((s, idx) => {
+      positions[s.id] = getNodePosition(idx, scholars.length);
+    });
+    return positions;
+  }, [scholars]);
+
+  const svgHeight = Math.max(600, Math.ceil(scholars.length / 4) * 180 + 100);
+
   return (
-    <div className="w-full overflow-x-auto">
-      <svg width="100%" height="600" className="min-w-[1000px]">
+    <div className="w-full h-full overflow-auto p-6">
+      <svg width="100%" height={svgHeight} className="min-w-[800px]">
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" className="fill-secondary" />
+            <polygon points="0 0, 10 3.5, 0 7" className="fill-accent" />
           </marker>
-          <linearGradient id="nodeGradientRashi" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(43 52% 51%)" />
-            <stop offset="100%" stopColor="hsl(45 70% 65%)" />
-          </linearGradient>
-          <linearGradient id="nodeGradientCommentator" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(30 24% 53%)" />
-            <stop offset="100%" stopColor="hsl(30 25% 35%)" />
-          </linearGradient>
-          <linearGradient id="nodeGradientOther" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(30 25% 35%)" />
-            <stop offset="100%" stopColor="hsl(25 35% 18%)" />
-          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
 
         {/* Draw connections first (behind nodes) */}
-        {scholars.map((scholar) => {
-          const connections = getConnections(scholar.id);
-          const idx = scholars.findIndex(s => s.id === scholar.id);
+        {connections.map((conn, idx) => {
+          const fromPos = scholarPositions[conn.from_scholar_id!];
+          const toPos = scholarPositions[conn.to_scholar_id!];
           
-          return connections.map((conn, cidx) => {
-            const fromIdx = scholars.findIndex(s => s.id === conn.from);
-            const toIdx = scholars.findIndex(s => s.id === conn.to);
-            
-            if (fromIdx === -1 || toIdx === -1) return null;
-            
-            const x1 = 150 + (fromIdx % 4) * 250;
-            const y1 = 100 + Math.floor(fromIdx / 4) * 150;
-            const x2 = 150 + (toIdx % 4) * 250;
-            const y2 = 100 + Math.floor(toIdx / 4) * 150;
-            
-            return (
-              <line
-                key={`${conn.from}-${conn.to}-${cidx}`}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                className="stroke-secondary"
-                strokeWidth="2"
-                markerEnd="url(#arrowhead)"
-                opacity="0.4"
-              />
-            );
-          });
+          if (!fromPos || !toPos) return null;
+          
+          const isEducational = conn.type === 'educational';
+          const isLiterary = conn.type === 'literary';
+          
+          return (
+            <line
+              key={`${conn.from_scholar_id}-${conn.to_scholar_id}-${idx}`}
+              x1={fromPos.x}
+              y1={fromPos.y}
+              x2={toPos.x}
+              y2={toPos.y}
+              stroke={isEducational ? '#f59e0b' : isLiterary ? '#3b82f6' : '#6b7280'}
+              strokeWidth="2"
+              strokeDasharray={isLiterary ? "5,5" : "none"}
+              markerEnd="url(#arrowhead)"
+              opacity="0.5"
+            />
+          );
         })}
 
         {/* Draw nodes */}
-        {scholars.map((scholar, idx) => {
-          const x = 150 + (idx % 4) * 250;
-          const y = 100 + Math.floor(idx / 4) * 150;
-          const radius = scholar.importance / 5;
+        {scholars.map((scholar) => {
+          const pos = scholarPositions[scholar.id];
+          if (!pos) return null;
           
-          const gradientId = scholar.id === 1 
-            ? 'url(#nodeGradientRashi)' 
-            : scholar.commentariesOnRashi 
-              ? 'url(#nodeGradientCommentator)' 
-              : 'url(#nodeGradientOther)';
+          const radius = getNodeRadius(scholar);
+          const color = getNodeColor(scholar);
+          const isSelected = selectedScholar?.id === scholar.id;
+          const isRashi = scholar.name === 'Rashi';
 
           return (
-            <g key={scholar.id}>
+            <g key={scholar.id} className="cursor-pointer" onClick={() => onSelectScholar(scholar)}>
+              {/* Glow effect for Rashi */}
+              {isRashi && (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={radius + 8}
+                  fill="none"
+                  stroke="#fbbf24"
+                  strokeWidth="3"
+                  opacity="0.5"
+                  filter="url(#glow)"
+                />
+              )}
+              
+              {/* Main node */}
               <circle
-                cx={x}
-                cy={y}
+                cx={pos.x}
+                cy={pos.y}
                 r={radius}
-                fill={gradientId}
-                className="stroke-brown-deep stroke-2 cursor-pointer transition-all hover:brightness-110"
+                fill={color}
+                stroke={isSelected ? '#fbbf24' : '#fff'}
+                strokeWidth={isSelected ? 3 : 2}
+                className="transition-all hover:brightness-125"
                 style={{ 
-                  transform: selectedScholar?.id === scholar.id ? 'scale(1.1)' : 'scale(1)',
-                  transformOrigin: `${x}px ${y}px`
+                  transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                  transformOrigin: `${pos.x}px ${pos.y}px`
                 }}
-                onClick={() => onSelectScholar(scholar)}
               />
+              
+              {/* Label */}
               <text
-                x={x}
-                y={y + radius + 20}
+                x={pos.x}
+                y={pos.y + radius + 18}
                 textAnchor="middle"
                 className="fill-foreground text-xs font-medium pointer-events-none"
               >
                 {scholar.name.split('(')[0].trim()}
               </text>
+              
+              {/* Hebrew name on hover */}
+              {scholar.hebrew_name && (
+                <text
+                  x={pos.x}
+                  y={pos.y + radius + 32}
+                  textAnchor="middle"
+                  className="fill-accent/70 text-[10px] font-hebrew pointer-events-none"
+                >
+                  {scholar.hebrew_name}
+                </text>
+              )}
             </g>
           );
         })}
       </svg>
+
+      {/* Legend */}
+      <div className="absolute bottom-6 left-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
+        <div className="font-bold text-accent mb-2">Connection Types</div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-0.5 bg-amber-500" />
+          <span className="text-muted-foreground">Teacher-Student</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-0.5 bg-blue-500" style={{ borderTop: '2px dashed' }} />
+          <span className="text-muted-foreground">Literary</span>
+        </div>
+      </div>
     </div>
   );
 };
