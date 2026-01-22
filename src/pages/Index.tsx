@@ -3,7 +3,6 @@ import { Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
-import { MapLegend } from '@/components/MapLegend';
 
 import { useScholars, useRelationships, type DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
@@ -41,11 +40,6 @@ const Index = () => {
           showMigrations={showMigrations}
           onShowMigrationsChange={setShowMigrations}
         />
-
-        {/* Legend - Bottom Left of Map */}
-        <div className="absolute bottom-6 left-6 z-[1000] bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4">
-          <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
-        </div>
 
         {/* Scholar Detail Panel */}
         {selectedScholar && (
