@@ -165,6 +165,7 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
           {/* Life Journey */}
           <ScholarJourney 
             scholarId={scholar.id} 
+            scholarName={scholar.name}
             onLocationClick={onFlyToLocation}
           />
 
