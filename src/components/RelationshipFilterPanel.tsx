@@ -123,20 +123,28 @@ export function RelationshipFilterPanel() {
   } = useRelationshipFilters();
 
   return (
-    <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[260px] max-w-[300px]">
-      <ScrollArea className="max-h-[70vh]">
-        <div className="space-y-4 pr-2">
-          {/* Reset button */}
+    <div className="h-full flex flex-col w-[280px]">
+      {/* Header */}
+      <div className="p-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-accent uppercase tracking-wider">
+            Relationship Filters
+          </h3>
           {activeFilterCount > 0 && (
             <button
               onClick={resetFilters}
-              className="flex items-center justify-center gap-1 w-full py-1.5 text-xs text-white/50 hover:text-white border border-white/10 rounded transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-[10px] text-white/50 hover:text-white border border-white/10 rounded transition-colors"
             >
               <RotateCcw className="w-3 h-3" />
-              Reset Filters
+              Reset
             </button>
           )}
+        </div>
+      </div>
 
+      {/* Scrollable Content */}
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
           {/* Biographical Section */}
           <DomainSection
             title="Biographical"
