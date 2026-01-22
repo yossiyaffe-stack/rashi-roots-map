@@ -5,7 +5,7 @@ import type { Tables } from '@/integrations/supabase/types';
 export type DbScholar = Tables<'scholars'>;
 export type DbWork = Tables<'works'>;
 export type DbRelationship = Tables<'relationships'>;
-export type DbHistoricalEvent = Tables<'historical_events'>;
+export type DbHistoricalEvent = Tables<'historical_events'> & { category?: string };
 export type DbPlace = Tables<'places'>;
 export type DbLocationName = Tables<'location_names'>;
 

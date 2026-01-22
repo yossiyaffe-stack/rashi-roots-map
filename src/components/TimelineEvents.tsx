@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, User } from 'lucide-react';
+import { MapPin, User, BookOpen, Globe } from 'lucide-react';
 import type { DbHistoricalEvent, DbScholar } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
 import type L from 'leaflet';
@@ -13,6 +13,8 @@ interface TimelineEventsProps {
   timeRange: [number, number];
   mapRef?: React.MutableRefObject<L.Map | null>;
   onSelectScholar?: (scholar: DbScholar) => void;
+  showSecularHistory?: boolean;
+  onToggleSecularHistory?: (show: boolean) => void;
 }
 
 const IMPORTANCE_CONFIG = {
@@ -26,7 +28,7 @@ const IMPORTANCE_CONFIG = {
 const TIMELINE_MIN = 1000;
 const TIMELINE_MAX = 1800;
 
-export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSelectScholar }: TimelineEventsProps) {
+export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSelectScholar, showSecularHistory = false, onToggleSecularHistory }: TimelineEventsProps) {
   const [selectedEvent, setSelectedEvent] = useState<DbHistoricalEvent | null>(null);
   const [selectedBirthScholar, setSelectedBirthScholar] = useState<DbScholar | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -44,26 +46,35 @@ export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSel
       }));
   }, [scholars]);
 
-  // Combine and sort all events
+  // Combine and sort all events, filtering by category
   const allTimelineItems = useMemo(() => {
-    const historicalItems = events.map(e => ({
-      id: e.id,
-      year: e.year,
-      name: e.name,
-      type: 'historical' as const,
-      event: e,
-    }));
+    const historicalItems = events
+      .filter(e => {
+        // Filter by category - show jewish by default, include secular if toggle is on
+        const eventCategory = (e as any).category || 'jewish';
+        if (eventCategory === 'jewish') return true;
+        return showSecularHistory;
+      })
+      .map(e => ({
+        id: e.id,
+        year: e.year,
+        name: e.name,
+        type: 'historical' as const,
+        category: (e as any).category || 'jewish',
+        event: e,
+      }));
     
     const birthItems = scholarBirthEvents.map(b => ({
       id: b.id,
       year: b.year,
       name: b.name,
       type: 'birth' as const,
+      category: 'jewish',
       scholar: b.scholar,
     }));
     
     return [...historicalItems, ...birthItems].sort((a, b) => a.year - b.year);
-  }, [events, scholarBirthEvents]);
+  }, [events, scholarBirthEvents, showSecularHistory]);
 
   const filteredItems = useMemo(() => {
     return allTimelineItems.filter(item => item.year >= timeRange[0] && item.year <= timeRange[1]);
@@ -115,7 +126,37 @@ export function TimelineEvents({ events, scholars = [], timeRange, mapRef, onSel
 
   return (
     <>
-      <div 
+      {/* Category toggle */}
+      {onToggleSecularHistory && (
+        <div className="flex items-center gap-2 mb-2">
+          <button
+            onClick={() => onToggleSecularHistory(false)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all",
+              !showSecularHistory 
+                ? "bg-accent/20 text-accent border border-accent/30" 
+                : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80"
+            )}
+          >
+            <BookOpen className="w-3 h-3" />
+            Jewish History
+          </button>
+          <button
+            onClick={() => onToggleSecularHistory(true)}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-all",
+              showSecularHistory 
+                ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
+                : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white/80"
+            )}
+          >
+            <Globe className="w-3 h-3" />
+            + Secular History
+          </button>
+        </div>
+      )}
+      
+      <div
         ref={scrollContainerRef} 
         className="flex gap-2 pb-2 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30"
       >

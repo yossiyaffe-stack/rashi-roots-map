@@ -22,6 +22,7 @@ const Index = () => {
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [timelineFullscreen, setTimelineFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showSecularHistory, setShowSecularHistory] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
@@ -249,6 +250,8 @@ const Index = () => {
             timeRange={timeRange} 
             mapRef={mapRef}
             onSelectScholar={setSelectedScholar}
+            showSecularHistory={showSecularHistory}
+            onToggleSecularHistory={setShowSecularHistory}
           />
         </div>
       </footer>
