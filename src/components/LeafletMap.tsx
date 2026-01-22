@@ -996,34 +996,6 @@ export function LeafletMap({
               </div>
             )}
 
-            {/* Scholar Colors Legend */}
-            <div className="pt-3 border-t border-slate-200">
-              <div className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">
-                Scholar Types
-              </div>
-              <div className="space-y-1.5 text-[10px]">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#c9a961', border: '2px solid #fbbf24' }}></div>
-                  <span className="text-slate-600 font-medium">Rashi</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-600"></div>
-                  <span className="text-slate-600">Grandsons</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                  <span className="text-slate-600">Rishonim</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="text-slate-600">Acharonim</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                  <span className="text-slate-600">Supercommentators</span>
-                </div>
-              </div>
-            </div>
 
             {/* Connection Legend - Only show when lines are on */}
             {showLines && (
