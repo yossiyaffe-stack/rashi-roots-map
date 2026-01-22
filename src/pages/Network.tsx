@@ -3,7 +3,6 @@ import { NetworkView } from '@/components/NetworkView';
 import { useScholars, useMultiDimensionalRelationships, type DbScholar } from '@/hooks/useScholars';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
-import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
 
 const Network = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
@@ -27,30 +26,22 @@ const Network = () => {
   }
 
   return (
-    <div className="w-full h-full relative bg-background flex">
-      {/* Filters Panel */}
-      <div className="w-64 shrink-0 bg-sidebar border-r border-white/10 p-4 overflow-y-auto">
-        <RelationshipFilterPanel />
-      </div>
-      
-      {/* Network View */}
-      <div className="flex-1 relative">
-        <NetworkView
-          scholars={scholars}
-          biographicalRelationships={biographical}
-          textualRelationships={textual}
-          intellectualRelationships={intellectual}
-          selectedScholar={selectedScholar}
-          onSelectScholar={setSelectedScholar}
-        />
+    <div className="w-full h-full relative bg-background">
+      <NetworkView
+        scholars={scholars}
+        biographicalRelationships={biographical}
+        textualRelationships={textual}
+        intellectualRelationships={intellectual}
+        selectedScholar={selectedScholar}
+        onSelectScholar={setSelectedScholar}
+      />
 
-        {selectedScholar && (
-          <ScholarDetailPanel
-            scholar={selectedScholar}
-            onClose={() => setSelectedScholar(null)}
-          />
-        )}
-      </div>
+      {selectedScholar && (
+        <ScholarDetailPanel
+          scholar={selectedScholar}
+          onClose={() => setSelectedScholar(null)}
+        />
+      )}
     </div>
   );
 };

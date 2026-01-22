@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronLeft, Filter, RotateCcw, Users, FileText, Lightbulb } from 'lucide-react';
+import { RotateCcw, Users, FileText, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { Switch } from '@/components/ui/switch';
@@ -111,7 +111,6 @@ function DomainSection({
 }
 
 export function RelationshipFilterPanel() {
-  const [expanded, setExpanded] = useState(false);
   const {
     filters,
     toggleDomain,
@@ -124,112 +123,81 @@ export function RelationshipFilterPanel() {
   } = useRelationshipFilters();
 
   return (
-    <div className="relative">
-      {/* Header with collapse toggle */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full gap-2 text-xs uppercase tracking-widest text-accent font-bold hover:text-accent/80 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4" />
-          <span>Relationships</span>
+    <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[260px] max-w-[300px]">
+      <ScrollArea className="max-h-[70vh]">
+        <div className="space-y-4 pr-2">
+          {/* Reset button */}
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="text-[10px] px-1.5">
-              {activeFilterCount}
-            </Badge>
+            <button
+              onClick={resetFilters}
+              className="flex items-center justify-center gap-1 w-full py-1.5 text-xs text-white/50 hover:text-white border border-white/10 rounded transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset Filters
+            </button>
           )}
-        </div>
-        {expanded ? (
-          <ChevronLeft className="w-4 h-4 text-white/40" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-white/40" />
-        )}
-      </button>
 
-      {/* Horizontal slide-out panel */}
-      <div className={cn(
-        "absolute left-full top-0 ml-2 z-50 transition-all duration-300 origin-left",
-        expanded 
-          ? "opacity-100 translate-x-0 scale-x-100" 
-          : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
-      )}>
-        <div className="bg-sidebar/95 backdrop-blur-md border border-white/10 rounded-lg shadow-xl p-3 min-w-[260px] max-w-[300px]">
-          <ScrollArea className="max-h-[70vh]">
-            <div className="space-y-4 pr-2">
-              {/* Reset button */}
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={resetFilters}
-                  className="flex items-center justify-center gap-1 w-full py-1.5 text-xs text-white/50 hover:text-white border border-white/10 rounded transition-colors"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  Reset Filters
-                </button>
-              )}
+          {/* Biographical Section */}
+          <DomainSection
+            title="Biographical"
+            domain="biographical"
+            isEnabled={filters.domains.biographical}
+            onToggleDomain={() => toggleDomain('biographical')}
+            categories={filters.biographical.categories}
+            onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
+            labels={CATEGORY_LABELS.biographical}
+          />
 
-              {/* Biographical Section */}
-              <DomainSection
-                title="Biographical"
-                domain="biographical"
-                isEnabled={filters.domains.biographical}
-                onToggleDomain={() => toggleDomain('biographical')}
-                categories={filters.biographical.categories}
-                onToggleCategory={(cat) => toggleBiographicalCategory(cat as keyof RelationshipFilters['biographical']['categories'])}
-                labels={CATEGORY_LABELS.biographical}
-              />
+          <div className="border-t border-white/10" />
 
-              <div className="border-t border-white/10" />
+          {/* Textual Section */}
+          <DomainSection
+            title="Textual"
+            domain="textual"
+            isEnabled={filters.domains.textual}
+            onToggleDomain={() => toggleDomain('textual')}
+            categories={filters.textual.categories}
+            onToggleCategory={(cat) => toggleTextualCategory(cat as keyof RelationshipFilters['textual']['categories'])}
+            labels={CATEGORY_LABELS.textual}
+          />
 
-              {/* Textual Section */}
-              <DomainSection
-                title="Textual"
-                domain="textual"
-                isEnabled={filters.domains.textual}
-                onToggleDomain={() => toggleDomain('textual')}
-                categories={filters.textual.categories}
-                onToggleCategory={(cat) => toggleTextualCategory(cat as keyof RelationshipFilters['textual']['categories'])}
-                labels={CATEGORY_LABELS.textual}
-              />
+          <div className="border-t border-white/10" />
 
-              <div className="border-t border-white/10" />
+          {/* Intellectual Section */}
+          <DomainSection
+            title="Intellectual"
+            domain="intellectual"
+            isEnabled={filters.domains.intellectual}
+            onToggleDomain={() => toggleDomain('intellectual')}
+            categories={filters.intellectual.categories}
+            onToggleCategory={(cat) => toggleIntellectualCategory(cat as keyof RelationshipFilters['intellectual']['categories'])}
+            labels={CATEGORY_LABELS.intellectual}
+          />
 
-              {/* Intellectual Section */}
-              <DomainSection
-                title="Intellectual"
-                domain="intellectual"
-                isEnabled={filters.domains.intellectual}
-                onToggleDomain={() => toggleDomain('intellectual')}
-                categories={filters.intellectual.categories}
-                onToggleCategory={(cat) => toggleIntellectualCategory(cat as keyof RelationshipFilters['intellectual']['categories'])}
-                labels={CATEGORY_LABELS.intellectual}
-              />
-
-              {/* Certainty Filter */}
-              <div className="pt-2 border-t border-white/10">
-                <div className="text-sm font-semibold text-foreground/80 mb-2">
-                  Certainty Level
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {Object.entries(filters.certainty).map(([level, enabled]) => (
-                    <button
-                      key={level}
-                      onClick={() => toggleCertainty(level as keyof RelationshipFilters['certainty'])}
-                      className={cn(
-                        "px-2 py-1 rounded text-[10px] uppercase tracking-wide transition-colors border",
-                        enabled 
-                          ? 'bg-accent/20 border-accent/50 text-accent' 
-                          : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
-                      )}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Certainty Filter */}
+          <div className="pt-2 border-t border-white/10">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              Certainty Level
             </div>
-          </ScrollArea>
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(filters.certainty).map(([level, enabled]) => (
+                <button
+                  key={level}
+                  onClick={() => toggleCertainty(level as keyof RelationshipFilters['certainty'])}
+                  className={cn(
+                    "px-2 py-1 rounded text-[10px] uppercase tracking-wide transition-colors border",
+                    enabled 
+                      ? 'bg-accent/20 border-accent/50 text-accent' 
+                      : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
+                  )}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

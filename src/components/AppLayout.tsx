@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ const navItems = [
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [relationshipsPanelOpen, setRelationshipsPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
@@ -39,6 +40,7 @@ export function AppLayout() {
   } = useMapControls();
   
   const isMapPage = location.pathname === '/';
+  const isNetworkPage = location.pathname === '/network';
 
   const handleScholarsClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -95,7 +97,7 @@ export function AppLayout() {
         </header>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 overflow-visible">
           {navItems.map(item => {
             const isActive = location.pathname === item.path;
             const isScholars = item.path === '/scholars';
@@ -146,6 +148,43 @@ export function AppLayout() {
               </NavLink>
             );
           })}
+          
+          {/* Relationships Filter - shown on Map and Network pages */}
+          {(isMapPage || isNetworkPage) && (
+            <div className="relative">
+              <button
+                onClick={() => setRelationshipsPanelOpen(!relationshipsPanelOpen)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  relationshipsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Filter className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Relationships</span>
+                    {relationshipsPanelOpen ? (
+                      <ChevronLeft className="w-4 h-4 text-accent" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </>
+                )}
+              </button>
+              
+              {/* Horizontal slide-out panel */}
+              <div className={cn(
+                "absolute left-full top-0 ml-2 z-50 transition-all duration-300 origin-left",
+                relationshipsPanelOpen 
+                  ? "opacity-100 translate-x-0 scale-x-100" 
+                  : "opacity-0 -translate-x-4 scale-x-0 pointer-events-none"
+              )}>
+                <RelationshipFilterPanel />
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Spacer - only when not showing legends */}
@@ -178,12 +217,9 @@ export function AppLayout() {
               />
             </div>
             
-            {/* Scrollable area for filters and legends */}
+            {/* Scrollable area for legends */}
             <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
               <div className="p-3 pt-4 space-y-4">
-                {/* Relationship Filters */}
-                <RelationshipFilterPanel />
-                
                 <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} />
                 <KingdomsLegend />
               </div>
