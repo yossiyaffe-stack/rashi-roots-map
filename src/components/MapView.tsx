@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Layers, GitBranch, Map as MapIcon } from 'lucide-react';
+import { Layers, GitBranch, Map as MapIcon, X } from 'lucide-react';
 import type { Scholar } from '@/data/scholars';
 import { scholars as allScholars } from '@/data/scholars';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ interface MapViewProps {
   selectedScholar: Scholar | null;
   onSelectScholar: (scholar: Scholar) => void;
 }
+
+type RegionKey = keyof typeof historicalBoundaries;
 
 // Historical boundaries (simplified GeoJSON-like coordinates for medieval period ~1200-1500)
 const historicalBoundaries = {
@@ -25,7 +27,7 @@ const historicalBoundaries = {
       [46.0, 15.0], [45.5, 13.5], [45.8, 11.0], [46.2, 9.5],
       [46.0, 8.0], [47.5, 7.5], [48.5, 6.0], [49.5, 6.0],
       [50.5, 5.5], [52.0, 5.0], [53.5, 5.5], [54.5, 6.0]
-    ]
+    ] as [number, number][]
   },
   kingdomOfFrance: {
     name: "Kingdom of France",
@@ -37,7 +39,7 @@ const historicalBoundaries = {
       [42.5, 3.0], [43.0, 4.5], [43.5, 7.0], [45.0, 7.0],
       [46.0, 6.5], [47.0, 6.0], [48.0, 6.0], [49.0, 5.5],
       [50.0, 4.0], [51.0, 2.5]
-    ]
+    ] as [number, number][]
   },
   ottomanEmpire: {
     name: "Ottoman Empire",
@@ -49,7 +51,7 @@ const historicalBoundaries = {
       [36.5, 30.0], [37.0, 32.0], [38.0, 34.0], [39.5, 36.0],
       [41.0, 37.0], [42.0, 35.0], [42.5, 32.0], [43.0, 30.0],
       [42.5, 28.0], [42.0, 26.0]
-    ]
+    ] as [number, number][]
   },
   polishLithuanian: {
     name: "Polish-Lithuanian Commonwealth",
@@ -60,7 +62,7 @@ const historicalBoundaries = {
       [56.0, 28.0], [54.5, 30.0], [52.0, 31.0], [50.0, 28.0],
       [49.0, 24.0], [49.5, 22.0], [50.0, 19.0], [51.0, 17.0],
       [52.0, 15.0], [54.5, 14.5]
-    ]
+    ] as [number, number][]
   },
   champagne: {
     name: "Champagne (Rashi's Region)",
@@ -70,7 +72,7 @@ const historicalBoundaries = {
       [49.5, 3.0], [49.8, 4.0], [49.5, 5.0], [48.8, 5.2],
       [48.0, 4.8], [47.8, 4.0], [48.2, 3.2], [49.0, 2.8],
       [49.5, 3.0]
-    ]
+    ] as [number, number][]
   },
   rhineland: {
     name: "Rhineland (ShUM Cities)",
@@ -80,8 +82,22 @@ const historicalBoundaries = {
       [51.0, 6.0], [51.2, 7.0], [50.8, 8.5], [50.0, 8.8],
       [49.2, 8.5], [49.0, 7.5], [49.5, 6.5], [50.5, 6.0],
       [51.0, 6.0]
-    ]
+    ] as [number, number][]
   }
+};
+
+// Point-in-polygon algorithm (ray casting)
+const isPointInPolygon = (lat: number, lng: number, polygon: [number, number][]): boolean => {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [yi, xi] = polygon[i];
+    const [yj, xj] = polygon[j];
+    
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
 };
 
 // Get color based on scholar's period/type
@@ -95,7 +111,7 @@ const getScholarColor = (scholar: Scholar): string => {
 };
 
 // Create custom icon for scholar
-const createScholarIcon = (scholar: Scholar, isHighlighted: boolean = false): L.DivIcon => {
+const createScholarIcon = (scholar: Scholar, isHighlighted: boolean = false, isDimmed: boolean = false): L.DivIcon => {
   const size = Math.max(24, scholar.importance / 3.5);
   const color = getScholarColor(scholar);
   
@@ -113,15 +129,16 @@ const createScholarIcon = (scholar: Scholar, isHighlighted: boolean = false): L.
         justify-content: center;
         cursor: pointer;
         box-shadow: ${isHighlighted ? `0 0 20px ${color}, 0 4px 12px rgba(0,0,0,0.4)` : '0 4px 12px rgba(0,0,0,0.3)'};
-        transition: transform 0.2s, box-shadow 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
         font-family: 'David Libre', serif;
         font-weight: bold;
         color: white;
         font-size: ${size * 0.4}px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         ${isHighlighted ? 'transform: scale(1.2);' : ''}
+        ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
         position: relative;
-        z-index: 1000;
+        z-index: ${isDimmed ? 100 : 1000};
       ">
         ${scholar.hebrewName?.[0] || scholar.name[0]}
       </div>
@@ -131,7 +148,7 @@ const createScholarIcon = (scholar: Scholar, isHighlighted: boolean = false): L.
   });
 };
 
-// Build connection data from teacher-student relationships
+// Build connection data
 interface Connection {
   from: Scholar;
   to: Scholar;
@@ -162,14 +179,40 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: number]: L.Marker }>({});
   const linesRef = useRef<L.Polyline[]>([]);
-  const boundariesRef = useRef<L.Polygon[]>([]);
+  const boundariesRef = useRef<{ [key: string]: L.Polygon }>({});
   const labelsRef = useRef<L.Marker[]>([]);
   const layersRef = useRef<{ modern?: L.TileLayer; historical?: L.TileLayer }>({});
+  
   const [mapStyle, setMapStyle] = useState<'modern' | 'historical'>('modern');
   const [showConnections, setShowConnections] = useState(true);
   const [showBoundaries, setShowBoundaries] = useState(true);
+  const [selectedRegion, setSelectedRegion] = useState<RegionKey | null>(null);
+
+  // Filter scholars based on selected region
+  const scholarsInRegion = useMemo(() => {
+    if (!selectedRegion) return new Set(scholars.map(s => s.id));
+    
+    const region = historicalBoundaries[selectedRegion];
+    const inRegion = new Set<number>();
+    
+    scholars.forEach(scholar => {
+      if (isPointInPolygon(scholar.location.lat, scholar.location.lng, region.coordinates)) {
+        inRegion.add(scholar.id);
+      }
+    });
+    
+    return inRegion;
+  }, [scholars, selectedRegion]);
 
   const connections = useMemo(() => buildConnections(scholars, allScholars), [scholars]);
+
+  const handleRegionClick = useCallback((regionKey: RegionKey) => {
+    setSelectedRegion(prev => prev === regionKey ? null : regionKey);
+  }, []);
+
+  const clearRegionFilter = useCallback(() => {
+    setSelectedRegion(null);
+  }, []);
 
   // Initialize map
   useEffect(() => {
@@ -205,15 +248,15 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
     };
   }, []);
 
-  // Draw historical boundaries
+  // Draw historical boundaries with click handlers
   useEffect(() => {
     if (!mapRef.current) return;
 
     // Clear existing boundaries and labels
-    boundariesRef.current.forEach(boundary => {
+    Object.values(boundariesRef.current).forEach(boundary => {
       mapRef.current?.removeLayer(boundary);
     });
-    boundariesRef.current = [];
+    boundariesRef.current = {};
     
     labelsRef.current.forEach(label => {
       mapRef.current?.removeLayer(label);
@@ -222,27 +265,44 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
 
     if (!showBoundaries) return;
 
-    Object.values(historicalBoundaries).forEach((region) => {
+    (Object.entries(historicalBoundaries) as [RegionKey, typeof historicalBoundaries[RegionKey]][]).forEach(([key, region]) => {
       const latLngs = region.coordinates.map(([lat, lng]) => [lat, lng] as L.LatLngTuple);
+      const isSelected = selectedRegion === key;
       
       const polygon = L.polygon(latLngs, {
         color: region.color,
-        weight: 2,
-        opacity: 0.8,
+        weight: isSelected ? 4 : 2,
+        opacity: isSelected ? 1 : 0.8,
         fillColor: region.fillColor,
-        fillOpacity: 0.1,
-        dashArray: '5, 5',
-        className: 'historical-boundary'
+        fillOpacity: isSelected ? 0.3 : 0.1,
+        dashArray: isSelected ? undefined : '5, 5',
+        className: `historical-boundary ${isSelected ? 'selected' : ''}`
       });
 
-      polygon.bindTooltip(region.name, {
+      polygon.bindTooltip(`${region.name}${isSelected ? ' (Click to clear filter)' : ' (Click to filter scholars)'}`, {
         permanent: false,
         direction: 'center',
         className: 'boundary-tooltip'
       });
 
+      polygon.on('click', () => {
+        handleRegionClick(key);
+      });
+
+      polygon.on('mouseover', () => {
+        if (!isSelected) {
+          polygon.setStyle({ fillOpacity: 0.2, weight: 3 });
+        }
+      });
+
+      polygon.on('mouseout', () => {
+        if (!isSelected) {
+          polygon.setStyle({ fillOpacity: 0.1, weight: 2 });
+        }
+      });
+
       polygon.addTo(mapRef.current!);
-      boundariesRef.current.push(polygon);
+      boundariesRef.current[key] = polygon;
 
       // Add region label at centroid
       const centroid = polygon.getBounds().getCenter();
@@ -251,31 +311,33 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         html: `
           <div style="
             font-family: 'Playfair Display', serif;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: ${isSelected ? '14px' : '12px'};
+            font-weight: ${isSelected ? '700' : '600'};
             color: ${region.color};
             text-shadow: 
-              1px 1px 0 white,
-              -1px -1px 0 white,
-              1px -1px 0 white,
-              -1px 1px 0 white,
+              2px 2px 0 white,
+              -2px -2px 0 white,
+              2px -2px 0 white,
+              -2px 2px 0 white,
               0 2px 4px rgba(0,0,0,0.3);
             white-space: nowrap;
             pointer-events: none;
-            opacity: 0.9;
+            opacity: ${isSelected ? 1 : 0.9};
+            transition: all 0.3s ease;
           ">
             ${region.name}
+            ${isSelected ? ' ✓' : ''}
           </div>
         `,
-        iconSize: [150, 20],
-        iconAnchor: [75, 10]
+        iconSize: [180, 20],
+        iconAnchor: [90, 10]
       });
 
       const label = L.marker(centroid, { icon: labelIcon, interactive: false });
       label.addTo(mapRef.current!);
       labelsRef.current.push(label);
     });
-  }, [showBoundaries]);
+  }, [showBoundaries, selectedRegion, handleRegionClick]);
 
   // Update connection lines
   useEffect(() => {
@@ -291,6 +353,12 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
     connections.forEach((conn) => {
       const isHighlighted = selectedScholar && 
         (conn.from.id === selectedScholar.id || conn.to.id === selectedScholar.id);
+      
+      // Dim connections if region filter is active and either scholar is outside
+      const isDimmed = selectedRegion && 
+        (!scholarsInRegion.has(conn.from.id) || !scholarsInRegion.has(conn.to.id));
+
+      if (isDimmed) return; // Skip drawing dimmed connections
 
       const midLat = (conn.from.location.lat + conn.to.location.lat) / 2;
       const midLng = (conn.from.location.lng + conn.to.location.lng) / 2;
@@ -362,7 +430,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         linesRef.current.push(arrowMarker as unknown as L.Polyline);
       }
     });
-  }, [connections, showConnections, selectedScholar]);
+  }, [connections, showConnections, selectedScholar, selectedRegion, scholarsInRegion]);
 
   // Update markers when scholars change
   useEffect(() => {
@@ -379,10 +447,15 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         selectedScholar.teachers?.includes(scholar.id) ||
         selectedScholar.students?.includes(scholar.id)
       );
+      
+      const isDimmed = selectedRegion && !scholarsInRegion.has(scholar.id);
 
       const marker = L.marker(
         [scholar.location.lat, scholar.location.lng],
-        { icon: createScholarIcon(scholar, !!isHighlighted), zIndexOffset: isHighlighted ? 1000 : 500 }
+        { 
+          icon: createScholarIcon(scholar, !!isHighlighted, !!isDimmed), 
+          zIndexOffset: isDimmed ? -1000 : (isHighlighted ? 1000 : 500)
+        }
       );
 
       const popupContent = `
@@ -429,7 +502,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
       marker.addTo(mapRef.current!);
       markersRef.current[scholar.id] = marker;
     });
-  }, [scholars, selectedScholar, onSelectScholar]);
+  }, [scholars, selectedScholar, onSelectScholar, selectedRegion, scholarsInRegion]);
 
   // Handle selected scholar
   useEffect(() => {
@@ -458,6 +531,9 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
       layersRef.current.historical?.addTo(mapRef.current);
     }
   }, [mapStyle]);
+
+  const selectedRegionData = selectedRegion ? historicalBoundaries[selectedRegion] : null;
+  const scholarsInRegionCount = scholarsInRegion.size;
 
   return (
     <div className="relative h-[600px]">
@@ -491,7 +567,16 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         }
         
         .historical-boundary {
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .historical-boundary:not(.selected) {
           animation: boundary-pulse 3s ease-in-out infinite;
+        }
+        
+        .historical-boundary.selected {
+          animation: none;
         }
         
         .connection-tooltip,
@@ -511,6 +596,37 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
           font-weight: 600 !important;
         }
       `}</style>
+
+      {/* Active Region Filter Banner */}
+      {selectedRegion && selectedRegionData && (
+        <div 
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[1001] animate-fade-in"
+        >
+          <div 
+            className="flex items-center gap-3 px-4 py-2 rounded-full shadow-elevated backdrop-blur-sm"
+            style={{ 
+              backgroundColor: `${selectedRegionData.color}20`,
+              border: `2px solid ${selectedRegionData.color}`
+            }}
+          >
+            <div 
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: selectedRegionData.color }}
+            />
+            <span className="text-sm font-semibold text-foreground">
+              {selectedRegionData.name}: {scholarsInRegionCount} scholar{scholarsInRegionCount !== 1 ? 's' : ''}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearRegionFilter}
+              className="h-6 w-6 p-0 rounded-full hover:bg-foreground/10"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Controls */}
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
@@ -584,32 +700,31 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         
         {showBoundaries && (
           <>
-            <h4 className="text-sm font-semibold text-foreground mt-4 mb-2 pt-2 border-t border-primary/20">Medieval Kingdoms</h4>
+            <h4 className="text-sm font-semibold text-foreground mt-4 mb-2 pt-2 border-t border-primary/20">
+              Kingdoms <span className="font-normal text-muted-foreground">(click to filter)</span>
+            </h4>
             <div className="space-y-1.5 text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#dc2626', opacity: 0.5 }} />
-                <span className="text-muted-foreground">Holy Roman Empire</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#3b82f6', opacity: 0.5 }} />
-                <span className="text-muted-foreground">Kingdom of France</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#16a34a', opacity: 0.5 }} />
-                <span className="text-muted-foreground">Ottoman Empire</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#9333ea', opacity: 0.5 }} />
-                <span className="text-muted-foreground">Polish-Lithuanian</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#c9a961', opacity: 0.5 }} />
-                <span className="text-muted-foreground">Champagne (Rashi)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-2 rounded-sm" style={{ backgroundColor: '#f59e0b', opacity: 0.5 }} />
-                <span className="text-muted-foreground">Rhineland (ShUM)</span>
-              </div>
+              {(Object.entries(historicalBoundaries) as [RegionKey, typeof historicalBoundaries[RegionKey]][]).map(([key, region]) => (
+                <button
+                  key={key}
+                  onClick={() => handleRegionClick(key)}
+                  className={`flex items-center gap-2 w-full text-left py-1 px-1 -mx-1 rounded transition-colors ${
+                    selectedRegion === key ? 'bg-primary/20' : 'hover:bg-primary/10'
+                  }`}
+                >
+                  <span 
+                    className="w-4 h-2 rounded-sm transition-opacity" 
+                    style={{ 
+                      backgroundColor: region.color, 
+                      opacity: selectedRegion === key ? 1 : 0.5 
+                    }} 
+                  />
+                  <span className={`${selectedRegion === key ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                    {region.name}
+                    {selectedRegion === key && ' ✓'}
+                  </span>
+                </button>
+              ))}
             </div>
           </>
         )}
