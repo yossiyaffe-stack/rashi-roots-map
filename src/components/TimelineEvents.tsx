@@ -1,12 +1,16 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { MapPin } from 'lucide-react';
 import type { DbHistoricalEvent } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
+import type L from 'leaflet';
 
 interface TimelineEventsProps {
   events: DbHistoricalEvent[];
   timeRange: [number, number];
+  mapRef?: React.MutableRefObject<L.Map | null>;
 }
 
 const IMPORTANCE_CONFIG = {
@@ -20,7 +24,7 @@ const IMPORTANCE_CONFIG = {
 const TIMELINE_MIN = 1000;
 const TIMELINE_MAX = 1800;
 
-export function TimelineEvents({ events, timeRange }: TimelineEventsProps) {
+export function TimelineEvents({ events, timeRange, mapRef }: TimelineEventsProps) {
   const [selectedEvent, setSelectedEvent] = useState<DbHistoricalEvent | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -123,6 +127,24 @@ export function TimelineEvents({ events, timeRange }: TimelineEventsProps) {
               {selectedEvent?.description}
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Show on map button if event has coordinates */}
+          {selectedEvent?.latitude && selectedEvent?.longitude && mapRef && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 gap-2"
+              onClick={() => {
+                if (mapRef.current && selectedEvent.latitude && selectedEvent.longitude) {
+                  mapRef.current.flyTo([selectedEvent.latitude, selectedEvent.longitude], 8, { duration: 1.5 });
+                  setSelectedEvent(null);
+                }
+              }}
+            >
+              <MapPin className="w-4 h-4" />
+              Show on map
+            </Button>
+          )}
         </DialogContent>
       </Dialog>
     </>

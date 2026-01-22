@@ -243,7 +243,7 @@ const Index = () => {
           </div>
           
           {/* Historical Events Row */}
-          <TimelineEvents events={historicalEvents} timeRange={timeRange} />
+          <TimelineEvents events={historicalEvents} timeRange={timeRange} mapRef={mapRef} />
         </div>
       </footer>
 
