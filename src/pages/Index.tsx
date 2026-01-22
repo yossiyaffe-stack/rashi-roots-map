@@ -83,6 +83,8 @@ const Index = () => {
               step={10}
               onValueChange={([start, end]) => setTimeRange([start, end])}
               className="flex-1"
+              showTooltip
+              formatValue={(val) => `${val} CE`}
             />
             <span className="text-sm text-accent font-medium w-20 text-right">{timeRange[1]} CE</span>
           </div>
