@@ -31,6 +31,7 @@ export const NetworkView = ({
 }: NetworkViewProps) => {
   const { filters, shouldShowRelationship } = useRelationshipFilters();
   const [showOnlyConnected, setShowOnlyConnected] = useState(false);
+  const [focusOnSelected, setFocusOnSelected] = useState(false);
 
   // Filter biographical relationships based on filters
   const filteredBiographical = useMemo(() => {
@@ -57,6 +58,32 @@ export const NetworkView = ({
     );
   }, [intellectualRelationships, filters, shouldShowRelationship]);
 
+  // Get scholars connected to the selected scholar
+  const selectedScholarConnections = useMemo(() => {
+    if (!selectedScholar) return new Set<string>();
+    
+    const ids = new Set<string>();
+    ids.add(selectedScholar.id); // Include the selected scholar
+    
+    filteredBiographical.forEach(rel => {
+      if (rel.scholar_id === selectedScholar.id) ids.add(rel.related_scholar_id);
+      if (rel.related_scholar_id === selectedScholar.id) ids.add(rel.scholar_id);
+    });
+    
+    filteredTextual.forEach(rel => {
+      const fromId = (rel as any).from_scholar_id;
+      const toId = (rel as any).to_scholar_id;
+      if (fromId === selectedScholar.id && toId) ids.add(toId);
+      if (toId === selectedScholar.id && fromId) ids.add(fromId);
+    });
+    
+    filteredIntellectual.forEach(rel => {
+      if (rel.scholar_id === selectedScholar.id) ids.add(rel.scholar_id);
+    });
+    
+    return ids;
+  }, [selectedScholar, filteredBiographical, filteredTextual, filteredIntellectual]);
+
   // Get set of scholar IDs that have active relationships
   const connectedScholarIds = useMemo(() => {
     const ids = new Set<string>();
@@ -80,11 +107,26 @@ export const NetworkView = ({
     return ids;
   }, [filteredBiographical, filteredTextual, filteredIntellectual]);
 
-  // Filter scholars based on showOnlyConnected toggle
+  // Filter scholars based on toggles
   const displayedScholars = useMemo(() => {
-    if (!showOnlyConnected) return scholars;
-    return scholars.filter(s => connectedScholarIds.has(s.id));
-  }, [scholars, showOnlyConnected, connectedScholarIds]);
+    let filtered = scholars;
+    
+    // If focusing on selected scholar, show only their connections
+    if (focusOnSelected && selectedScholar && selectedScholarConnections.size > 0) {
+      filtered = filtered.filter(s => selectedScholarConnections.has(s.id));
+    } else if (showOnlyConnected) {
+      // Otherwise if showing only connected, filter by all connections
+      filtered = filtered.filter(s => connectedScholarIds.has(s.id));
+    }
+    
+    return filtered;
+  }, [scholars, showOnlyConnected, focusOnSelected, selectedScholar, connectedScholarIds, selectedScholarConnections]);
+
+  // Check if a relationship involves the selected scholar
+  const isRelationshipHighlighted = (scholarId1: string, scholarId2?: string): boolean => {
+    if (!selectedScholar) return true; // No selection = all highlighted
+    return scholarId1 === selectedScholar.id || scholarId2 === selectedScholar.id;
+  };
 
   const getNodeColor = (scholar: DbScholar): string => {
     if (scholar.name === 'Rashi') return '#e11d48';
@@ -191,7 +233,7 @@ export const NetworkView = ({
           
           if (!fromPos || !toPos) return null;
           
-          // Offset lines slightly to prevent overlap
+          const isHighlighted = isRelationshipHighlighted(conn.scholar_id, conn.related_scholar_id);
           const offset = idx * 0.5;
           
           return (
@@ -202,10 +244,10 @@ export const NetworkView = ({
               x2={toPos.x}
               y2={toPos.y + offset}
               stroke={DOMAIN_COLORS.biographical}
-              strokeWidth="2"
+              strokeWidth={isHighlighted ? 3 : 1.5}
               markerEnd="url(#arrowhead-bio)"
-              opacity="0.6"
-              className="transition-opacity hover:opacity-100"
+              opacity={isHighlighted ? 0.9 : 0.2}
+              className="transition-all duration-200"
             />
           );
         })}
@@ -219,7 +261,7 @@ export const NetworkView = ({
           
           if (!fromPos || !toPos || fromScholarId === toScholarId) return null;
           
-          // Offset lines to prevent overlap with biographical
+          const isHighlighted = isRelationshipHighlighted(fromScholarId, toScholarId);
           const offset = -3 - (idx % 3);
           
           return (
@@ -230,11 +272,11 @@ export const NetworkView = ({
               x2={toPos.x}
               y2={toPos.y + offset}
               stroke={DOMAIN_COLORS.textual}
-              strokeWidth="2"
+              strokeWidth={isHighlighted ? 3 : 1.5}
               strokeDasharray="6,3"
               markerEnd="url(#arrowhead-text)"
-              opacity="0.6"
-              className="transition-opacity hover:opacity-100"
+              opacity={isHighlighted ? 0.9 : 0.2}
+              className="transition-all duration-200"
             />
           );
         })}
@@ -245,7 +287,7 @@ export const NetworkView = ({
           
           if (!fromPos) return null;
           
-          // Draw as a small arc indicating intellectual activity
+          const isHighlighted = isRelationshipHighlighted(conn.scholar_id);
           const arcRadius = 20 + (idx % 3) * 5;
           
           return (
@@ -255,10 +297,10 @@ export const NetworkView = ({
                   A ${arcRadius} ${arcRadius} 0 0 1 ${fromPos.x + arcRadius} ${fromPos.y - 10}`}
               fill="none"
               stroke={DOMAIN_COLORS.intellectual}
-              strokeWidth="2"
+              strokeWidth={isHighlighted ? 3 : 1.5}
               strokeDasharray="4,2"
-              opacity="0.6"
-              className="transition-opacity hover:opacity-100"
+              opacity={isHighlighted ? 0.9 : 0.2}
+              className="transition-all duration-200"
             />
           );
         })}
@@ -271,18 +313,24 @@ export const NetworkView = ({
           const radius = getNodeRadius(scholar);
           const color = getNodeColor(scholar);
           const isSelected = selectedScholar?.id === scholar.id;
+          const isConnectedToSelected = selectedScholar ? selectedScholarConnections.has(scholar.id) : true;
           const isRashi = scholar.name === 'Rashi';
 
           return (
-            <g key={scholar.id} className="cursor-pointer" onClick={() => onSelectScholar(scholar)}>
-              {/* Glow effect for Rashi */}
-              {isRashi && (
+            <g 
+              key={scholar.id} 
+              className="cursor-pointer" 
+              onClick={() => onSelectScholar(scholar)}
+              opacity={isConnectedToSelected ? 1 : 0.3}
+            >
+              {/* Glow effect for selected scholar or Rashi */}
+              {(isSelected || isRashi) && (
                 <circle
                   cx={pos.x}
                   cy={pos.y}
                   r={radius + 8}
                   fill="none"
-                  stroke="#fbbf24"
+                  stroke={isSelected ? '#fbbf24' : '#fbbf24'}
                   strokeWidth="3"
                   opacity="0.5"
                   filter="url(#glow)"
@@ -297,7 +345,7 @@ export const NetworkView = ({
                 fill={color}
                 stroke={isSelected ? '#fbbf24' : '#fff'}
                 strokeWidth={isSelected ? 3 : 2}
-                className="transition-all hover:brightness-125"
+                className="transition-all duration-200 hover:brightness-125"
                 style={{ 
                   transform: isSelected ? 'scale(1.15)' : 'scale(1)',
                   transformOrigin: `${pos.x}px ${pos.y}px`
@@ -331,11 +379,12 @@ export const NetworkView = ({
       </svg>
 
       {/* Controls */}
-      <div className="absolute top-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs">
-        <div className="flex items-center gap-2 mb-3">
+      <div className="absolute top-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-3">
+        <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-accent" />
           <span className="font-bold text-accent uppercase tracking-wide">Display</span>
         </div>
+        
         <div className="flex items-center justify-between gap-4">
           <Label htmlFor="show-connected" className="text-sm text-muted-foreground cursor-pointer">
             Connected scholars only
@@ -344,11 +393,39 @@ export const NetworkView = ({
             id="show-connected"
             checked={showOnlyConnected}
             onCheckedChange={setShowOnlyConnected}
+            disabled={focusOnSelected}
           />
         </div>
-        {showOnlyConnected && (
-          <div className="mt-2 text-muted-foreground/70">
-            Showing {displayedScholars.length} of {scholars.length} scholars
+
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="focus-selected" className="text-sm text-muted-foreground cursor-pointer">
+            Focus on selected
+          </Label>
+          <Switch
+            id="focus-selected"
+            checked={focusOnSelected}
+            onCheckedChange={setFocusOnSelected}
+          />
+        </div>
+        
+        {selectedScholar && (
+          <div className="pt-2 border-t border-white/10">
+            <div className="text-accent font-medium">{selectedScholar.name}</div>
+            <div className="text-muted-foreground/70">
+              {selectedScholarConnections.size - 1} connections
+            </div>
+            <button 
+              onClick={() => onSelectScholar(null as any)}
+              className="mt-1 text-xs text-white/50 hover:text-white underline"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+        
+        {!selectedScholar && (
+          <div className="text-muted-foreground/70 italic">
+            Click a scholar to see connections
           </div>
         )}
       </div>
