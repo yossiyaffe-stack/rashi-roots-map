@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Users, FileText, Lightbulb, Filter } from 'lucide-react';
+import { Users, FileText, Lightbulb, Filter, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 interface NetworkViewProps {
   scholars: DbScholar[];
@@ -32,6 +33,14 @@ export const NetworkView = ({
   const { filters, shouldShowRelationship } = useRelationshipFilters();
   const [showOnlyConnected, setShowOnlyConnected] = useState(false);
   const [focusOnSelected, setFocusOnSelected] = useState(false);
+  const [highlightSelected, setHighlightSelected] = useState(false);
+  
+  // Zoom and pan state
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Filter biographical relationships based on filters
   const filteredBiographical = useMemo(() => {
@@ -122,11 +131,57 @@ export const NetworkView = ({
     return filtered;
   }, [scholars, showOnlyConnected, focusOnSelected, selectedScholar, connectedScholarIds, selectedScholarConnections]);
 
-  // Check if a relationship involves the selected scholar
+  // Check if a relationship involves the selected scholar (only dim when highlightSelected is on)
   const isRelationshipHighlighted = (scholarId1: string, scholarId2?: string): boolean => {
-    if (!selectedScholar) return true; // No selection = all highlighted
+    if (!highlightSelected || !selectedScholar) return true; // No highlight mode = all fully visible
     return scholarId1 === selectedScholar.id || scholarId2 === selectedScholar.id;
   };
+
+  // Zoom handlers
+  const handleZoomIn = useCallback(() => {
+    setZoom(z => Math.min(z * 1.25, 3));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoom(z => Math.max(z / 1.25, 0.25));
+  }, []);
+
+  const handleResetView = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
+
+  // Mouse wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(z => Math.min(Math.max(z * delta, 0.25), 3));
+  }, []);
+
+  // Pan handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 0) { // Left click
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    }
+  }, [pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning) {
+      setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+    }
+  }, [isPanning, panStart]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // Reset pan when mouse leaves
+  useEffect(() => {
+    const handleGlobalMouseUp = () => setIsPanning(false);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
 
   const getNodeColor = (scholar: DbScholar): string => {
     if (scholar.name === 'Rashi') return '#e11d48';
@@ -205,8 +260,26 @@ export const NetworkView = ({
   }), [filteredBiographical, filteredTextual, filteredIntellectual]);
 
   return (
-    <div className="w-full h-full overflow-auto p-6">
-      <svg width={svgDimensions.width} height={svgDimensions.height} className="min-w-[800px]">
+    <div 
+      ref={containerRef}
+      className="w-full h-full overflow-hidden relative"
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
+    >
+      <svg 
+        width="100%" 
+        height="100%" 
+        style={{ 
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center',
+          transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+        }}
+      >
+        <g transform={`translate(${svgDimensions.width / 2 - 400}, 50)`}>
         <defs>
           <marker id="arrowhead-bio" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={DOMAIN_COLORS.biographical} />
@@ -244,9 +317,9 @@ export const NetworkView = ({
               x2={toPos.x}
               y2={toPos.y + offset}
               stroke={DOMAIN_COLORS.biographical}
-              strokeWidth={isHighlighted ? 3 : 1.5}
+              strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
               markerEnd="url(#arrowhead-bio)"
-              opacity={isHighlighted ? 0.9 : 0.2}
+              opacity={isHighlighted ? 0.8 : 0.15}
               className="transition-all duration-200"
             />
           );
@@ -272,10 +345,10 @@ export const NetworkView = ({
               x2={toPos.x}
               y2={toPos.y + offset}
               stroke={DOMAIN_COLORS.textual}
-              strokeWidth={isHighlighted ? 3 : 1.5}
+              strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
               strokeDasharray="6,3"
               markerEnd="url(#arrowhead-text)"
-              opacity={isHighlighted ? 0.9 : 0.2}
+              opacity={isHighlighted ? 0.8 : 0.15}
               className="transition-all duration-200"
             />
           );
@@ -297,9 +370,9 @@ export const NetworkView = ({
                   A ${arcRadius} ${arcRadius} 0 0 1 ${fromPos.x + arcRadius} ${fromPos.y - 10}`}
               fill="none"
               stroke={DOMAIN_COLORS.intellectual}
-              strokeWidth={isHighlighted ? 3 : 1.5}
+              strokeWidth={isHighlighted && highlightSelected ? 3 : 2}
               strokeDasharray="4,2"
-              opacity={isHighlighted ? 0.9 : 0.2}
+              opacity={isHighlighted ? 0.8 : 0.15}
               className="transition-all duration-200"
             />
           );
@@ -313,15 +386,20 @@ export const NetworkView = ({
           const radius = getNodeRadius(scholar);
           const color = getNodeColor(scholar);
           const isSelected = selectedScholar?.id === scholar.id;
-          const isConnectedToSelected = selectedScholar ? selectedScholarConnections.has(scholar.id) : true;
+          const isConnectedToSelected = highlightSelected && selectedScholar 
+            ? selectedScholarConnections.has(scholar.id) 
+            : true;
           const isRashi = scholar.name === 'Rashi';
 
           return (
             <g 
               key={scholar.id} 
               className="cursor-pointer" 
-              onClick={() => onSelectScholar(scholar)}
-              opacity={isConnectedToSelected ? 1 : 0.3}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectScholar(scholar);
+              }}
+              opacity={isConnectedToSelected ? 1 : 0.25}
             >
               {/* Glow effect for selected scholar or Rashi */}
               {(isSelected || isRashi) && (
@@ -376,7 +454,42 @@ export const NetworkView = ({
             </g>
           );
         })}
+        </g>
       </svg>
+
+      {/* Zoom Controls */}
+      <div className="absolute top-6 left-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-2 flex flex-col gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleZoomIn}
+          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
+          title="Zoom in"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleZoomOut}
+          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
+          title="Zoom out"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleResetView}
+          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
+          title="Reset view"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
+        <div className="text-[10px] text-center text-muted-foreground mt-1">
+          {Math.round(zoom * 100)}%
+        </div>
+      </div>
 
       {/* Controls */}
       <div className="absolute top-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-3">
@@ -394,6 +507,17 @@ export const NetworkView = ({
             checked={showOnlyConnected}
             onCheckedChange={setShowOnlyConnected}
             disabled={focusOnSelected}
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="highlight-selected" className="text-sm text-muted-foreground cursor-pointer">
+            Highlight selected
+          </Label>
+          <Switch
+            id="highlight-selected"
+            checked={highlightSelected}
+            onCheckedChange={setHighlightSelected}
           />
         </div>
 
