@@ -1,8 +1,87 @@
-import { X, BookOpen, MapPin, Calendar, Users, ExternalLink } from 'lucide-react';
+import { X, BookOpen, MapPin, Calendar, Users, ExternalLink, GitBranch, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useScholarWithWorks, type DbScholar } from '@/hooks/useScholars';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import type { WorkWithTextualRelationships } from '@/hooks/useScholars';
+
+interface WorkCardProps {
+  work: WorkWithTextualRelationships;
+  supercommentaries: NonNullable<WorkWithTextualRelationships['supercommentaries']>;
+  hasSupercommentaries: boolean;
+}
+
+function WorkCard({ work, supercommentaries, hasSupercommentaries }: WorkCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="rounded-lg bg-white/5 border border-white/10 overflow-hidden">
+      <div className="p-3">
+        <div className="flex justify-between items-start">
+          <span className="font-medium text-foreground">{work.title}</span>
+          {work.hebrew_title && (
+            <span className="font-hebrew text-xs text-accent">{work.hebrew_title}</span>
+          )}
+        </div>
+        {work.description && (
+          <p className="text-xs text-muted-foreground mt-1">{work.description}</p>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          <Badge variant="outline" className="text-xs">
+            {work.work_type}
+          </Badge>
+          {work.manuscript_id && (
+            <Badge variant="secondary" className="text-xs bg-accent/10 text-accent">
+              {work.manuscript_id}
+            </Badge>
+          )}
+        </div>
+        {work.manuscript_url && (
+          <a 
+            href={work.manuscript_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 mt-2 text-xs text-accent hover:underline"
+          >
+            <ExternalLink className="w-3 h-3" />
+            View Manuscript / Digital Access
+          </a>
+        )}
+      </div>
+      
+      {/* Supercommentaries Section */}
+      {hasSupercommentaries && (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger className="w-full px-3 py-2 bg-emerald-500/10 border-t border-emerald-500/20 flex items-center gap-2 text-xs text-emerald-400 hover:bg-emerald-500/15 transition-colors">
+            {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            <GitBranch className="w-3 h-3" />
+            <span className="font-medium">Supercommentaries ({supercommentaries.length})</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-3 py-2 bg-emerald-500/5 space-y-2">
+              {supercommentaries.map(sc => (
+                <div key={sc.id} className="pl-4 border-l-2 border-emerald-500/30">
+                  <div className="flex justify-between items-start">
+                    <span className="text-xs font-medium text-foreground">{sc.title}</span>
+                    {sc.hebrew_title && (
+                      <span className="font-hebrew text-[10px] text-emerald-400">{sc.hebrew_title}</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">by {sc.author_name}</p>
+                  {sc.notes && (
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5 italic">{sc.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
 
 interface ScholarDetailPanelProps {
   scholar: DbScholar;
@@ -81,51 +160,27 @@ export function ScholarDetailPanel({ scholar, onClose }: ScholarDetailPanelProps
             </div>
           )}
 
-          {/* Works */}
+          {/* Works with Supercommentaries */}
           {works.length > 0 && (
             <div className="mb-6">
               <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 Works ({works.length})
               </h3>
-              <div className="space-y-2">
-                {works.map(work => (
-                  <div 
-                    key={work.id}
-                    className="p-3 rounded-lg bg-white/5 border border-white/10"
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium text-foreground">{work.title}</span>
-                      {work.hebrew_title && (
-                        <span className="font-hebrew text-xs text-accent">{work.hebrew_title}</span>
-                      )}
-                    </div>
-                    {work.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{work.description}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {work.work_type}
-                      </Badge>
-                      {work.manuscript_id && (
-                        <Badge variant="secondary" className="text-xs bg-accent/10 text-accent">
-                          {work.manuscript_id}
-                        </Badge>
-                      )}
-                    </div>
-                    {work.manuscript_url && (
-                      <a 
-                        href={work.manuscript_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 mt-2 text-xs text-accent hover:underline"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        View Manuscript / Digital Access
-                      </a>
-                    )}
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {works.map(work => {
+                  const supercommentaries = work.supercommentaries || [];
+                  const hasSupercommentaries = supercommentaries.length > 0;
+                  
+                  return (
+                    <WorkCard 
+                      key={work.id} 
+                      work={work} 
+                      supercommentaries={supercommentaries}
+                      hasSupercommentaries={hasSupercommentaries}
+                    />
+                  );
+                })}
               </div>
             </div>
           )}
