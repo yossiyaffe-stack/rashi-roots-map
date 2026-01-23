@@ -26,7 +26,7 @@ const formatYear = (year: number): string => {
 };
 
 const Index = () => {
-  const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
+  const { selectedScholar, setSelectedScholar } = useScholarsOverlay();
   const [timeRange, setTimeRange] = useState<[number, number]>([-500, 1650]);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [timelineFullscreen, setTimelineFullscreen] = useState(false);

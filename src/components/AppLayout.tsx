@@ -23,7 +23,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
-  const { isOverlayOpen, setIsOverlayOpen } = useScholarsOverlay();
+  const { isOverlayOpen, setIsOverlayOpen, clearSelection } = useScholarsOverlay();
   const { 
     showBoundaries, setShowBoundaries,
     showMigrations, setShowMigrations,
@@ -102,6 +102,7 @@ export function AppLayout() {
               {/* Map */}
               <NavLink
                 to="/"
+                onClick={clearSelection}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
                   "hover:bg-white/10 text-white/70 hover:text-white",
