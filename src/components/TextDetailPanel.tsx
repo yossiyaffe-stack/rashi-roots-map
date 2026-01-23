@@ -7,21 +7,130 @@ import { type WorkWithAuthor, type TextualRelationshipWithWorks } from '@/hooks/
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
-// 9 Relationship Types from the guide
-const RELATIONSHIP_TYPES = {
-  nosei_kelim: { label: 'Nosei Kelim', hebrewLabel: 'נושאי כלים', icon: Layers, color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', description: 'Texts printed together' },
-  hasagot: { label: 'Hasagot', hebrewLabel: 'השגות', icon: AlertCircle, color: 'bg-red-500/20 text-red-400 border-red-500/30', description: 'Criticisms/objections' },
-  commentary: { label: 'Commentary', hebrewLabel: 'פירוש', icon: Book, color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', description: 'Primary interpretation' },
-  super_commentary: { label: 'Super-Commentary', hebrewLabel: 'פירוש על פירוש', icon: GitBranch, color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', description: 'Commentary on commentary' },
-  hiddushim: { label: 'Hiddushim', hebrewLabel: 'חידושים', icon: FileText, color: 'bg-green-500/20 text-green-400 border-green-500/30', description: 'Novellae/innovations' },
-  abridgement: { label: 'Abridgement', hebrewLabel: 'קיצור', icon: Scissors, color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', description: 'Shortened versions' },
-  translation: { label: 'Translation', hebrewLabel: 'תרגום', icon: Languages, color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30', description: 'Language translations' },
-  reorganization: { label: 'Reorganization', hebrewLabel: 'סידור', icon: ArrowRightLeft, color: 'bg-pink-500/20 text-pink-400 border-pink-500/30', description: 'Structural rearrangements' },
-  halakhic_dependency: { label: 'Halakhic Dependency', hebrewLabel: 'תלות הלכתית', icon: Scale, color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', description: 'Legal source chains' },
-  citation: { label: 'Citation', hebrewLabel: 'ציטוט', icon: Link2, color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', description: 'Direct quotation' },
-  influence: { label: 'Influence', hebrewLabel: 'השפעה', icon: GitBranch, color: 'bg-teal-500/20 text-teal-400 border-teal-500/30', description: 'Conceptual influence' },
-  response: { label: 'Response', hebrewLabel: 'תגובה', icon: AlertCircle, color: 'bg-rose-500/20 text-rose-400 border-rose-500/30', description: 'Direct response' },
-  transmission: { label: 'Transmission', hebrewLabel: 'מסירה', icon: ArrowRightLeft, color: 'bg-lime-500/20 text-lime-400 border-lime-500/30', description: 'Text transmission' },
+// 9 Relationship Types from the guide (with database type mappings)
+const RELATIONSHIP_TYPES: Record<string, { 
+  label: string; 
+  hebrewLabel: string; 
+  icon: typeof Layers; 
+  color: string; 
+  description: string;
+  dbTypes?: string[]; // Database types that map to this category
+}> = {
+  nosei_kelim: { 
+    label: 'Nosei Kelim', 
+    hebrewLabel: 'נושאי כלים', 
+    icon: Layers, 
+    color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', 
+    description: 'Texts printed together (e.g., Rashi + Tosafot with Talmud)',
+    dbTypes: ['nosei_kelim', 'compilation', 'printed_together']
+  },
+  hasagot: { 
+    label: 'Hasagot', 
+    hebrewLabel: 'השגות', 
+    icon: AlertCircle, 
+    color: 'bg-red-500/20 text-red-400 border-red-500/30', 
+    description: 'Criticisms/objections (e.g., Ravad on Maimonides)',
+    dbTypes: ['hasagot', 'opposes', 'criticism', 'objection']
+  },
+  commentary: { 
+    label: 'Commentary', 
+    hebrewLabel: 'פירוש', 
+    icon: Book, 
+    color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', 
+    description: 'Primary interpretation (e.g., Rashi on Torah)',
+    dbTypes: ['commentary', 'interpretation', 'explanation']
+  },
+  supercommentary: { 
+    label: 'Super-Commentary', 
+    hebrewLabel: 'פירוש על פירוש', 
+    icon: GitBranch, 
+    color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', 
+    description: 'Commentary on commentary (e.g., Mizrachi on Rashi)',
+    dbTypes: ['supercommentary', 'super_commentary', 'super-supercommentary']
+  },
+  hiddushim: { 
+    label: 'Hiddushim', 
+    hebrewLabel: 'חידושים', 
+    icon: FileText, 
+    color: 'bg-green-500/20 text-green-400 border-green-500/30', 
+    description: 'Novellae/innovations (e.g., HaRan on Talmud)',
+    dbTypes: ['hiddushim', 'novellae', 'innovation']
+  },
+  abridgement: { 
+    label: 'Abridgement', 
+    hebrewLabel: 'קיצור', 
+    icon: Scissors, 
+    color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', 
+    description: 'Shortened versions (e.g., Kitzur Shulchan Aruch)',
+    dbTypes: ['abridgement', 'shortened', 'summary']
+  },
+  translation: { 
+    label: 'Translation', 
+    hebrewLabel: 'תרגום', 
+    icon: Languages, 
+    color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30', 
+    description: 'Language translations (e.g., Targum Onkelos)',
+    dbTypes: ['translation', 'translated']
+  },
+  reorganization: { 
+    label: 'Reorganization', 
+    hebrewLabel: 'סידור מחדש', 
+    icon: ArrowRightLeft, 
+    color: 'bg-pink-500/20 text-pink-400 border-pink-500/30', 
+    description: 'Topical rearrangement (e.g., Ein Mishpat)',
+    dbTypes: ['reorganization', 'rearrangement', 'topical']
+  },
+  halakhic_dependency: { 
+    label: 'Halakhic Dependency', 
+    hebrewLabel: 'תלות הלכתית', 
+    icon: Scale, 
+    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', 
+    description: 'Legal chains (e.g., Talmud → Shulchan Aruch)',
+    dbTypes: ['halakhic_dependency', 'legal', 'halakhic']
+  },
+  // Additional types for existing data
+  citation: { 
+    label: 'Citation', 
+    hebrewLabel: 'ציטוט', 
+    icon: Link2, 
+    color: 'bg-orange-500/20 text-orange-400 border-orange-500/30', 
+    description: 'Direct quotation or reference',
+    dbTypes: ['citation', 'references', 'quotes']
+  },
+  influence: { 
+    label: 'Influence', 
+    hebrewLabel: 'השפעה', 
+    icon: GitBranch, 
+    color: 'bg-teal-500/20 text-teal-400 border-teal-500/30', 
+    description: 'Conceptual influence',
+    dbTypes: ['influence', 'engagement', 'inspired_by']
+  },
+  response: { 
+    label: 'Response', 
+    hebrewLabel: 'תגובה', 
+    icon: AlertCircle, 
+    color: 'bg-rose-500/20 text-rose-400 border-rose-500/30', 
+    description: 'Direct response or reply',
+    dbTypes: ['response', 'reply']
+  },
+};
+
+// Map database relationship_type to our canonical types
+const normalizeRelationshipType = (dbType: string): string => {
+  const normalizedType = dbType.toLowerCase().replace(/[-_\s]/g, '_');
+  
+  for (const [canonicalType, config] of Object.entries(RELATIONSHIP_TYPES)) {
+    if (config.dbTypes?.some(t => normalizedType.includes(t.replace(/[-_\s]/g, '_')))) {
+      return canonicalType;
+    }
+  }
+  
+  // Check if the type itself is a canonical type
+  if (RELATIONSHIP_TYPES[normalizedType]) {
+    return normalizedType;
+  }
+  
+  return 'other';
 };
 
 interface TextDetailPanelProps {
@@ -51,18 +160,18 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
     return { incoming, outgoing };
   }, [relationships, text.id]);
 
-  // Group relationships by type
+  // Group relationships by normalized type
   const groupedRelationships = useMemo(() => {
     const groups: Record<string, { incoming: TextualRelationshipWithWorks[]; outgoing: TextualRelationshipWithWorks[] }> = {};
     
     textRelationships.incoming.forEach(rel => {
-      const type = rel.relationship_type || 'other';
+      const type = normalizeRelationshipType(rel.relationship_type || 'other');
       if (!groups[type]) groups[type] = { incoming: [], outgoing: [] };
       groups[type].incoming.push(rel);
     });
     
     textRelationships.outgoing.forEach(rel => {
-      const type = rel.relationship_type || 'other';
+      const type = normalizeRelationshipType(rel.relationship_type || 'other');
       if (!groups[type]) groups[type] = { incoming: [], outgoing: [] };
       groups[type].outgoing.push(rel);
     });
