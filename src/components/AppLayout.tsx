@@ -309,6 +309,28 @@ export function AppLayout() {
                 </div>
               )}
 
+              {/* Texts Panel - Main texts listing (like Scholars panel) */}
+              <NavLink
+                to="/texts"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <BookOpen className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Texts</span>
+                    <ChevronRight className={cn(
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      location.pathname === '/texts' ? "rotate-90 text-accent" : "text-white/50"
+                    )} />
+                  </>
+                )}
+              </NavLink>
+
               {/* Works Network (renamed to Texts Network) */}
               <NavLink
                 to="/works"
