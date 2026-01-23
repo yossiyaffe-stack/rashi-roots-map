@@ -29,6 +29,8 @@ export interface RelationshipFilters {
       response: boolean;
       transmission: boolean;
     };
+    // Depth level filter - only show direct relationships (daughter), not granddaughter
+    depthLevel: 'daughter' | 'all';
   };
   
   // Certainty filter
@@ -60,6 +62,7 @@ const DEFAULT_FILTERS: RelationshipFilters = {
       response: true,
       transmission: true,
     },
+    depthLevel: 'daughter',
   },
   certainty: {
     certain: true,
@@ -76,9 +79,10 @@ interface RelationshipFilterContextType {
   toggleFamilyType: (familyType: keyof RelationshipFilters['familyTypes']) => void;
   toggleTextualCategory: (category: keyof RelationshipFilters['textual']['categories']) => void;
   toggleCertainty: (level: keyof RelationshipFilters['certainty']) => void;
+  setDepthLevel: (level: 'daughter' | 'all') => void;
   resetFilters: () => void;
   activeFilterCount: number;
-  shouldShowRelationship: (domain: 'family' | 'teacherStudent' | 'textual', category: string, relationshipType: string | null, certainty: string | null) => boolean;
+  shouldShowRelationship: (domain: 'family' | 'teacherStudent' | 'textual', category: string, relationshipType: string | null, certainty: string | null, depthLevel?: number) => boolean;
 }
 
 const RelationshipFilterContext = createContext<RelationshipFilterContextType | undefined>(undefined);
@@ -129,6 +133,16 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     }));
   }, []);
 
+  const setDepthLevel = useCallback((level: 'daughter' | 'all') => {
+    setFilters(prev => ({
+      ...prev,
+      textual: {
+        ...prev.textual,
+        depthLevel: level,
+      },
+    }));
+  }, []);
+
   const resetFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
   }, []);
@@ -150,7 +164,8 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
     domain: 'family' | 'teacherStudent' | 'textual',
     category: string,
     relationshipType: string | null,
-    certainty: string | null
+    certainty: string | null,
+    depthLevel?: number
   ): boolean => {
     // Check domain is enabled
     if (!filters.domains[domain]) return false;
@@ -165,13 +180,18 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       if (familyTypeKey && !familyTypes[familyTypeKey]) return false;
     }
     
-    // For textual domain, check category
+    // For textual domain, check category and depth level
     if (domain === 'textual') {
       const normalizedCategory = category.toLowerCase();
       const categoryKey = Object.keys(filters.textual.categories).find(
         key => key.toLowerCase() === normalizedCategory
       );
       if (categoryKey && !filters.textual.categories[categoryKey as keyof typeof filters.textual.categories]) return false;
+      
+      // Check depth level - if set to 'daughter', only show depth_level 1 (direct relationships)
+      if (filters.textual.depthLevel === 'daughter' && depthLevel !== undefined && depthLevel > 1) {
+        return false;
+      }
     }
     
     // Check certainty is enabled
@@ -191,6 +211,7 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       toggleFamilyType,
       toggleTextualCategory,
       toggleCertainty,
+      setDepthLevel,
       resetFilters,
       activeFilterCount,
       shouldShowRelationship,
@@ -211,6 +232,7 @@ export function useRelationshipFilters() {
       toggleFamilyType: () => {},
       toggleTextualCategory: () => {},
       toggleCertainty: () => {},
+      setDepthLevel: () => {},
       resetFilters: () => {},
       activeFilterCount: 0,
       shouldShowRelationship: () => true,
