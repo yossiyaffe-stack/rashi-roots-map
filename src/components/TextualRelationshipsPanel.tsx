@@ -1,40 +1,91 @@
-import { useState } from 'react';
-import { RotateCcw, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { RotateCcw, Layers, MessageSquareWarning, BookOpen, BookMarked, Lightbulb, FileText, Languages, LayoutGrid, Scale } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
-// Domain colors for visual identification
-const DOMAIN_COLORS = {
-  textual: { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-400' },
-};
-
-// Textual category labels
-const TEXTUAL_CATEGORY_LABELS: Record<string, string> = {
-  commentary: 'Commentary',
-  citation: 'Citation',
-  influence: 'Influence',
-  response: 'Response',
-  transmission: 'Transmission',
+// 9 Relationship Categories with icons and descriptions
+const TEXTUAL_CATEGORIES: Record<keyof RelationshipFilters['textual']['categories'], {
+  label: string;
+  hebrewLabel: string;
+  icon: typeof Layers;
+  description: string;
+  color: string;
+}> = {
+  nosei_kelim: {
+    label: 'Nosei Kelim',
+    hebrewLabel: 'נושאי כלים',
+    icon: Layers,
+    description: 'Texts printed together',
+    color: 'bg-purple-500/20 text-purple-400 border-purple-500/40',
+  },
+  hasagot: {
+    label: 'Hasagot',
+    hebrewLabel: 'השגות',
+    icon: MessageSquareWarning,
+    description: 'Criticisms',
+    color: 'bg-red-500/20 text-red-400 border-red-500/40',
+  },
+  commentary: {
+    label: 'Commentary',
+    hebrewLabel: 'פירוש',
+    icon: BookOpen,
+    description: 'Primary interpretation',
+    color: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+  },
+  super_commentary: {
+    label: 'Super-Commentary',
+    hebrewLabel: 'פירוש על פירוש',
+    icon: BookMarked,
+    description: 'Meta-commentary',
+    color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
+  },
+  hiddushim: {
+    label: 'Hiddushim',
+    hebrewLabel: 'חידושים',
+    icon: Lightbulb,
+    description: 'Novellae',
+    color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
+  },
+  abridgement: {
+    label: 'Abridgement',
+    hebrewLabel: 'קיצור',
+    icon: FileText,
+    description: 'Shortened versions',
+    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
+  },
+  translation: {
+    label: 'Translation',
+    hebrewLabel: 'תרגום',
+    icon: Languages,
+    description: 'Language change',
+    color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
+  },
+  reorganization: {
+    label: 'Reorganization',
+    hebrewLabel: 'סידור מחדש',
+    icon: LayoutGrid,
+    description: 'Topical rearrangement',
+    color: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+  },
+  halakhic_dependency: {
+    label: 'Halakhic Dependency',
+    hebrewLabel: 'שרשרת הלכתית',
+    icon: Scale,
+    description: 'Legal chains',
+    color: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+  },
 };
 
 export function TextualRelationshipsPanel() {
   const {
     filters,
-    toggleDomain,
     toggleTextualCategory,
-    toggleCertainty,
-    setDepthLevel,
     resetFilters,
     activeFilterCount,
   } = useRelationshipFilters();
 
-  const [textualOpen, setTextualOpen] = useState(true);
-
-  const textualCategoriesEnabledCount = Object.values(filters.textual.categories).filter(Boolean).length;
+  const enabledCount = Object.values(filters.textual.categories).filter(Boolean).length;
+  const totalCount = Object.keys(filters.textual.categories).length;
 
   return (
     <div className="h-full flex flex-col w-[280px]">
@@ -54,109 +105,46 @@ export function TextualRelationshipsPanel() {
             </button>
           )}
         </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          {enabledCount}/{totalCount} categories active
+        </p>
       </div>
 
-      {/* Scrollable Content */}
+      {/* Scrollable Content - Category Buttons */}
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3">
-          {/* Textual Section */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className={cn("w-4 h-4", DOMAIN_COLORS.textual.text)} />
-                <Label className="text-sm text-foreground/80 cursor-pointer">Textual</Label>
-              </div>
-              <Switch
-                checked={filters.domains.textual}
-                onCheckedChange={() => toggleDomain('textual')}
-              />
-            </div>
+        <div className="p-3 space-y-2">
+          {(Object.entries(TEXTUAL_CATEGORIES) as [keyof RelationshipFilters['textual']['categories'], typeof TEXTUAL_CATEGORIES[keyof typeof TEXTUAL_CATEGORIES]][]).map(([key, config]) => {
+            const enabled = filters.textual.categories[key];
+            const Icon = config.icon;
             
-            {filters.domains.textual && (
-              <Collapsible open={textualOpen} onOpenChange={setTextualOpen}>
-                <CollapsibleTrigger className="flex items-center gap-1 pl-6 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
-                  {textualOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                  <span>Categories ({textualCategoriesEnabledCount}/{Object.keys(filters.textual.categories).length})</span>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="pl-6 space-y-1">
-                    {Object.entries(filters.textual.categories).map(([key, enabled]) => (
-                      <div
-                        key={key}
-                        onClick={() => toggleTextualCategory(key as keyof RelationshipFilters['textual']['categories'])}
-                        className={cn(
-                          "flex items-center justify-between py-1 px-2 rounded cursor-pointer transition-colors",
-                          "hover:bg-white/5"
-                        )}
-                      >
-                        <span className="text-xs text-muted-foreground">{TEXTUAL_CATEGORY_LABELS[key]}</span>
-                        <div className={cn(
-                          "w-3 h-3 rounded-sm border transition-colors",
-                          enabled ? `${DOMAIN_COLORS.textual.bg} ${DOMAIN_COLORS.textual.border}` : 'border-white/30'
-                        )}>
-                          {enabled && <div className="w-full h-full rounded-sm bg-blue-500/60" />}
-                        </div>
-                      </div>
-                    ))}
+            return (
+              <button
+                key={key}
+                onClick={() => toggleTextualCategory(key)}
+                className={cn(
+                  "w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left",
+                  enabled
+                    ? config.color
+                    : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:text-white/60"
+                )}
+              >
+                <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", enabled ? "" : "opacity-50")} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{config.label}</span>
+                    <span className="text-[10px] opacity-70">{config.hebrewLabel}</span>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </div>
-
-          {/* Depth Level Filter */}
-          <div className="pt-2 border-t border-white/10">
-            <div className="text-sm font-semibold text-foreground/80 mb-2">
-              Relationship Depth
-            </div>
-            <div className="flex gap-1.5">
-              <button
-                onClick={() => setDepthLevel('daughter')}
-                className={cn(
-                  "flex-1 px-2 py-1.5 rounded text-xs transition-colors border",
-                  filters.textual.depthLevel === 'daughter'
-                    ? 'bg-accent/20 border-accent/50 text-accent'
-                    : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
-                )}
-              >
-                Daughter Only
+                  <p className="text-[10px] opacity-70 mt-0.5">{config.description}</p>
+                </div>
+                <div className={cn(
+                  "w-4 h-4 rounded border-2 shrink-0 mt-0.5 flex items-center justify-center transition-colors",
+                  enabled ? "border-current bg-current/20" : "border-white/30"
+                )}>
+                  {enabled && <div className="w-2 h-2 rounded-sm bg-current" />}
+                </div>
               </button>
-              <button
-                onClick={() => setDepthLevel('all')}
-                className={cn(
-                  "flex-1 px-2 py-1.5 rounded text-xs transition-colors border",
-                  filters.textual.depthLevel === 'all'
-                    ? 'bg-accent/20 border-accent/50 text-accent'
-                    : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
-                )}
-              >
-                All Depths
-              </button>
-            </div>
-          </div>
-
-          {/* Certainty Filter */}
-          <div className="pt-2 border-t border-white/10">
-            <div className="text-sm font-semibold text-foreground/80 mb-2">
-              Certainty Level
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(filters.certainty).map(([level, enabled]) => (
-                <button
-                  key={level}
-                  onClick={() => toggleCertainty(level as keyof RelationshipFilters['certainty'])}
-                  className={cn(
-                    "px-2 py-1 rounded text-[10px] uppercase tracking-wide transition-colors border",
-                    enabled 
-                      ? 'bg-accent/20 border-accent/50 text-accent' 
-                      : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
-                  )}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
-          </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </div>
