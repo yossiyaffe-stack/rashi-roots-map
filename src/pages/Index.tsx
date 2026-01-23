@@ -67,6 +67,9 @@ const Index = () => {
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
+      // Filter out anonymous manuscript entries (these are works, not scholars)
+      if (s.period === 'Anonymous Work') return false;
+      
       const matchesSearch = searchTerm === '' ||
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (s.hebrew_name && s.hebrew_name.includes(searchTerm));
