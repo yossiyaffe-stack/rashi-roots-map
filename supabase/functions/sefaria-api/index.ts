@@ -236,57 +236,102 @@ async function getRashiLineage() {
 }
 
 async function getAuthorWorks(authorName: string) {
-  // Map common names to Sefaria search terms
-  const authorMappings: Record<string, string[]> = {
-    'rashi': ['Rashi', 'Rabbi Shlomo Yitzchaki'],
-    'rashbam': ['Rashbam', 'Samuel ben Meir'],
-    'ibn ezra': ['Ibn Ezra', 'Abraham ibn Ezra'],
-    'ramban': ['Ramban', 'Nachmanides'],
-    'mizrachi': ['Mizrachi', 'Elijah Mizrachi'],
-    'maharal': ['Maharal', 'Judah Loew'],
+  // Map scholar names to known Sefaria work titles
+  const authorData: Record<string, { works: string[] }> = {
+    'rashi': {
+      works: [
+        'Rashi on Genesis', 'Rashi on Exodus', 'Rashi on Leviticus', 
+        'Rashi on Numbers', 'Rashi on Deuteronomy', 'Rashi on Berakhot',
+        'Rashi on Shabbat', 'Rashi on Pesachim', 'Rashi on Megillah'
+      ]
+    },
+    'rashbam': {
+      works: ['Rashbam on Genesis', 'Rashbam on Exodus', 'Rashbam on Leviticus', 'Rashbam on Bava Batra']
+    },
+    'ibn ezra': {
+      works: ['Ibn Ezra on Genesis', 'Ibn Ezra on Exodus', 'Ibn Ezra on Psalms', 'Ibn Ezra on Isaiah']
+    },
+    'abraham ibn ezra': {
+      works: ['Ibn Ezra on Genesis', 'Ibn Ezra on Exodus', 'Ibn Ezra on Psalms']
+    },
+    'ramban': {
+      works: ['Ramban on Genesis', 'Ramban on Exodus', 'Ramban on Leviticus', 'Ramban on Numbers', 'Ramban on Deuteronomy']
+    },
+    'nachmanides': {
+      works: ['Ramban on Genesis', 'Ramban on Exodus']
+    },
+    'mizrachi': {
+      works: ['Mizrachi']
+    },
+    'sforno': {
+      works: ['Sforno on Genesis', 'Sforno on Exodus', 'Sforno on Leviticus']
+    },
+    'ohr hachaim': {
+      works: ['Or HaChaim on Genesis', 'Or HaChaim on Exodus']
+    },
   };
-  
-  const searchTerms = authorMappings[authorName.toLowerCase()] || [authorName];
-  
-  // Search for works
-  const allResults: any[] = [];
-  
-  for (const term of searchTerms) {
-    const response = await fetch(
-      `${SEFARIA_BASE}/search-wrapper?query=${encodeURIComponent(term)}&type=text&field=naive_lemmatizer&size=30`
-    );
-    
-    if (response.ok) {
-      const data = await response.json();
-      const hits = data.hits?.hits || [];
-      
-      for (const hit of hits) {
-        const ref = hit._source?.ref || '';
-        if (ref.toLowerCase().includes(term.toLowerCase())) {
-          allResults.push({
-            ref: hit._source?.ref,
-            title: hit._source?.ref?.split(',')[0],
-            heRef: hit._source?.heRef,
-            categories: hit._source?.categories,
-            type: hit._source?.type,
-          });
+
+  const normalizedName = authorName.toLowerCase();
+  const authorInfo = authorData[normalizedName];
+  const works: any[] = [];
+
+  try {
+    if (authorInfo) {
+      // Fetch index info for each known work
+      for (const workTitle of authorInfo.works) {
+        try {
+          const indexUrl = `${SEFARIA_BASE}/v2/index/${encodeURIComponent(workTitle.replace(/ /g, '_'))}`;
+          const response = await fetch(indexUrl);
+          if (response.ok) {
+            const data = await response.json();
+            works.push({
+              title: data.title || workTitle,
+              hebrewTitle: data.heTitle,
+              categories: data.categories || [],
+              description: data.enDesc || data.enShortDesc,
+              sefariaUrl: `https://www.sefaria.org/${encodeURIComponent(workTitle.replace(/ /g, '_'))}`,
+            });
+          }
+        } catch {
+          // Continue on individual errors
+        }
+      }
+    } else {
+      // Fallback: search for the author name
+      const searchUrl = `${SEFARIA_BASE}/search-wrapper?query=${encodeURIComponent(authorName)}&type=text&field=naive_lemmatizer&size=20`;
+      const response = await fetch(searchUrl);
+      if (response.ok) {
+        const data = await response.json();
+        const seen = new Set<string>();
+        for (const hit of (data.hits?.hits || [])) {
+          const ref = hit._source?.ref;
+          const title = ref?.split(',')[0];
+          if (title && !seen.has(title.toLowerCase())) {
+            seen.add(title.toLowerCase());
+            works.push({
+              title,
+              hebrewTitle: hit._source?.heRef?.split(',')[0],
+              categories: hit._source?.path?.split('/').filter(Boolean) || [],
+              sefariaUrl: `https://www.sefaria.org/${encodeURIComponent(ref.replace(/ /g, '_'))}`,
+            });
+          }
         }
       }
     }
+
+    return {
+      author: authorName,
+      totalFound: works.length,
+      works,
+    };
+  } catch (err) {
+    const error = err as Error;
+    console.error('Sefaria author works error:', error);
+    return {
+      author: authorName,
+      totalFound: 0,
+      works: [],
+      error: error.message,
+    };
   }
-  
-  // Deduplicate by title
-  const seen = new Set<string>();
-  const unique = allResults.filter(item => {
-    const key = item.title?.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-  
-  return {
-    author: authorName,
-    works: unique.slice(0, 20),
-    totalFound: unique.length,
-  };
 }
