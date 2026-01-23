@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, BookOpen, Book, GitBranch, AlertCircle, Layers, Link2, FileText, Languages, Scissors, ArrowRightLeft, Scale } from 'lucide-react';
+import { Search, BookOpen, Book, GitBranch, AlertCircle, Layers, Link2, FileText, Languages, Scissors, ArrowRightLeft, Scale, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -250,21 +250,31 @@ const Texts = () => {
                               </p>
                             )}
                             
-                            {/* Relationship indicators */}
-                            {totalRels > 0 && (
-                              <div className="flex items-center gap-2 mt-2">
-                                {counts.incoming > 0 && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                    {counts.incoming} commentar{counts.incoming === 1 ? 'y' : 'ies'}
-                                  </span>
-                                )}
-                                {counts.outgoing > 0 && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30">
-                                    {counts.outgoing} reference{counts.outgoing === 1 ? '' : 's'}
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                            {/* Indicators */}
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              {work.manuscript_url && (
+                                <a
+                                  href={work.manuscript_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors"
+                                >
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                  Manuscript
+                                </a>
+                              )}
+                              {counts.incoming > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                  {counts.incoming} commentar{counts.incoming === 1 ? 'y' : 'ies'}
+                                </span>
+                              )}
+                              {counts.outgoing > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30">
+                                  {counts.outgoing} reference{counts.outgoing === 1 ? '' : 's'}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
