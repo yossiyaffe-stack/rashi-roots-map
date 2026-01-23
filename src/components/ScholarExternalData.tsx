@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ExternalLink, BookOpen, ScrollText, Globe, Loader2, FileText, Library } from 'lucide-react';
+import { ExternalLink, BookOpen, ScrollText, Globe, Loader2, FileText, Library, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { IIIFManuscriptViewer } from './IIIFManuscriptViewer';
 
 interface SefariaWork {
   ref: string;
@@ -24,6 +25,7 @@ interface NLIManuscript {
   type?: string;
   viewerUrl?: string;
   thumbnail?: string;
+  iiifManifest?: string;
 }
 
 interface ScholarExternalDataProps {
@@ -33,7 +35,7 @@ interface ScholarExternalDataProps {
 
 export function ScholarExternalData({ scholarName, hebrewName }: ScholarExternalDataProps) {
   const [activeTab, setActiveTab] = useState('texts');
-
+  const [selectedManuscript, setSelectedManuscript] = useState<NLIManuscript | null>(null);
   // Fetch Sefaria works
   const { data: sefariaData, isLoading: sefariaLoading, error: sefariaError } = useQuery({
     queryKey: ['sefaria-works', scholarName],
@@ -204,48 +206,83 @@ export function ScholarExternalData({ scholarName, hebrewName }: ScholarExternal
               </a>
             </Card>
           ) : (
-            <ScrollArea className="max-h-48">
-              <div className="space-y-2">
-                {nliManuscripts.slice(0, 10).map((ms, i) => (
-                  <Card key={i} className="p-3 bg-white/5 hover:bg-white/10 transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{ms.title}</p>
-                        {ms.creator && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {ms.creator}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 mt-1">
-                          {ms.date && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {ms.date}
-                            </Badge>
+            <>
+              {/* IIIF Viewer */}
+              {selectedManuscript && (
+                <div className="mb-3">
+                  <IIIFManuscriptViewer
+                    manuscriptId={selectedManuscript.id}
+                    manuscriptTitle={selectedManuscript.title}
+                    viewerUrl={selectedManuscript.viewerUrl}
+                    onClose={() => setSelectedManuscript(null)}
+                  />
+                </div>
+              )}
+              
+              <ScrollArea className="max-h-48">
+                <div className="space-y-2">
+                  {nliManuscripts.slice(0, 10).map((ms, i) => (
+                    <Card 
+                      key={i} 
+                      className={`p-3 transition-colors cursor-pointer ${
+                        selectedManuscript?.id === ms.id 
+                          ? 'bg-accent/20 border-accent/40' 
+                          : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                      onClick={() => setSelectedManuscript(ms)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{ms.title}</p>
+                          {ms.creator && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              {ms.creator}
+                            </p>
                           )}
-                          {ms.type && (
-                            <Badge variant="secondary" className="text-[10px]">
-                              {ms.type}
-                            </Badge>
+                          <div className="flex items-center gap-2 mt-1">
+                            {ms.date && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {ms.date}
+                              </Badge>
+                            )}
+                            {ms.type && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                {ms.type}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedManuscript(ms);
+                            }}
+                          >
+                            <Eye className="w-3 h-3" />
+                          </Button>
+                          {ms.viewerUrl && (
+                            <a
+                              href={ms.viewerUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <ExternalLink className="w-3 h-3" />
+                              </Button>
+                            </a>
                           )}
                         </div>
                       </div>
-                      {ms.viewerUrl && (
-                        <a
-                          href={ms.viewerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ml-2"
-                        >
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <ExternalLink className="w-3 h-3" />
-                          </Button>
-                        </a>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </>
           )}
           
           <a
