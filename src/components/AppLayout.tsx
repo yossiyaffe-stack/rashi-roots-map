@@ -121,10 +121,13 @@ export function AppLayout() {
                 {sidebarOpen && <span className="font-medium text-sm">Map</span>}
               </button>
 
-              {/* Map Controls - only on map page */}
-              {isMapPage && (
-                <button
-                  onClick={() => {
+              {/* Map Controls */}
+              <button
+                onClick={() => {
+                  if (!isMapPage) {
+                    navigate('/');
+                    setTimeout(() => setMapControlsPanelOpen(true), 100);
+                  } else {
                     setMapControlsPanelOpen(!mapControlsPanelOpen);
                     if (!mapControlsPanelOpen) {
                       setRelationshipsPanelOpen(false);
@@ -132,31 +135,34 @@ export function AppLayout() {
                       setKingdomsPanelOpen(false);
                       setJourneysPanelOpen(false);
                     }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                    "hover:bg-white/10 text-white/70 hover:text-white",
-                    !sidebarOpen && "justify-center px-2",
-                    mapControlsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                  )}
-                >
-                  <Settings2 className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
-                      <ChevronRight className={cn(
-                        "w-5 h-5 transition-transform duration-300 ease-out",
-                        mapControlsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
-                      )} />
-                    </>
-                  )}
-                </button>
-              )}
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  mapControlsPanelOpen && isMapPage && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Settings2 className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Map Controls</span>
+                    <ChevronRight className={cn(
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      mapControlsPanelOpen && isMapPage ? "rotate-180 text-accent" : "text-white/50"
+                    )} />
+                  </>
+                )}
+              </button>
 
-              {/* Legends - only on map page */}
-              {isMapPage && (
-                <button
-                  onClick={() => {
+              {/* Legends */}
+              <button
+                onClick={() => {
+                  if (!isMapPage) {
+                    navigate('/');
+                    setTimeout(() => setLegendsPanelOpen(true), 100);
+                  } else {
                     setLegendsPanelOpen(!legendsPanelOpen);
                     if (!legendsPanelOpen) {
                       setMapControlsPanelOpen(false);
@@ -164,31 +170,34 @@ export function AppLayout() {
                       setKingdomsPanelOpen(false);
                       setJourneysPanelOpen(false);
                     }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                    "hover:bg-white/10 text-white/70 hover:text-white",
-                    !sidebarOpen && "justify-center px-2",
-                    legendsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                  )}
-                >
-                  <Palette className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="font-medium text-sm flex-1 text-left">Legends</span>
-                      <ChevronRight className={cn(
-                        "w-5 h-5 transition-transform duration-300 ease-out",
-                        legendsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
-                      )} />
-                    </>
-                  )}
-                </button>
-              )}
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  legendsPanelOpen && isMapPage && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Palette className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Legends</span>
+                    <ChevronRight className={cn(
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      legendsPanelOpen && isMapPage ? "rotate-180 text-accent" : "text-white/50"
+                    )} />
+                  </>
+                )}
+              </button>
 
-              {/* Kingdoms - only on map page */}
-              {isMapPage && (
-                <button
-                  onClick={() => {
+              {/* Kingdoms */}
+              <button
+                onClick={() => {
+                  if (!isMapPage) {
+                    navigate('/');
+                    setTimeout(() => setKingdomsPanelOpen(true), 100);
+                  } else {
                     setKingdomsPanelOpen(!kingdomsPanelOpen);
                     if (!kingdomsPanelOpen) {
                       setMapControlsPanelOpen(false);
@@ -196,26 +205,26 @@ export function AppLayout() {
                       setLegendsPanelOpen(false);
                       setJourneysPanelOpen(false);
                     }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                    "hover:bg-white/10 text-white/70 hover:text-white",
-                    !sidebarOpen && "justify-center px-2",
-                    kingdomsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                  )}
-                >
-                  <Crown className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="font-medium text-sm flex-1 text-left">Kingdoms</span>
-                      <ChevronRight className={cn(
-                        "w-5 h-5 transition-transform duration-300 ease-out",
-                        kingdomsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
-                      )} />
-                    </>
-                  )}
-                </button>
-              )}
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  kingdomsPanelOpen && isMapPage && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Crown className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Kingdoms</span>
+                    <ChevronRight className={cn(
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      kingdomsPanelOpen && isMapPage ? "rotate-180 text-accent" : "text-white/50"
+                    )} />
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Divider */}
@@ -432,10 +441,13 @@ export function AppLayout() {
                 {sidebarOpen && <span className="font-medium text-sm">Historical Context</span>}
               </NavLink>
 
-              {/* Scholar Journeys - only on map page */}
-              {isMapPage && (
-                <button
-                  onClick={() => {
+              {/* Scholar Journeys */}
+              <button
+                onClick={() => {
+                  if (!isMapPage) {
+                    navigate('/');
+                    setTimeout(() => setJourneysPanelOpen(true), 100);
+                  } else {
                     setJourneysPanelOpen(!journeysPanelOpen);
                     if (!journeysPanelOpen) {
                       setMapControlsPanelOpen(false);
@@ -443,26 +455,26 @@ export function AppLayout() {
                       setLegendsPanelOpen(false);
                       setKingdomsPanelOpen(false);
                     }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                    "hover:bg-white/10 text-white/70 hover:text-white",
-                    !sidebarOpen && "justify-center px-2",
-                    journeysPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                  )}
-                >
-                  <Route className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="font-medium text-sm flex-1 text-left">Scholar Journeys</span>
-                      <ChevronRight className={cn(
-                        "w-5 h-5 transition-transform duration-300 ease-out",
-                        journeysPanelOpen ? "rotate-180 text-accent" : "text-white/50"
-                      )} />
-                    </>
-                  )}
-                </button>
-              )}
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  journeysPanelOpen && isMapPage && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Route className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Scholar Journeys</span>
+                    <ChevronRight className={cn(
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      journeysPanelOpen && isMapPage ? "rotate-180 text-accent" : "text-white/50"
+                    )} />
+                  </>
+                )}
+              </button>
             </div>
           </nav>
 
