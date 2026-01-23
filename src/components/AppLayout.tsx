@@ -313,11 +313,11 @@ export function AppLayout() {
             {/* Divider */}
             <div className="border-t border-white/10 my-3" />
 
-            {/* ========== SECTION 3: TIMELINE ========== */}
+            {/* ========== SECTION 3: HISTORY ========== */}
             <div className="space-y-1">
               {sidebarOpen && (
                 <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/40 font-semibold">
-                  Timeline
+                  History
                 </div>
               )}
 
