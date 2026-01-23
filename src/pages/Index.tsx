@@ -9,9 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
-import { PlaceSearch } from '@/components/PlaceSearch';
-import { ScholarSearch } from '@/components/ScholarSearch';
-import { WorksSearch } from '@/components/WorksSearch';
+import { UnifiedSearch } from '@/components/UnifiedSearch';
 import { CircleFilterPanel } from '@/components/CircleFilterPanel';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useCircleFilter } from '@/contexts/CircleFilterContext';
@@ -167,10 +165,12 @@ const Index = () => {
         />
 
         {/* Search Controls - Top Right */}
-        <div className="absolute top-6 right-6 z-[1000] flex gap-2">
-          <ScholarSearch onScholarSelect={handleScholarSelect} />
-          <WorksSearch onWorkSelect={handleWorkSelectFromSearch} />
-          <PlaceSearch onPlaceSelect={handlePlaceSelect} />
+        <div className="absolute top-6 right-6 z-[1000]">
+          <UnifiedSearch
+            onScholarSelect={handleScholarSelect}
+            onWorkSelect={handleWorkSelectFromSearch}
+            onPlaceSelect={handlePlaceSelect}
+          />
         </div>
 
         {/* Circle Filter Panel */}
