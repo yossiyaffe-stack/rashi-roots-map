@@ -29,7 +29,7 @@ const formatYear = (year: number): string => {
 
 const Index = () => {
   const { selectedScholar, setSelectedScholar } = useScholarsOverlay();
-  const [timeRange, setTimeRange] = useState<[number, number]>([-500, 1650]);
+  const [timeRange, setTimeRange] = useState<[number, number]>([-200, 1650]);
   const [timelineExpanded, setTimelineExpanded] = useState(true);
   const [timelineFullscreen, setTimelineFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -320,7 +320,7 @@ const Index = () => {
                 <ZoomIn className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setTimeRange([-500, 1650])}
+                onClick={() => setTimeRange([-200, 1650])}
                 className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
                 title="Reset to default"
               >
