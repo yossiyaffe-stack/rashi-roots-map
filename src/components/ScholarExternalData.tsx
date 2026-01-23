@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { ExternalLink, BookOpen, ScrollText, Globe, Loader2, FileText, Library, Eye } from 'lucide-react';
+import { ExternalLink, ScrollText, Globe, Loader2, Library, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,12 +39,6 @@ export function ScholarExternalData({ scholarName, hebrewName }: ScholarExternal
   const { data: sefariaData, isLoading: sefariaLoading, error: sefariaError } = useQuery({
     queryKey: ['sefaria-works', scholarName],
     queryFn: async () => {
-      const response = await supabase.functions.invoke('sefaria-api', {
-        body: null,
-        method: 'GET',
-      });
-      
-      // Use fetch directly since we need query params
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sefaria-api?action=author-works&query=${encodeURIComponent(scholarName)}`;
       const res = await fetch(url, {
         headers: {
