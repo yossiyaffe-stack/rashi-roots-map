@@ -2,6 +2,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import type { LocationReason } from '@/hooks/useScholars';
 
 export type CityFilter = 'all' | 'major';
+export type MapEntityMode = 'scholars' | 'works';
 
 interface MapControlsContextType {
   showBoundaries: boolean;
@@ -28,6 +29,8 @@ interface MapControlsContextType {
   setShowJourneyMarkers: (show: boolean) => void;
   journeyReasonFilter: LocationReason[];
   setJourneyReasonFilter: (reasons: LocationReason[]) => void;
+  mapEntityMode: MapEntityMode;
+  setMapEntityMode: (mode: MapEntityMode) => void;
 }
 
 const MapControlsContext = createContext<MapControlsContextType | undefined>(undefined);
@@ -45,6 +48,7 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showOnlyScholarCities, setShowOnlyScholarCities] = useState(false);
   const [showJourneyMarkers, setShowJourneyMarkers] = useState(false);
   const [journeyReasonFilter, setJourneyReasonFilter] = useState<LocationReason[]>([]);
+  const [mapEntityMode, setMapEntityMode] = useState<MapEntityMode>('scholars');
 
   return (
     <MapControlsContext.Provider value={{
@@ -72,6 +76,8 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
       setShowJourneyMarkers,
       journeyReasonFilter,
       setJourneyReasonFilter,
+      mapEntityMode,
+      setMapEntityMode,
     }}>
       {children}
     </MapControlsContext.Provider>
@@ -107,6 +113,8 @@ export function useMapControls() {
       setShowJourneyMarkers: () => {},
       journeyReasonFilter: [] as LocationReason[],
       setJourneyReasonFilter: () => {},
+      mapEntityMode: 'scholars' as MapEntityMode,
+      setMapEntityMode: () => {},
     };
   }
   return context;

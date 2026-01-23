@@ -16,6 +16,7 @@ import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useCircleFilter } from '@/contexts/CircleFilterContext';
 
 import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useLocations, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
+import { useWorksWithLocations, type WorkWithLocation } from '@/hooks/useWorks';
 import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,7 @@ const Index = () => {
     showOnlyScholarCities,
     showJourneyMarkers,
     journeyReasonFilter,
+    mapEntityMode,
   } = useMapControls();
 
   const { data: scholars = [], isLoading } = useScholars();
@@ -60,6 +62,8 @@ const Index = () => {
   const { data: locations = [] } = useLocations();
   const { data: biographicalRelationships = [] } = useBiographicalRelationships();
   const { data: textualRelationships = [] } = useTextualRelationships();
+  const { data: works = [] } = useWorksWithLocations();
+  const [selectedWork, setSelectedWork] = useState<WorkWithLocation | null>(null);
 
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
@@ -139,6 +143,10 @@ const Index = () => {
             setIsDrawingCircle(false);
           }}
           circleFilter={circleFilter}
+          works={works}
+          selectedWork={selectedWork}
+          onSelectWork={setSelectedWork}
+          mapEntityMode={mapEntityMode}
         />
 
         {/* Search Controls - Top Right */}

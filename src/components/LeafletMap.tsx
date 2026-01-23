@@ -3,8 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { DbScholar, DbRelationship, DbPlace, DbLocationName, DbBiographicalRelationship, DbTextualRelationship, DbLocation, LocationReason } from '@/hooks/useScholars';
 import { LOCATION_REASON_CONFIG } from '@/hooks/useScholars';
-import type { CityFilter } from '@/contexts/MapControlsContext';
+import type { CityFilter, MapEntityMode } from '@/contexts/MapControlsContext';
 import type { CircleFilter } from '@/contexts/CircleFilterContext';
+import type { WorkWithLocation } from '@/hooks/useWorks';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { cn } from '@/lib/utils';
 
@@ -24,8 +25,11 @@ interface LeafletMapProps {
   places: DbPlace[];
   locationNames: DbLocationName[];
   locations?: DbLocation[];
+  works?: WorkWithLocation[];
   selectedScholar: DbScholar | null;
   onSelectScholar: (scholar: DbScholar) => void;
+  selectedWork?: WorkWithLocation | null;
+  onSelectWork?: (work: WorkWithLocation) => void;
   timeRange: [number, number];
   showConnections: boolean;
   showMigrations: boolean;
@@ -40,6 +44,7 @@ interface LeafletMapProps {
   showJourneyMarkers?: boolean;
   journeyReasonFilter?: LocationReason[];
   mapRef?: React.MutableRefObject<L.Map | null>;
+  mapEntityMode?: MapEntityMode;
   // Circle filter props
   isDrawingCircle?: boolean;
   onCircleDrawn?: (center: [number, number], radius: number) => void;
@@ -414,8 +419,11 @@ export function LeafletMap({
   places,
   locationNames,
   locations = [],
+  works = [],
   selectedScholar, 
-  onSelectScholar, 
+  onSelectScholar,
+  selectedWork,
+  onSelectWork,
   timeRange,
   showConnections,
   showMigrations,
@@ -430,6 +438,7 @@ export function LeafletMap({
   showJourneyMarkers = false,
   journeyReasonFilter = [],
   mapRef: externalMapRef,
+  mapEntityMode = 'scholars',
   isDrawingCircle = false,
   onCircleDrawn,
   circleFilter,
@@ -440,6 +449,7 @@ export function LeafletMap({
   const historicalLayerRef = useRef<L.TileLayer | null>(null);
   const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const workMarkersRef = useRef<L.Marker[]>([]);
   const linesRef = useRef<L.Polyline[]>([]);
   const boundariesRef = useRef<L.Polygon[]>([]);
   const boundaryLabelsRef = useRef<L.Marker[]>([]);
@@ -1324,13 +1334,16 @@ export function LeafletMap({
 
   }, [showLines, relationships, biographicalRelationships, textualRelationships, scholars, shouldShowRelationship]);
 
-  // Update markers when scholars or time range or region filter changes
+  // Update scholar markers when scholars or time range or region filter changes
   useEffect(() => {
     if (!leafletMap.current) return;
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
+
+    // Skip if in works mode
+    if (mapEntityMode === 'works') return;
 
     // Filter scholars by time range and valid coordinates
     const visibleScholars = scholars.filter(s => {
@@ -1553,7 +1566,221 @@ export function LeafletMap({
     });
 
     // Note: Removed auto-pan to selected scholar - map only moves on user interaction
-  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew, zoomLevel]);
+  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew, zoomLevel, mapEntityMode]);
+
+  // Update work markers when in works mode
+  useEffect(() => {
+    if (!leafletMap.current) return;
+
+    // Clear existing work markers
+    workMarkersRef.current.forEach(marker => marker.remove());
+    workMarkersRef.current = [];
+
+    // Skip if in scholars mode
+    if (mapEntityMode === 'scholars') return;
+
+    // Get work type colors
+    const getWorkTypeColor = (workType: string): string => {
+      switch (workType) {
+        case 'commentary': return '#c9a961'; // Gold
+        case 'supercommentary': return '#6366f1'; // Indigo
+        case 'talmud_commentary': return '#f59e0b'; // Amber
+        case 'halakha': return '#22c55e'; // Green
+        case 'responsa': return '#3b82f6'; // Blue
+        case 'philosophy': return '#8b5cf6'; // Violet
+        case 'kabbalah': return '#a855f7'; // Purple
+        case 'poetry': return '#ec4899'; // Pink
+        case 'grammar': return '#14b8a6'; // Teal
+        case 'ethics': return '#10b981'; // Emerald
+        case 'homiletics': return '#f97316'; // Orange
+        default: return '#8b7355'; // Sepia
+      }
+    };
+
+    const getWorkTypeIcon = (workType: string): string => {
+      switch (workType) {
+        case 'commentary': return '📖';
+        case 'supercommentary': return '📚';
+        case 'talmud_commentary': return '📜';
+        case 'halakha': return '⚖️';
+        case 'responsa': return '✉️';
+        case 'philosophy': return '🔮';
+        case 'kabbalah': return '✡️';
+        case 'poetry': return '🎭';
+        case 'grammar': return '📝';
+        case 'ethics': return '🌿';
+        case 'homiletics': return '🕯️';
+        default: return '📕';
+      }
+    };
+
+    // Filter works by time range and valid coordinates
+    const visibleWorks = works.filter(w => {
+      if (!w.latitude || !w.longitude) return false;
+      if (!w.year_written) return true;
+      return w.year_written >= timeRange[0] && w.year_written <= timeRange[1];
+    });
+
+    // Get map instance for coordinate conversions
+    const map = leafletMap.current;
+    
+    // Sort works by year (oldest first for consistent z-index)
+    const sortedWorks = [...visibleWorks].sort((a, b) => {
+      const yearA = a.year_written ?? 0;
+      const yearB = b.year_written ?? 0;
+      return yearB - yearA;
+    });
+
+    // Track occupied label rectangles for collision detection
+    const occupiedRects: { x: number; y: number; width: number; height: number }[] = [];
+    
+    // Check if a new label would overlap with existing ones
+    const wouldOverlap = (x: number, y: number, width: number, height: number, padding: number = 5): boolean => {
+      const newRect = {
+        x: x - padding,
+        y: y - padding,
+        width: width + padding * 2,
+        height: height + padding * 2,
+      };
+      
+      for (const rect of occupiedRects) {
+        if (!(newRect.x + newRect.width < rect.x ||
+              rect.x + rect.width < newRect.x ||
+              newRect.y + newRect.height < rect.y ||
+              rect.y + rect.height < newRect.y)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Scale marker sizes based on zoom
+    const zoomScale = Math.max(0.6, Math.min(1.2, zoomLevel / 8));
+
+    // First pass: determine which labels should be shown based on collision detection
+    const labelsToShow = new Set<string>();
+    
+    sortedWorks.forEach(work => {
+      const isSelected = selectedWork?.id === work.id;
+      
+      // Get pixel position of work
+      const point = map.latLngToContainerPoint([work.latitude!, work.longitude!]);
+      
+      // Estimate label dimensions
+      const shortTitle = work.title.length > 25 ? work.title.substring(0, 22) + '...' : work.title;
+      const estWidth = Math.min(160, shortTitle.length * 7 + 30);
+      const estHeight = 24;
+      
+      const baseSize = Math.round(16 * zoomScale);
+      const labelX = point.x - estWidth / 2;
+      const labelY = point.y + baseSize / 2 + 4;
+      
+      // Selected always shows
+      if (isSelected) {
+        labelsToShow.add(work.id);
+        occupiedRects.push({ x: labelX, y: labelY, width: estWidth, height: estHeight });
+        return;
+      }
+      
+      // Check if this label would overlap with any existing labels
+      if (!wouldOverlap(labelX, labelY, estWidth, estHeight)) {
+        labelsToShow.add(work.id);
+        occupiedRects.push({ x: labelX, y: labelY, width: estWidth, height: estHeight });
+      }
+    });
+
+    // Second pass: create markers
+    visibleWorks.forEach(work => {
+      const isSelected = selectedWork?.id === work.id;
+      const color = getWorkTypeColor(work.work_type);
+      const icon = getWorkTypeIcon(work.work_type);
+      
+      // Calculate size based on zoom level
+      const baseSize = Math.round(18 * zoomScale);
+      const fontSize = 10;
+      
+      // Determine if label should be shown (collision-detected)
+      const shouldShowLabel = labelsToShow.has(work.id);
+      
+      // Get a shorter display title
+      const shortTitle = work.title.length > 25 ? work.title.substring(0, 22) + '...' : work.title;
+      
+      const markerIcon = L.divIcon({
+        className: 'work-marker',
+        html: `
+          <div class="marker-container" style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+          ">
+            <div 
+              class="marker-dot" 
+              style="
+                background: ${color}; 
+                width: ${baseSize}px;
+                height: ${baseSize}px;
+                border-radius: 4px;
+                border: 2px solid ${isSelected ? '#fff' : 'rgba(255,255,255,0.8)'};
+                box-shadow: 0 0 ${isSelected ? 16 : 8}px ${color}, 0 1px 4px rgba(0,0,0,0.4);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                ${isSelected ? 'transform: scale(1.3);' : ''}
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: ${baseSize * 0.7}px;
+              "
+            >${icon}</div>
+            ${shouldShowLabel ? `<div class="marker-label" style="
+              background: #1a1408;
+              color: #ffd700;
+              padding: 3px 8px;
+              border-radius: 3px;
+              font-size: ${fontSize}px;
+              font-weight: 600;
+              letter-spacing: 0.3px;
+              white-space: nowrap;
+              max-width: 160px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              box-shadow: 0 1px 6px rgba(0,0,0,0.7), 0 0 0 1px #1a1408;
+              border: 1.5px solid ${color};
+              text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            ">${shortTitle}</div>` : ''}
+          </div>
+        `,
+        iconSize: [140, 60],
+        iconAnchor: [70, Math.round(baseSize / 2)],
+      });
+
+      const marker = L.marker([work.latitude!, work.longitude!], { 
+        icon: markerIcon,
+        zIndexOffset: isSelected ? 1000 : (work.year_written || 1000)
+      });
+
+      marker.bindTooltip(
+        `<div class="historical-tooltip-content">
+          <strong>${work.title}</strong>
+          ${work.hebrew_title ? `<span class="hebrew-text">${work.hebrew_title}</span>` : ''}
+          <span class="scholar-meta">by ${work.author_name} • ${work.year_written || '?'}</span>
+          <span class="work-type-badge" style="color: ${color}; font-weight: 600;">${work.work_type.replace(/_/g, ' ')}</span>
+        </div>`,
+        { 
+          className: 'historical-tooltip',
+          direction: 'top',
+          offset: [0, -8]
+        }
+      );
+
+      if (onSelectWork) {
+        marker.on('click', () => onSelectWork(work));
+      }
+      
+      marker.addTo(leafletMap.current!);
+      workMarkersRef.current.push(marker);
+    });
+
+  }, [works, selectedWork, timeRange, onSelectWork, zoomLevel, mapEntityMode]);
 
   // Circle drawing functionality
   useEffect(() => {

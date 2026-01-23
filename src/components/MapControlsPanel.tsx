@@ -1,9 +1,9 @@
-import { Settings2 } from 'lucide-react';
+import { Settings2, Users, BookOpen } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import type { CityFilter } from '@/contexts/MapControlsContext';
+import type { CityFilter, MapEntityMode } from '@/contexts/MapControlsContext';
 
 interface MapControlsPanelProps {
   showBoundaries: boolean;
@@ -26,11 +26,18 @@ interface MapControlsPanelProps {
   onCityFilterChange: (filter: CityFilter) => void;
   showOnlyScholarCities: boolean;
   onShowOnlyScholarCitiesChange: (show: boolean) => void;
+  mapEntityMode: MapEntityMode;
+  onMapEntityModeChange: (mode: MapEntityMode) => void;
 }
 
 const CITY_FILTER_OPTIONS: { value: CityFilter; label: string; description: string }[] = [
   { value: 'all', label: 'All', description: 'Show all cities' },
   { value: 'major', label: 'Major', description: 'Importance ≥ 7' },
+];
+
+const ENTITY_MODE_OPTIONS: { value: MapEntityMode; label: string; icon: React.ReactNode }[] = [
+  { value: 'scholars', label: 'Scholars', icon: <Users className="w-3.5 h-3.5" /> },
+  { value: 'works', label: 'Works', icon: <BookOpen className="w-3.5 h-3.5" /> },
 ];
 
 export function MapControlsPanel({
@@ -54,6 +61,8 @@ export function MapControlsPanel({
   onCityFilterChange,
   showOnlyScholarCities,
   onShowOnlyScholarCitiesChange,
+  mapEntityMode,
+  onMapEntityModeChange,
 }: MapControlsPanelProps) {
   return (
     <div className="flex flex-col h-full w-[280px]">
@@ -68,8 +77,37 @@ export function MapControlsPanel({
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
-          {/* Layers Section */}
+          {/* Map View Mode */}
           <div>
+            <div className="text-sm font-semibold text-foreground/80 mb-3">
+              View Mode
+            </div>
+            <div className="flex gap-1.5">
+              {ENTITY_MODE_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => onMapEntityModeChange(option.value)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all border",
+                    mapEntityMode === option.value
+                      ? 'bg-accent/20 border-accent/50 text-accent' 
+                      : 'bg-transparent border-white/10 text-white/60 hover:border-white/30 hover:text-white/80'
+                  )}
+                >
+                  {option.icon}
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {mapEntityMode === 'scholars' 
+                ? 'Showing scholars at their locations' 
+                : 'Showing works at author locations'}
+            </p>
+          </div>
+
+          {/* Layers Section */}
+          <div className="pt-3 border-t border-white/10">
             <div className="text-sm font-semibold text-foreground/80 mb-3">
               Layers
             </div>
