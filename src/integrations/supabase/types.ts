@@ -642,6 +642,7 @@ export type Database = {
           created_at: string
           id: string
           location_type: Database["public"]["Enums"]["work_location_type"]
+          manuscript_significance: string | null
           notes: string | null
           place_id: string | null
           printer_publisher: string | null
@@ -655,6 +656,7 @@ export type Database = {
           created_at?: string
           id?: string
           location_type: Database["public"]["Enums"]["work_location_type"]
+          manuscript_significance?: string | null
           notes?: string | null
           place_id?: string | null
           printer_publisher?: string | null
@@ -668,6 +670,7 @@ export type Database = {
           created_at?: string
           id?: string
           location_type?: Database["public"]["Enums"]["work_location_type"]
+          manuscript_significance?: string | null
           notes?: string | null
           place_id?: string | null
           printer_publisher?: string | null
