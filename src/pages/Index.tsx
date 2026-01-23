@@ -167,7 +167,7 @@ const Index = () => {
         />
 
         {/* Search Controls - Top Right */}
-        <div className="absolute top-6 right-6 z-[1000] flex flex-col gap-2">
+        <div className="absolute top-6 right-6 z-[1000] flex gap-2">
           <ScholarSearch onScholarSelect={handleScholarSelect} />
           <WorksSearch onWorkSelect={handleWorkSelectFromSearch} />
           <PlaceSearch onPlaceSelect={handlePlaceSelect} />
