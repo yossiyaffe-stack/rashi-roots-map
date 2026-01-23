@@ -450,6 +450,7 @@ export function LeafletMap({
   const labelsLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const workMarkersRef = useRef<L.Marker[]>([]);
+  const workJourneyRef = useRef<(L.Marker | L.Polyline)[]>([]);
   const linesRef = useRef<L.Polyline[]>([]);
   const boundariesRef = useRef<L.Polygon[]>([]);
   const boundaryLabelsRef = useRef<L.Marker[]>([]);
@@ -1781,6 +1782,190 @@ export function LeafletMap({
     });
 
   }, [works, selectedWork, timeRange, onSelectWork, zoomLevel, mapEntityMode]);
+
+  // Work journey lines - show composition and print locations for selected work
+  useEffect(() => {
+    if (!leafletMap.current) return;
+    const map = leafletMap.current;
+
+    // Clear existing work journey markers and lines
+    workJourneyRef.current.forEach(item => item.remove());
+    workJourneyRef.current = [];
+
+    // Only show journey when in works mode and a work is selected with location events
+    if (mapEntityMode !== 'works' || !selectedWork || !selectedWork.location_events?.length) return;
+
+    const events = selectedWork.location_events
+      .filter(e => e.place?.latitude && e.place?.longitude)
+      .sort((a, b) => {
+        // Sort by type priority then year
+        const typeOrder: Record<string, number> = {
+          'composition': 0,
+          'first_print': 1,
+          'reprint': 2,
+          'manuscript_copy': 3,
+          'translation': 4,
+        };
+        const orderDiff = (typeOrder[a.location_type] ?? 99) - (typeOrder[b.location_type] ?? 99);
+        if (orderDiff !== 0) return orderDiff;
+        return (a.year ?? 9999) - (b.year ?? 9999);
+      });
+
+    if (events.length === 0) return;
+
+    // Get color and icon for location type
+    const getLocationTypeStyle = (type: string) => {
+      switch (type) {
+        case 'composition': return { color: '#22c55e', icon: '✍️', label: 'Composed' };
+        case 'first_print': return { color: '#3b82f6', icon: '🖨️', label: 'First Print' };
+        case 'reprint': return { color: '#6366f1', icon: '📚', label: 'Reprint' };
+        case 'manuscript_copy': return { color: '#f59e0b', icon: '📜', label: 'Manuscript' };
+        case 'translation': return { color: '#8b5cf6', icon: '🌍', label: 'Translation' };
+        default: return { color: '#8b7355', icon: '📍', label: type };
+      }
+    };
+
+    // Draw connecting lines between events (journey)
+    if (events.length > 1) {
+      for (let i = 0; i < events.length - 1; i++) {
+        const from = events[i];
+        const to = events[i + 1];
+        
+        if (!from.place || !to.place) continue;
+        
+        const fromStyle = getLocationTypeStyle(from.location_type);
+        const toStyle = getLocationTypeStyle(to.location_type);
+        
+        // Create curved line
+        const fromLatLng: [number, number] = [from.place.latitude, from.place.longitude];
+        const toLatLng: [number, number] = [to.place.latitude, to.place.longitude];
+        
+        // Create arc control point
+        const midLat = (fromLatLng[0] + toLatLng[0]) / 2;
+        const midLng = (fromLatLng[1] + toLatLng[1]) / 2;
+        const dx = toLatLng[1] - fromLatLng[1];
+        const dy = toLatLng[0] - fromLatLng[0];
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const offset = dist * 0.15;
+        const perpLat = midLat + (dx / dist) * offset;
+        const perpLng = midLng - (dy / dist) * offset;
+        
+        // Create curved path points
+        const points: [number, number][] = [];
+        for (let t = 0; t <= 1; t += 0.1) {
+          const lat = (1 - t) * (1 - t) * fromLatLng[0] + 2 * (1 - t) * t * perpLat + t * t * toLatLng[0];
+          const lng = (1 - t) * (1 - t) * fromLatLng[1] + 2 * (1 - t) * t * perpLng + t * t * toLatLng[1];
+          points.push([lat, lng]);
+        }
+        
+        const line = L.polyline(points, {
+          color: toStyle.color,
+          weight: 3,
+          opacity: 0.8,
+          dashArray: '8, 6',
+        });
+        
+        line.addTo(map);
+        workJourneyRef.current.push(line);
+
+        // Add arrow marker at midpoint
+        const arrowIdx = Math.floor(points.length / 2);
+        const arrowPos = points[arrowIdx];
+        const nextPos = points[arrowIdx + 1] || points[arrowIdx];
+        const angle = Math.atan2(nextPos[0] - arrowPos[0], nextPos[1] - arrowPos[1]) * (180 / Math.PI);
+        
+        const arrowIcon = L.divIcon({
+          className: 'work-journey-arrow',
+          html: `<div style="
+            transform: rotate(${-angle + 90}deg);
+            color: ${toStyle.color};
+            font-size: 14px;
+            text-shadow: 0 0 4px rgba(0,0,0,0.8);
+          ">➤</div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+        
+        const arrowMarker = L.marker(arrowPos, { icon: arrowIcon, interactive: false });
+        arrowMarker.addTo(map);
+        workJourneyRef.current.push(arrowMarker);
+      }
+    }
+
+    // Draw markers for each event
+    events.forEach((event, index) => {
+      if (!event.place) return;
+      
+      const style = getLocationTypeStyle(event.location_type);
+      const size = event.location_type === 'composition' ? 28 : 24;
+      
+      const icon = L.divIcon({
+        className: 'work-location-marker',
+        html: `
+          <div style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+          ">
+            <div style="
+              background: ${style.color};
+              width: ${size}px;
+              height: ${size}px;
+              border-radius: ${event.location_type === 'composition' ? '50%' : '4px'};
+              border: 2px solid #fff;
+              box-shadow: 0 0 12px ${style.color}, 0 2px 6px rgba(0,0,0,0.4);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: ${size * 0.6}px;
+            ">${style.icon}</div>
+            <div style="
+              background: #1a1408;
+              color: #ffd700;
+              padding: 3px 8px;
+              border-radius: 3px;
+              font-size: 10px;
+              font-weight: 600;
+              white-space: nowrap;
+              box-shadow: 0 1px 6px rgba(0,0,0,0.7);
+              border: 1.5px solid ${style.color};
+            ">
+              <span style="margin-right: 4px;">${index + 1}.</span>
+              ${style.label}${event.year ? ` (${event.circa ? 'c.' : ''}${event.year})` : ''}
+            </div>
+          </div>
+        `,
+        iconSize: [140, 60],
+        iconAnchor: [70, size / 2],
+      });
+
+      const marker = L.marker([event.place.latitude, event.place.longitude], { 
+        icon,
+        zIndexOffset: 2000 - index, // Composition on top
+      });
+
+      const tooltipContent = `
+        <div class="historical-tooltip-content">
+          <strong>${style.label}</strong>
+          <span class="scholar-meta">${event.place.name_english}${event.place.modern_country ? `, ${event.place.modern_country}` : ''}</span>
+          ${event.year ? `<span class="scholar-meta">${event.circa ? 'c. ' : ''}${event.year}</span>` : ''}
+          ${event.printer_publisher ? `<span class="work-type-badge">Publisher: ${event.printer_publisher}</span>` : ''}
+          ${event.notes ? `<span class="scholar-meta" style="font-style: italic;">${event.notes}</span>` : ''}
+        </div>
+      `;
+
+      marker.bindTooltip(tooltipContent, {
+        className: 'historical-tooltip',
+        direction: 'top',
+        offset: [0, -8],
+      });
+
+      marker.addTo(map);
+      workJourneyRef.current.push(marker);
+    });
+
+  }, [selectedWork, mapEntityMode]);
 
   // Circle drawing functionality
   useEffect(() => {
