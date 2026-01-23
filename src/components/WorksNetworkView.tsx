@@ -119,8 +119,9 @@ export const WorksNetworkView = ({
 
   const displayedRelationships = useMemo(() => {
     if (!focusMode || !selectedWork) return relationships;
+    // Only show relationships where BOTH works are in the connected set
     return relationships.filter(rel => 
-      selectedWorkConnections.has(rel.work_id || '') || 
+      selectedWorkConnections.has(rel.work_id || '') && 
       selectedWorkConnections.has(rel.related_work_id || '')
     );
   }, [relationships, focusMode, selectedWork, selectedWorkConnections]);
