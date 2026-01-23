@@ -197,23 +197,37 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
 
           {/* Relationships */}
           {relationships.length > 0 && (
-            <div>
+            <div className="mb-6">
               <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Connections ({relationships.length})
               </h3>
               <div className="space-y-2">
-                {relationships.map(rel => (
-                  <div 
-                    key={rel.id}
-                    className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm"
-                  >
-                    <Badge className="mb-1" variant="outline">{rel.type}</Badge>
-                    {rel.description && (
-                      <p className="text-xs text-muted-foreground mt-1">{rel.description}</p>
-                    )}
-                  </div>
-                ))}
+                {relationships.map(rel => {
+                  // Determine who the "other" scholar is
+                  const isFromScholar = rel.from_scholar_id === scholar.id;
+                  const otherScholar = isFromScholar ? rel.to_scholar : rel.from_scholar;
+                  const relationDirection = isFromScholar ? 'to' : 'from';
+                  
+                  return (
+                    <div 
+                      key={rel.id}
+                      className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline">{rel.type}</Badge>
+                        {otherScholar && (
+                          <span className="text-accent font-medium">
+                            {relationDirection === 'to' ? '→' : '←'} {otherScholar.name}
+                          </span>
+                        )}
+                      </div>
+                      {rel.description && (
+                        <p className="text-xs text-muted-foreground">{rel.description}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
