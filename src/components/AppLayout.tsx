@@ -381,11 +381,6 @@ export function AppLayout() {
           <div className="flex-shrink-0" />
 
           {/* Footer */}
-          {sidebarOpen && (
-            <footer className="p-4 border-t border-white/10 text-xs text-white/40 shrink-0">
-              Medieval Jewish Scholarship
-            </footer>
-          )}
         </aside>
 
         {/* Slide-out Panel for Relationships - Full height */}
