@@ -32,6 +32,8 @@ export function AppLayout() {
     showPlaceNamesHebrew, setShowPlaceNamesHebrew,
     showScholarNamesEnglish, setShowScholarNamesEnglish,
     showScholarNamesHebrew, setShowScholarNamesHebrew,
+    showTextNamesEnglish, setShowTextNamesEnglish,
+    showTextNamesHebrew, setShowTextNamesHebrew,
     cityFilter, setCityFilter,
     showOnlyScholarCities, setShowOnlyScholarCities,
     showJourneyMarkers, setShowJourneyMarkers,
@@ -518,6 +520,10 @@ export function AppLayout() {
               onShowScholarNamesEnglishChange={setShowScholarNamesEnglish}
               showScholarNamesHebrew={showScholarNamesHebrew}
               onShowScholarNamesHebrewChange={setShowScholarNamesHebrew}
+              showTextNamesEnglish={showTextNamesEnglish}
+              onShowTextNamesEnglishChange={setShowTextNamesEnglish}
+              showTextNamesHebrew={showTextNamesHebrew}
+              onShowTextNamesHebrewChange={setShowTextNamesHebrew}
               cityFilter={cityFilter}
               onCityFilterChange={setCityFilter}
               showOnlyScholarCities={showOnlyScholarCities}

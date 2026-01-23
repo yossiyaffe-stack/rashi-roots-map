@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkWithAuthor, TextualRelationshipWithWorks } from '@/hooks/useWorks';
 import { LayoutMode, HoveredWork } from './works-network/types';
@@ -9,6 +9,9 @@ import { WorksLegend } from './works-network/WorksLegend';
 import { LayoutModeSelector } from './works-network/LayoutModeSelector';
 import { CenterWorkSelector } from './works-network/CenterWorkSelector';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useMapControls } from '@/contexts/MapControlsContext';
 
 interface WorksNetworkViewProps {
   works: WorkWithAuthor[];
@@ -47,7 +50,15 @@ export const WorksNetworkView = ({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [hoveredWork, setHoveredWork] = useState<HoveredWork | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [showLanguagePanel, setShowLanguagePanel] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  const { 
+    showTextNamesEnglish, setShowTextNamesEnglish,
+    showTextNamesHebrew, setShowTextNamesHebrew,
+    showScholarNamesEnglish, setShowScholarNamesEnglish,
+    showScholarNamesHebrew, setShowScholarNamesHebrew,
+  } = useMapControls();
 
   // Get all connected work IDs
   const connectedWorkIds = useMemo(() => {
@@ -373,6 +384,60 @@ export const WorksNetworkView = ({
         >
           Highlight Selected
         </button>
+        
+        <button
+          onClick={() => setShowLanguagePanel(!showLanguagePanel)}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            showLanguagePanel
+              ? "bg-blue-500/20 border-blue-500/50 text-blue-300" 
+              : "bg-card/90 border-border text-foreground"
+          )}
+        >
+          <Languages className="w-4 h-4" />
+          Display
+        </button>
+        
+        {/* Language controls panel */}
+        {showLanguagePanel && (
+          <div className="bg-card/90 backdrop-blur border border-border rounded-lg p-3 space-y-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Text Names</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="work-text-english"
+                checked={showTextNamesEnglish}
+                onCheckedChange={setShowTextNamesEnglish}
+              />
+              <Label htmlFor="work-text-english" className="text-xs cursor-pointer">English</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="work-text-hebrew"
+                checked={showTextNamesHebrew}
+                onCheckedChange={setShowTextNamesHebrew}
+              />
+              <Label htmlFor="work-text-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+            </div>
+            <div className="border-t border-white/10 my-2" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Authors</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="work-author-english"
+                checked={showScholarNamesEnglish}
+                onCheckedChange={setShowScholarNamesEnglish}
+              />
+              <Label htmlFor="work-author-english" className="text-xs cursor-pointer">English</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="work-author-hebrew"
+                checked={showScholarNamesHebrew}
+                onCheckedChange={setShowScholarNamesHebrew}
+              />
+              <Label htmlFor="work-author-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Manuscript preview tooltip */}
@@ -393,11 +458,24 @@ export const WorksNetworkView = ({
       {/* Selected work info */}
       {selectedWork && (
         <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur p-4 rounded-lg border border-border max-w-xs shadow-lg animate-fade-in">
-          <h3 className="font-bold text-foreground">{selectedWork.title}</h3>
-          {selectedWork.hebrew_title && (
-            <p className="text-sm text-muted-foreground font-hebrew">{selectedWork.hebrew_title}</p>
+          {showTextNamesEnglish && (
+            <h3 className="font-bold text-foreground">{selectedWork.title}</h3>
           )}
-          <p className="text-sm text-muted-foreground mt-1">by {selectedWork.author_name}</p>
+          {showTextNamesHebrew && selectedWork.hebrew_title && (
+            <p className={cn(
+              "text-sm font-hebrew",
+              showTextNamesEnglish ? "text-muted-foreground" : "font-bold text-foreground"
+            )} dir="rtl">{selectedWork.hebrew_title}</p>
+          )}
+          {!showTextNamesEnglish && !showTextNamesHebrew && (
+            <h3 className="font-bold text-foreground">{selectedWork.title}</h3>
+          )}
+          <p className="text-sm text-muted-foreground mt-1">
+            by {showScholarNamesEnglish && selectedWork.author_name}
+            {showScholarNamesEnglish && showScholarNamesHebrew && selectedWork.author_hebrew_name && ' / '}
+            {showScholarNamesHebrew && selectedWork.author_hebrew_name}
+            {!showScholarNamesEnglish && !showScholarNamesHebrew && selectedWork.author_name}
+          </p>
           {selectedWork.year_written && (
             <p className="text-xs text-muted-foreground">c. {selectedWork.year_written}</p>
           )}

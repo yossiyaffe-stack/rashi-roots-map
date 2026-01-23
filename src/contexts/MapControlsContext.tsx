@@ -21,6 +21,10 @@ interface MapControlsContextType {
   setShowScholarNamesEnglish: (show: boolean) => void;
   showScholarNamesHebrew: boolean;
   setShowScholarNamesHebrew: (show: boolean) => void;
+  showTextNamesEnglish: boolean;
+  setShowTextNamesEnglish: (show: boolean) => void;
+  showTextNamesHebrew: boolean;
+  setShowTextNamesHebrew: (show: boolean) => void;
   cityFilter: CityFilter;
   setCityFilter: (filter: CityFilter) => void;
   showOnlyScholarCities: boolean;
@@ -44,6 +48,8 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showPlaceNamesHebrew, setShowPlaceNamesHebrew] = useState(true);
   const [showScholarNamesEnglish, setShowScholarNamesEnglish] = useState(true);
   const [showScholarNamesHebrew, setShowScholarNamesHebrew] = useState(false);
+  const [showTextNamesEnglish, setShowTextNamesEnglish] = useState(true);
+  const [showTextNamesHebrew, setShowTextNamesHebrew] = useState(true);
   const [cityFilter, setCityFilter] = useState<CityFilter>('major');
   const [showOnlyScholarCities, setShowOnlyScholarCities] = useState(false);
   const [showJourneyMarkers, setShowJourneyMarkers] = useState(false);
@@ -68,6 +74,10 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
       setShowScholarNamesEnglish,
       showScholarNamesHebrew,
       setShowScholarNamesHebrew,
+      showTextNamesEnglish,
+      setShowTextNamesEnglish,
+      showTextNamesHebrew,
+      setShowTextNamesHebrew,
       cityFilter,
       setCityFilter,
       showOnlyScholarCities,
@@ -105,6 +115,10 @@ export function useMapControls() {
       setShowScholarNamesEnglish: () => {},
       showScholarNamesHebrew: false,
       setShowScholarNamesHebrew: () => {},
+      showTextNamesEnglish: true,
+      setShowTextNamesEnglish: () => {},
+      showTextNamesHebrew: true,
+      setShowTextNamesHebrew: () => {},
       cityFilter: 'all' as CityFilter,
       setCityFilter: () => {},
       showOnlyScholarCities: false,

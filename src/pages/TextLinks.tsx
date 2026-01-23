@@ -1,5 +1,8 @@
 import { useWorksWithAuthors } from '@/hooks/useWorks';
+import { useMapControls } from '@/contexts/MapControlsContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ExternalLink, BookOpen, Library } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,10 +22,49 @@ function getSefariaIcon(): string {
 
 export default function TextLinks() {
   const { data: works = [], isLoading } = useWorksWithAuthors();
+  const { 
+    showTextNamesEnglish, setShowTextNamesEnglish,
+    showTextNamesHebrew, setShowTextNamesHebrew,
+    showScholarNamesEnglish,
+    showScholarNamesHebrew,
+  } = useMapControls();
 
   // Filter works based on URL patterns in manuscript_url
   const sefariaWorks = works.filter(w => w.manuscript_url?.includes('sefaria.org'));
   const hebrewBooksWorks = works.filter(w => w.manuscript_url?.includes('hebrewbooks.org'));
+
+  // Helper to render title based on language settings
+  const renderTitle = (title: string, hebrewTitle: string | null) => {
+    const showEnglish = showTextNamesEnglish;
+    const showHebrew = showTextNamesHebrew && hebrewTitle;
+    
+    if (showEnglish && showHebrew) {
+      return (
+        <>
+          <span className="truncate">{title}</span>
+          <span className="text-xs text-muted-foreground truncate" dir="rtl">{hebrewTitle}</span>
+        </>
+      );
+    }
+    if (showHebrew) {
+      return <span className="truncate" dir="rtl">{hebrewTitle}</span>;
+    }
+    return <span className="truncate">{title}</span>;
+  };
+
+  // Helper to render author based on language settings
+  const renderAuthor = (name: string, hebrewName: string | null) => {
+    const showEnglish = showScholarNamesEnglish;
+    const showHebrew = showScholarNamesHebrew && hebrewName;
+    
+    if (showEnglish && showHebrew) {
+      return `${name} / ${hebrewName}`;
+    }
+    if (showHebrew) {
+      return hebrewName;
+    }
+    return name;
+  };
 
   if (isLoading) {
     return (
@@ -36,10 +78,35 @@ export default function TextLinks() {
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <div className="p-6 border-b border-white/10 shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Text Links</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Digital editions and scanned texts from Sefaria and HebrewBooks.org
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Text Links</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Digital editions and scanned texts from Sefaria and HebrewBooks.org
+            </p>
+          </div>
+          
+          {/* Language Controls */}
+          <div className="flex flex-col gap-2 bg-card/50 p-3 rounded-lg border border-white/10">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Display</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="text-english"
+                checked={showTextNamesEnglish}
+                onCheckedChange={setShowTextNamesEnglish}
+              />
+              <Label htmlFor="text-english" className="text-xs cursor-pointer">English</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="text-hebrew"
+                checked={showTextNamesHebrew}
+                onCheckedChange={setShowTextNamesHebrew}
+              />
+              <Label htmlFor="text-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+            </div>
+          </div>
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
@@ -73,16 +140,11 @@ export default function TextLinks() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm text-foreground truncate group-hover:text-green-400 transition-colors">
-                        {work.title}
-                      </h3>
-                      {work.hebrew_title && (
-                        <p className="text-xs text-muted-foreground truncate" dir="rtl">
-                          {work.hebrew_title}
-                        </p>
-                      )}
+                      <div className="font-medium text-sm text-foreground group-hover:text-green-400 transition-colors flex flex-col">
+                        {renderTitle(work.title, work.hebrew_title)}
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {work.author_name}
+                        {renderAuthor(work.author_name, work.author_hebrew_name)}
                       </p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-green-400 transition-colors shrink-0" />
@@ -134,16 +196,11 @@ export default function TextLinks() {
                         <Library className={cn("w-6 h-6 text-amber-400/60", coverUrl && "hidden")} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm text-foreground truncate group-hover:text-amber-400 transition-colors">
-                          {work.title}
-                        </h3>
-                        {work.hebrew_title && (
-                          <p className="text-xs text-muted-foreground truncate" dir="rtl">
-                            {work.hebrew_title}
-                          </p>
-                        )}
+                        <div className="font-medium text-sm text-foreground group-hover:text-amber-400 transition-colors flex flex-col">
+                          {renderTitle(work.title, work.hebrew_title)}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {work.author_name}
+                          {renderAuthor(work.author_name, work.author_hebrew_name)}
                         </p>
                       </div>
                       <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-amber-400 transition-colors shrink-0" />
