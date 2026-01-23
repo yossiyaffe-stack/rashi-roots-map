@@ -354,38 +354,6 @@ export function AppLayout() {
                 {sidebarOpen && <span className="font-medium text-sm">Texts Network</span>}
               </NavLink>
 
-              {/* Text Relationships - only on works page */}
-              {isWorksPage && (
-                <button
-                  onClick={() => {
-                    setRelationshipsPanelOpen(!relationshipsPanelOpen);
-                    if (!relationshipsPanelOpen) {
-                      setMapControlsPanelOpen(false);
-                      setLegendsPanelOpen(false);
-                      setKingdomsPanelOpen(false);
-                      setJourneysPanelOpen(false);
-                    }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                    "hover:bg-white/10 text-white/70 hover:text-white",
-                    !sidebarOpen && "justify-center px-2",
-                    relationshipsPanelOpen && "bg-accent/20 text-accent border border-accent/30"
-                  )}
-                >
-                  <Link2 className="w-5 h-5 shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="font-medium text-sm flex-1 text-left">Text Relationships</span>
-                      <ChevronRight className={cn(
-                        "w-5 h-5 transition-transform duration-300 ease-out",
-                        relationshipsPanelOpen ? "rotate-180 text-accent" : "text-white/50"
-                      )} />
-                    </>
-                  )}
-                </button>
-              )}
-
               {/* Work Journey */}
               <NavLink
                 to="/work-journey"

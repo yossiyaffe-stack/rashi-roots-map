@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus, Languages } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus, Languages, Link2, ChevronDown, ChevronUp, Layers, MessageSquareWarning, BookMarked, Lightbulb, FileText, LayoutGrid, Scale, CheckSquare, RotateCcw as ResetIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkWithAuthor, TextualRelationshipWithWorks } from '@/hooks/useWorks';
 import { LayoutMode, HoveredWork } from './works-network/types';
@@ -12,6 +12,8 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useMapControls } from '@/contexts/MapControlsContext';
+import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface WorksNetworkViewProps {
   works: WorkWithAuthor[];
@@ -30,6 +32,24 @@ const parseManuscriptUrl = (url: string): { source: string; id: string | null } 
     return { source: 'Sefaria', id: null };
   }
   return { source: 'Digital Edition', id: null };
+};
+
+// 9 Relationship Categories config (inline version)
+const TEXTUAL_CATEGORIES: Record<keyof RelationshipFilters['textual']['categories'], {
+  label: string;
+  icon: typeof Layers;
+  activeColor: string;
+  inactiveColor: string;
+}> = {
+  nosei_kelim: { label: 'Nosei Kelim', icon: Layers, activeColor: 'bg-purple-500/30 text-purple-300 border-purple-400/60', inactiveColor: 'bg-purple-500/10 text-purple-400/50 border-purple-500/20' },
+  hasagot: { label: 'Hasagot', icon: MessageSquareWarning, activeColor: 'bg-red-500/30 text-red-300 border-red-400/60', inactiveColor: 'bg-red-500/10 text-red-400/50 border-red-500/20' },
+  commentary: { label: 'Commentary', icon: BookOpen, activeColor: 'bg-blue-500/30 text-blue-300 border-blue-400/60', inactiveColor: 'bg-blue-500/10 text-blue-400/50 border-blue-500/20' },
+  super_commentary: { label: 'Super-Commentary', icon: BookMarked, activeColor: 'bg-indigo-500/30 text-indigo-300 border-indigo-400/60', inactiveColor: 'bg-indigo-500/10 text-indigo-400/50 border-indigo-500/20' },
+  hiddushim: { label: 'Hiddushim', icon: Lightbulb, activeColor: 'bg-yellow-500/30 text-yellow-300 border-yellow-400/60', inactiveColor: 'bg-yellow-500/10 text-yellow-400/50 border-yellow-500/20' },
+  abridgement: { label: 'Abridgement', icon: FileText, activeColor: 'bg-emerald-500/30 text-emerald-300 border-emerald-400/60', inactiveColor: 'bg-emerald-500/10 text-emerald-400/50 border-emerald-500/20' },
+  translation: { label: 'Translation', icon: Languages, activeColor: 'bg-cyan-500/30 text-cyan-300 border-cyan-400/60', inactiveColor: 'bg-cyan-500/10 text-cyan-400/50 border-cyan-500/20' },
+  reorganization: { label: 'Reorganization', icon: LayoutGrid, activeColor: 'bg-orange-500/30 text-orange-300 border-orange-400/60', inactiveColor: 'bg-orange-500/10 text-orange-400/50 border-orange-500/20' },
+  halakhic_dependency: { label: 'Halakhic', icon: Scale, activeColor: 'bg-amber-500/30 text-amber-300 border-amber-400/60', inactiveColor: 'bg-amber-500/10 text-amber-400/50 border-amber-500/20' },
 };
 
 export const WorksNetworkView = ({
@@ -51,6 +71,7 @@ export const WorksNetworkView = ({
   const [hoveredWork, setHoveredWork] = useState<HoveredWork | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showLanguagePanel, setShowLanguagePanel] = useState(false);
+  const [showRelationshipsPanel, setShowRelationshipsPanel] = useState(true); // Open by default
   const containerRef = useRef<HTMLDivElement>(null);
   
   const { 
@@ -59,6 +80,16 @@ export const WorksNetworkView = ({
     showScholarNamesEnglish, setShowScholarNamesEnglish,
     showScholarNamesHebrew, setShowScholarNamesHebrew,
   } = useMapControls();
+
+  const {
+    filters,
+    toggleTextualCategory,
+    setAllTextualCategories,
+    resetFilters,
+  } = useRelationshipFilters();
+
+  const enabledCount = Object.values(filters.textual.categories).filter(Boolean).length;
+  const totalCount = Object.keys(filters.textual.categories).length;
 
   // Get all connected work IDs
   const connectedWorkIds = useMemo(() => {
@@ -438,6 +469,75 @@ export const WorksNetworkView = ({
               />
               <Label htmlFor="work-author-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
             </div>
+          </div>
+        )}
+
+        {/* Text Relationships - Collapsible inline panel */}
+        <button
+          onClick={() => setShowRelationshipsPanel(!showRelationshipsPanel)}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            showRelationshipsPanel
+              ? "bg-purple-500/20 border-purple-500/50 text-purple-300" 
+              : "bg-card/90 border-border text-foreground"
+          )}
+        >
+          <Link2 className="w-4 h-4" />
+          Relationships
+          {showRelationshipsPanel ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </button>
+
+        {showRelationshipsPanel && (
+          <div className="bg-card/90 backdrop-blur border border-border rounded-lg p-3 space-y-2 max-h-[50vh] overflow-hidden flex flex-col">
+            {/* Header with counts and actions */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{enabledCount}/{totalCount} active</span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setAllTextualCategories(true)}
+                  className="px-2 py-0.5 text-[10px] rounded border border-white/20 hover:bg-white/10 transition-colors"
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setAllTextualCategories(false)}
+                  className="px-2 py-0.5 text-[10px] rounded border border-white/20 hover:bg-white/10 transition-colors"
+                >
+                  None
+                </button>
+              </div>
+            </div>
+            
+            {/* Scrollable category list */}
+            <ScrollArea className="flex-1 -mx-1 px-1">
+              <div className="space-y-1">
+                {(Object.entries(TEXTUAL_CATEGORIES) as [keyof RelationshipFilters['textual']['categories'], typeof TEXTUAL_CATEGORIES[keyof typeof TEXTUAL_CATEGORIES]][]).map(([key, config]) => {
+                  const enabled = filters.textual.categories[key];
+                  const Icon = config.icon;
+                  
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => toggleTextualCategory(key)}
+                      className={cn(
+                        "w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left text-xs",
+                        enabled ? config.activeColor : config.inactiveColor,
+                        "hover:brightness-110"
+                      )}
+                    >
+                      <Icon className={cn("w-3.5 h-3.5 shrink-0", enabled ? "" : "opacity-60")} />
+                      <span className={cn("flex-1", enabled ? "text-white" : "")}>{config.label}</span>
+                      <div className={cn(
+                        "w-3 h-3 rounded border shrink-0 flex items-center justify-center",
+                        enabled ? "border-white/80 bg-white/20" : "border-current/50"
+                      )}>
+                        {enabled && <div className="w-1.5 h-1.5 rounded-sm bg-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           </div>
         )}
       </div>
