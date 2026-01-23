@@ -119,9 +119,14 @@ export interface WorkWithTextualRelationships extends DbWork {
   }[];
 }
 
+export interface RelationshipWithScholars extends DbRelationship {
+  from_scholar?: { id: string; name: string } | null;
+  to_scholar?: { id: string; name: string } | null;
+}
+
 export interface ScholarWithWorksAndRelationships extends DbScholar {
   works?: WorkWithTextualRelationships[];
-  relationships?: DbRelationship[];
+  relationships?: RelationshipWithScholars[];
 }
 
 export function useScholarWithWorks(scholarId: string | null) {
@@ -134,7 +139,14 @@ export function useScholarWithWorks(scholarId: string | null) {
       const [scholarRes, worksRes, relationshipsRes] = await Promise.all([
         supabase.from('scholars').select('*').eq('id', scholarId).single(),
         supabase.from('works').select('*').eq('scholar_id', scholarId),
-        supabase.from('relationships').select('*').or(`from_scholar_id.eq.${scholarId},to_scholar_id.eq.${scholarId}`),
+        supabase
+          .from('relationships')
+          .select(`
+            *,
+            from_scholar:scholars!relationships_from_scholar_id_fkey(id, name),
+            to_scholar:scholars!relationships_to_scholar_id_fkey(id, name)
+          `)
+          .or(`from_scholar_id.eq.${scholarId},to_scholar_id.eq.${scholarId}`),
       ]);
       
       if (scholarRes.error) throw scholarRes.error;
