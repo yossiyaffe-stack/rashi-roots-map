@@ -27,6 +27,7 @@ export function TextualRelationshipsPanel() {
     toggleDomain,
     toggleTextualCategory,
     toggleCertainty,
+    setDepthLevel,
     resetFilters,
     activeFilterCount,
   } = useRelationshipFilters();
@@ -101,6 +102,37 @@ export function TextualRelationshipsPanel() {
                 </CollapsibleContent>
               </Collapsible>
             )}
+          </div>
+
+          {/* Depth Level Filter */}
+          <div className="pt-2 border-t border-white/10">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              Relationship Depth
+            </div>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => setDepthLevel('daughter')}
+                className={cn(
+                  "flex-1 px-2 py-1.5 rounded text-xs transition-colors border",
+                  filters.textual.depthLevel === 'daughter'
+                    ? 'bg-accent/20 border-accent/50 text-accent'
+                    : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
+                )}
+              >
+                Daughter Only
+              </button>
+              <button
+                onClick={() => setDepthLevel('all')}
+                className={cn(
+                  "flex-1 px-2 py-1.5 rounded text-xs transition-colors border",
+                  filters.textual.depthLevel === 'all'
+                    ? 'bg-accent/20 border-accent/50 text-accent'
+                    : 'bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white/70'
+                )}
+              >
+                All Depths
+              </button>
+            </div>
           </div>
 
           {/* Certainty Filter */}
