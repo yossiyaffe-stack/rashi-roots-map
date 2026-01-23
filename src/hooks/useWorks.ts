@@ -135,6 +135,58 @@ export function useWorksWithLocations() {
   });
 }
 
+export function useWorks() {
+  return useQuery({
+    queryKey: ['works'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('works')
+        .select('*');
+      
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAllWorkLocations() {
+  return useQuery({
+    queryKey: ['all-work-locations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('work_locations')
+        .select(`
+          *,
+          place:places!place_id(id, name_english, name_hebrew, latitude, longitude, modern_country)
+        `)
+        .order('year', { ascending: true });
+      
+      if (error) throw error;
+      
+      return (data ?? []).map((loc: any) => ({
+        id: loc.id,
+        work_id: loc.work_id,
+        place_id: loc.place_id,
+        location_type: loc.location_type as WorkLocationType,
+        year: loc.year,
+        circa: loc.circa ?? false,
+        printer_publisher: loc.printer_publisher,
+        manuscript_significance: loc.manuscript_significance,
+        notes: loc.notes,
+        source: loc.source,
+        place: loc.place ? {
+          id: loc.place.id,
+          name_english: loc.place.name_english,
+          name_hebrew: loc.place.name_hebrew,
+          latitude: loc.place.latitude,
+          longitude: loc.place.longitude,
+          modern_country: loc.place.modern_country,
+        } : null,
+      }));
+    },
+  });
+}
+
 export function useWorkLocations(workId?: string) {
   return useQuery({
     queryKey: ['work-locations', workId],
