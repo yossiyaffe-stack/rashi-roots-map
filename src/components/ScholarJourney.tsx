@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MapPin, Play, Pause, SkipForward, SkipBack, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
 import { useScholarLocations, LOCATION_REASON_CONFIG, type LocationReason } from '@/hooks/useScholars';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,9 @@ interface ScholarJourneyProps {
 export function ScholarJourney({ scholarId, scholarName, onLocationClick }: ScholarJourneyProps) {
   const { data: locations = [], isLoading } = useScholarLocations(scholarId);
   const { showJourneyMarkers, setShowJourneyMarkers } = useMapControls();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isMapPage = location.pathname === '/';
   
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -86,12 +90,23 @@ export function ScholarJourney({ scholarId, scholarName, onLocationClick }: Scho
         clearTimeout(animationRef.current);
       }
     } else {
-      // Play
-      setIsPlaying(true);
-      const startStep = currentStep < 0 ? 0 : currentStep;
-      goToStep(startStep, true);
+      // If not on map page, navigate there first, then start playing
+      if (!isMapPage) {
+        navigate('/');
+        // Delay play start to let map load
+        setTimeout(() => {
+          setIsPlaying(true);
+          const startStep = currentStep < 0 ? 0 : currentStep;
+          goToStep(startStep, true);
+        }, 300);
+      } else {
+        // Play immediately
+        setIsPlaying(true);
+        const startStep = currentStep < 0 ? 0 : currentStep;
+        goToStep(startStep, true);
+      }
     }
-  }, [isPlaying, currentStep, goToStep]);
+  }, [isPlaying, currentStep, goToStep, isMapPage, navigate]);
 
   // Step controls
   const goToPrevious = useCallback(() => {
