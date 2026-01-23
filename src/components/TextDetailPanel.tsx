@@ -1,11 +1,42 @@
 import { useState, useMemo } from 'react';
-import { X, Book, GitBranch, AlertCircle, Layers, Link2, FileText, Languages, Scissors, ArrowRightLeft, Scale, ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Book, GitBranch, AlertCircle, Layers, Link2, FileText, Languages, Scissors, ArrowRightLeft, Scale, ExternalLink, ChevronDown, ChevronRight, BookOpen, Library, FileImage, MapPin } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { type WorkWithAuthor, type TextualRelationshipWithWorks } from '@/hooks/useWorks';
+import { type WorkWithAuthor, type TextualRelationshipWithWorks, useWorkLocations } from '@/hooks/useWorks';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
+
+// Helper functions for external links
+function getHebrewBooksCover(url: string): string | null {
+  const match = url.match(/hebrewbooks\.org\/(\d+)/);
+  if (match) {
+    return `https://hebrewbooks.org/pagefeed/${match[1]}.gif`;
+  }
+  return null;
+}
+
+function getLinkType(url: string): 'sefaria' | 'hebrewbooks' | 'manuscript' | 'other' {
+  if (url.includes('sefaria.org')) return 'sefaria';
+  if (url.includes('hebrewbooks.org')) return 'hebrewbooks';
+  if (url.includes('nli.org') || url.includes('bodleian') || url.includes('bl.uk') || url.includes('bnf') || url.includes('bsb') || url.includes('vatican')) return 'manuscript';
+  return 'other';
+}
+
+function getRepositoryName(url: string): string {
+  const repos = [
+    { pattern: /bodleian|oxford/i, name: 'Bodleian Library' },
+    { pattern: /bsb|bayerische/i, name: 'Bayerische Staatsbibliothek' },
+    { pattern: /bnf|gallica/i, name: 'BnF' },
+    { pattern: /nli\.org|ktiv/i, name: 'NLI' },
+    { pattern: /vaticana|vatican/i, name: 'Vatican Library' },
+    { pattern: /bl\.uk|british/i, name: 'British Library' },
+  ];
+  for (const repo of repos) {
+    if (repo.pattern.test(url)) return repo.name;
+  }
+  return 'Digital Repository';
+}
 
 // 9 Relationship Types from the guide (with database type mappings)
 const RELATIONSHIP_TYPES: Record<string, { 
@@ -134,12 +165,14 @@ const normalizeRelationshipType = (dbType: string): string => {
 };
 
 interface TextDetailPanelProps {
-  text: WorkWithAuthor;
+  text: WorkWithAuthor & { manuscript_url?: string | null };
   relationships: TextualRelationshipWithWorks[];
   onClose: () => void;
 }
 
 export function TextDetailPanel({ text, relationships, onClose }: TextDetailPanelProps) {
+  // Fetch manuscript locations for this work
+  const { data: workLocations = [] } = useWorkLocations(text.id);
   const [activeTab, setActiveTab] = useState<'all' | 'commentaries' | 'references'>('all');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   
@@ -148,6 +181,8 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
     showTextNamesHebrew,
     showScholarNamesEnglish,
     showScholarNamesHebrew,
+    showPlaceNamesEnglish,
+    showPlaceNamesHebrew,
   } = useMapControls();
 
   // Get relationships for this text
@@ -233,17 +268,80 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
           <p className="text-sm text-white/70 mt-3">{text.description}</p>
         )}
         
-        {/* External links */}
-        {text.manuscript_url && (
-          <a
-            href={text.manuscript_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-3 text-xs text-accent hover:underline"
-          >
-            <ExternalLink className="w-3 h-3" />
-            View Manuscript
-          </a>
+        {/* External Links Section */}
+        {(text.manuscript_url || workLocations.length > 0) && (
+          <div className="mt-4 pt-3 border-t border-white/10 space-y-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">External Resources</p>
+            
+            {/* Digital Text Links (Sefaria/HebrewBooks) */}
+            {text.manuscript_url && (
+              <a
+                href={text.manuscript_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center gap-2 p-2 rounded-lg border transition-all group",
+                  getLinkType(text.manuscript_url) === 'sefaria' 
+                    ? "bg-green-500/10 border-green-500/20 hover:border-green-500/40" 
+                    : getLinkType(text.manuscript_url) === 'hebrewbooks'
+                      ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
+                      : "bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40"
+                )}
+              >
+                {getLinkType(text.manuscript_url) === 'sefaria' ? (
+                  <BookOpen className="w-4 h-4 text-green-400 shrink-0" />
+                ) : getLinkType(text.manuscript_url) === 'hebrewbooks' ? (
+                  <Library className="w-4 h-4 text-amber-400 shrink-0" />
+                ) : (
+                  <FileImage className="w-4 h-4 text-cyan-400 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <span className={cn(
+                    "text-xs font-medium",
+                    getLinkType(text.manuscript_url) === 'sefaria' ? "text-green-400" :
+                    getLinkType(text.manuscript_url) === 'hebrewbooks' ? "text-amber-400" : "text-cyan-400"
+                  )}>
+                    {getLinkType(text.manuscript_url) === 'sefaria' ? 'Sefaria' :
+                     getLinkType(text.manuscript_url) === 'hebrewbooks' ? 'HebrewBooks.org' :
+                     getRepositoryName(text.manuscript_url)}
+                  </span>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {getLinkType(text.manuscript_url) === 'sefaria' ? 'Digital edition' : 
+                     getLinkType(text.manuscript_url) === 'hebrewbooks' ? 'Scanned text' : 'Digital manuscript'}
+                  </p>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+              </a>
+            )}
+            
+            {/* Manuscript Locations */}
+            {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] text-muted-foreground mt-2">Manuscript Copies</p>
+                {workLocations
+                  .filter(loc => loc.location_type === 'manuscript_copy')
+                  .map(loc => (
+                    <div
+                      key={loc.id}
+                      className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20"
+                    >
+                      <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs text-foreground">
+                          {showPlaceNamesEnglish && loc.place?.name_english}
+                          {showPlaceNamesEnglish && showPlaceNamesHebrew && loc.place?.name_hebrew && ' / '}
+                          {showPlaceNamesHebrew && loc.place?.name_hebrew}
+                          {!showPlaceNamesEnglish && !showPlaceNamesHebrew && loc.place?.name_english}
+                        </span>
+                        {loc.notes && (
+                          <p className="text-[10px] text-muted-foreground truncate">{loc.notes}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
