@@ -37,6 +37,7 @@ export function AppLayout() {
     showJourneyMarkers, setShowJourneyMarkers,
     journeyReasonFilter, setJourneyReasonFilter,
     showBoundaryShading, setShowBoundaryShading,
+    mapEntityMode, setMapEntityMode,
   } = useMapControls();
   
   const isMapPage = location.pathname === '/';
@@ -425,6 +426,8 @@ export function AppLayout() {
               onCityFilterChange={setCityFilter}
               showOnlyScholarCities={showOnlyScholarCities}
               onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
+              mapEntityMode={mapEntityMode}
+              onMapEntityModeChange={setMapEntityMode}
             />
           </div>
         )}
