@@ -294,20 +294,6 @@ export function AppLayout() {
                 <Share2 className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="font-medium text-sm">Scholars Network</span>}
               </NavLink>
-
-              {/* Works Network */}
-              <NavLink
-                to="/works"
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
-                  "hover:bg-white/10 text-white/70 hover:text-white",
-                  !sidebarOpen && "justify-center px-2"
-                )}
-                activeClassName="bg-accent/20 text-accent border border-accent/30"
-              >
-                <Library className="w-5 h-5 shrink-0" />
-                {sidebarOpen && <span className="font-medium text-sm">Works Network</span>}
-              </NavLink>
             </div>
 
             {/* Divider */}
@@ -320,6 +306,20 @@ export function AppLayout() {
                   Texts
                 </div>
               )}
+
+              {/* Works Network (renamed to Texts Network) */}
+              <NavLink
+                to="/works"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <Library className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Texts Network</span>}
+              </NavLink>
 
               {/* Work Journey */}
               <NavLink
