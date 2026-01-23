@@ -13,6 +13,7 @@ import Scholars from "./pages/Scholars";
 import Timeline from "./pages/Timeline";
 import Network from "./pages/Network";
 import WorksNetwork from "./pages/WorksNetwork";
+import WorkJourney from "./pages/WorkJourney";
 import HistoricalContext from "./pages/HistoricalContext";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,7 @@ const App = () => (
                     <Route path="/timeline" element={<Timeline />} />
                     <Route path="/network" element={<Network />} />
                     <Route path="/works" element={<WorksNetwork />} />
+                    <Route path="/work-journey" element={<WorkJourney />} />
                     <Route path="/context" element={<HistoricalContext />} />
                   </Route>
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

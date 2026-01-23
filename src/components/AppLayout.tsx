@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route, ScrollText } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -307,6 +307,32 @@ export function AppLayout() {
               >
                 <Library className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="font-medium text-sm">Works Network</span>}
+              </NavLink>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-white/10 my-3" />
+
+            {/* ========== SECTION 3: TEXTS ========== */}
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-white/40 font-semibold">
+                  Texts
+                </div>
+              )}
+
+              {/* Work Journey */}
+              <NavLink
+                to="/work-journey"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <ScrollText className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Work Journey</span>}
               </NavLink>
             </div>
 
