@@ -328,7 +328,25 @@ const Index = () => {
               </button>
             </div>
             
-            <span className="text-sm text-white/50 w-24">{formatYear(timeRange[0])}</span>
+            {/* Manual Year Input - Start */}
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                value={timeRange[0]}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || -2000;
+                  const clamped = Math.max(-2000, Math.min(timeRange[1] - 10, val));
+                  setTimeRange([clamped, timeRange[1]]);
+                }}
+                className="w-20 h-7 text-xs bg-white/5 border-white/10 text-center"
+                min={-2000}
+                max={timeRange[1] - 10}
+              />
+              <span className="text-xs text-white/40">
+                {timeRange[0] < 0 ? 'BCE' : 'CE'}
+              </span>
+            </div>
+            
             <Slider
               value={timeRange}
               min={-2000}
@@ -339,7 +357,23 @@ const Index = () => {
               showTooltip
               formatValue={(val) => formatYear(val)}
             />
-            <span className="text-sm text-accent font-medium w-24 text-right">{formatYear(timeRange[1])}</span>
+            
+            {/* Manual Year Input - End */}
+            <div className="flex items-center gap-1">
+              <Input
+                type="number"
+                value={timeRange[1]}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 2026;
+                  const clamped = Math.min(2026, Math.max(timeRange[0] + 10, val));
+                  setTimeRange([timeRange[0], clamped]);
+                }}
+                className="w-20 h-7 text-xs bg-white/5 border-white/10 text-center"
+                min={timeRange[0] + 10}
+                max={2026}
+              />
+              <span className="text-xs text-white/40">CE</span>
+            </div>
             
             {/* Current span indicator */}
             <span className="text-xs text-white/40 ml-2 w-20 text-right">
