@@ -83,6 +83,7 @@ interface RelationshipFilterContextType {
   toggleDomain: (domain: keyof RelationshipFilters['domains']) => void;
   toggleFamilyType: (familyType: keyof RelationshipFilters['familyTypes']) => void;
   toggleTextualCategory: (category: keyof RelationshipFilters['textual']['categories']) => void;
+  setAllTextualCategories: (enabled: boolean) => void;
   toggleCertainty: (level: keyof RelationshipFilters['certainty']) => void;
   resetFilters: () => void;
   activeFilterCount: number;
@@ -122,6 +123,26 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
         categories: {
           ...prev.textual.categories,
           [category]: !prev.textual.categories[category],
+        },
+      },
+    }));
+  }, []);
+
+  const setAllTextualCategories = useCallback((enabled: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      textual: {
+        ...prev.textual,
+        categories: {
+          nosei_kelim: enabled,
+          hasagot: enabled,
+          commentary: enabled,
+          super_commentary: enabled,
+          hiddushim: enabled,
+          abridgement: enabled,
+          translation: enabled,
+          reorganization: enabled,
+          halakhic_dependency: enabled,
         },
       },
     }));
@@ -198,6 +219,7 @@ export function RelationshipFilterProvider({ children }: { children: ReactNode }
       toggleDomain,
       toggleFamilyType,
       toggleTextualCategory,
+      setAllTextualCategories,
       toggleCertainty,
       resetFilters,
       activeFilterCount,
@@ -218,6 +240,7 @@ export function useRelationshipFilters() {
       toggleDomain: () => {},
       toggleFamilyType: () => {},
       toggleTextualCategory: () => {},
+      setAllTextualCategories: () => {},
       toggleCertainty: () => {},
       resetFilters: () => {},
       activeFilterCount: 0,

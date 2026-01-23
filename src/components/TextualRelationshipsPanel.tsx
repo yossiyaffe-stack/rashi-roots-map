@@ -1,78 +1,88 @@
-import { RotateCcw, Layers, MessageSquareWarning, BookOpen, BookMarked, Lightbulb, FileText, Languages, LayoutGrid, Scale } from 'lucide-react';
+import { RotateCcw, Layers, MessageSquareWarning, BookOpen, BookMarked, Lightbulb, FileText, Languages, LayoutGrid, Scale, CheckSquare } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-// 9 Relationship Categories with icons and descriptions
+// 9 Relationship Categories with icons and descriptions - MORE VIBRANT colors
 const TEXTUAL_CATEGORIES: Record<keyof RelationshipFilters['textual']['categories'], {
   label: string;
   hebrewLabel: string;
   icon: typeof Layers;
   description: string;
-  color: string;
+  activeColor: string;
+  inactiveColor: string;
 }> = {
   nosei_kelim: {
     label: 'Nosei Kelim',
     hebrewLabel: 'נושאי כלים',
     icon: Layers,
     description: 'Texts printed together',
-    color: 'bg-purple-500/20 text-purple-400 border-purple-500/40',
+    activeColor: 'bg-purple-500/30 text-purple-300 border-purple-400/60',
+    inactiveColor: 'bg-purple-500/10 text-purple-400/50 border-purple-500/20',
   },
   hasagot: {
     label: 'Hasagot',
     hebrewLabel: 'השגות',
     icon: MessageSquareWarning,
     description: 'Criticisms',
-    color: 'bg-red-500/20 text-red-400 border-red-500/40',
+    activeColor: 'bg-red-500/30 text-red-300 border-red-400/60',
+    inactiveColor: 'bg-red-500/10 text-red-400/50 border-red-500/20',
   },
   commentary: {
     label: 'Commentary',
     hebrewLabel: 'פירוש',
     icon: BookOpen,
     description: 'Primary interpretation',
-    color: 'bg-blue-500/20 text-blue-400 border-blue-500/40',
+    activeColor: 'bg-blue-500/30 text-blue-300 border-blue-400/60',
+    inactiveColor: 'bg-blue-500/10 text-blue-400/50 border-blue-500/20',
   },
   super_commentary: {
     label: 'Super-Commentary',
     hebrewLabel: 'פירוש על פירוש',
     icon: BookMarked,
     description: 'Meta-commentary',
-    color: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40',
+    activeColor: 'bg-indigo-500/30 text-indigo-300 border-indigo-400/60',
+    inactiveColor: 'bg-indigo-500/10 text-indigo-400/50 border-indigo-500/20',
   },
   hiddushim: {
     label: 'Hiddushim',
     hebrewLabel: 'חידושים',
     icon: Lightbulb,
     description: 'Novellae',
-    color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40',
+    activeColor: 'bg-yellow-500/30 text-yellow-300 border-yellow-400/60',
+    inactiveColor: 'bg-yellow-500/10 text-yellow-400/50 border-yellow-500/20',
   },
   abridgement: {
     label: 'Abridgement',
     hebrewLabel: 'קיצור',
     icon: FileText,
     description: 'Shortened versions',
-    color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
+    activeColor: 'bg-emerald-500/30 text-emerald-300 border-emerald-400/60',
+    inactiveColor: 'bg-emerald-500/10 text-emerald-400/50 border-emerald-500/20',
   },
   translation: {
     label: 'Translation',
     hebrewLabel: 'תרגום',
     icon: Languages,
     description: 'Language change',
-    color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40',
+    activeColor: 'bg-cyan-500/30 text-cyan-300 border-cyan-400/60',
+    inactiveColor: 'bg-cyan-500/10 text-cyan-400/50 border-cyan-500/20',
   },
   reorganization: {
     label: 'Reorganization',
     hebrewLabel: 'סידור מחדש',
     icon: LayoutGrid,
     description: 'Topical rearrangement',
-    color: 'bg-orange-500/20 text-orange-400 border-orange-500/40',
+    activeColor: 'bg-orange-500/30 text-orange-300 border-orange-400/60',
+    inactiveColor: 'bg-orange-500/10 text-orange-400/50 border-orange-500/20',
   },
   halakhic_dependency: {
     label: 'Halakhic Dependency',
     hebrewLabel: 'שרשרת הלכתית',
     icon: Scale,
     description: 'Legal chains',
-    color: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+    activeColor: 'bg-amber-500/30 text-amber-300 border-amber-400/60',
+    inactiveColor: 'bg-amber-500/10 text-amber-400/50 border-amber-500/20',
   },
 };
 
@@ -80,12 +90,22 @@ export function TextualRelationshipsPanel() {
   const {
     filters,
     toggleTextualCategory,
+    setAllTextualCategories,
     resetFilters,
     activeFilterCount,
   } = useRelationshipFilters();
 
   const enabledCount = Object.values(filters.textual.categories).filter(Boolean).length;
   const totalCount = Object.keys(filters.textual.categories).length;
+  const allSelected = enabledCount === totalCount;
+
+  const handleSelectAll = () => {
+    setAllTextualCategories(true);
+  };
+
+  const handleDeselectAll = () => {
+    setAllTextualCategories(false);
+  };
 
   return (
     <div className="h-full flex flex-col w-[280px]">
@@ -108,6 +128,33 @@ export function TextualRelationshipsPanel() {
         <p className="text-xs text-muted-foreground mt-1">
           {enabledCount}/{totalCount} categories active
         </p>
+        
+        {/* Select All / Deselect All buttons */}
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={handleSelectAll}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+              allSelected
+                ? "bg-accent/20 text-accent border-accent/50"
+                : "bg-white/5 text-white/70 border-white/20 hover:bg-white/10 hover:text-white"
+            )}
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            Select All
+          </button>
+          <button
+            onClick={handleDeselectAll}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+              enabledCount === 0
+                ? "bg-white/10 text-white/50 border-white/20"
+                : "bg-white/5 text-white/70 border-white/20 hover:bg-white/10 hover:text-white"
+            )}
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
       {/* Scrollable Content - Category Buttons */}
@@ -123,24 +170,23 @@ export function TextualRelationshipsPanel() {
                 onClick={() => toggleTextualCategory(key)}
                 className={cn(
                   "w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left",
-                  enabled
-                    ? config.color
-                    : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:text-white/60"
+                  enabled ? config.activeColor : config.inactiveColor,
+                  "hover:brightness-110"
                 )}
               >
-                <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", enabled ? "" : "opacity-50")} />
+                <Icon className={cn("w-4 h-4 mt-0.5 shrink-0", enabled ? "" : "opacity-60")} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{config.label}</span>
-                    <span className="text-[10px] opacity-70">{config.hebrewLabel}</span>
+                    <span className={cn("text-sm font-medium", enabled ? "text-white" : "")}>{config.label}</span>
+                    <span className={cn("text-[10px]", enabled ? "text-white/80" : "opacity-70")}>{config.hebrewLabel}</span>
                   </div>
-                  <p className="text-[10px] opacity-70 mt-0.5">{config.description}</p>
+                  <p className={cn("text-[10px] mt-0.5", enabled ? "text-white/70" : "opacity-60")}>{config.description}</p>
                 </div>
                 <div className={cn(
                   "w-4 h-4 rounded border-2 shrink-0 mt-0.5 flex items-center justify-center transition-colors",
-                  enabled ? "border-current bg-current/20" : "border-white/30"
+                  enabled ? "border-white/80 bg-white/20" : "border-current/50"
                 )}>
-                  {enabled && <div className="w-2 h-2 rounded-sm bg-current" />}
+                  {enabled && <div className="w-2 h-2 rounded-sm bg-white" />}
                 </div>
               </button>
             );
