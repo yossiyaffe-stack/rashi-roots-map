@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import L from 'leaflet';
+import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Clock, ChevronRight, ChevronLeft, Users, Search, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Slider, type SliderMarker } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -274,7 +275,48 @@ const Index = () => {
           "transition-all duration-200 overflow-hidden",
           timelineExpanded ? "max-h-40 px-4 pb-4" : "max-h-0"
         )}>
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1 mr-2">
+              <button
+                onClick={() => {
+                  // Zoom out: expand range by 50 years on each side
+                  const newStart = Math.max(-2000, timeRange[0] - 50);
+                  const newEnd = Math.min(2026, timeRange[1] + 50);
+                  setTimeRange([newStart, newEnd]);
+                }}
+                className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                title="Zoom out (expand range)"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  // Zoom in: shrink range by 50 years on each side (min 50 year span)
+                  const currentSpan = timeRange[1] - timeRange[0];
+                  if (currentSpan > 50) {
+                    const shrinkAmount = Math.min(50, (currentSpan - 50) / 2);
+                    setTimeRange([
+                      Math.round(timeRange[0] + shrinkAmount),
+                      Math.round(timeRange[1] - shrinkAmount)
+                    ]);
+                  }
+                }}
+                disabled={(timeRange[1] - timeRange[0]) <= 50}
+                className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Zoom in (narrow range)"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setTimeRange([-500, 1650])}
+                className="p-1.5 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                title="Reset to default"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            
             <span className="text-sm text-white/50 w-24">{formatYear(timeRange[0])}</span>
             <Slider
               value={timeRange}
@@ -287,6 +329,11 @@ const Index = () => {
               formatValue={(val) => formatYear(val)}
             />
             <span className="text-sm text-accent font-medium w-24 text-right">{formatYear(timeRange[1])}</span>
+            
+            {/* Current span indicator */}
+            <span className="text-xs text-white/40 ml-2 w-20 text-right">
+              {timeRange[1] - timeRange[0]} yrs
+            </span>
           </div>
           
           {/* Historical Events Row */}
