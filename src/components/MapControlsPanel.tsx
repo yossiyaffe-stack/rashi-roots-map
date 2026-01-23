@@ -22,6 +22,10 @@ interface MapControlsPanelProps {
   onShowScholarNamesEnglishChange: (show: boolean) => void;
   showScholarNamesHebrew: boolean;
   onShowScholarNamesHebrewChange: (show: boolean) => void;
+  showTextNamesEnglish: boolean;
+  onShowTextNamesEnglishChange: (show: boolean) => void;
+  showTextNamesHebrew: boolean;
+  onShowTextNamesHebrewChange: (show: boolean) => void;
   cityFilter: CityFilter;
   onCityFilterChange: (filter: CityFilter) => void;
   showOnlyScholarCities: boolean;
@@ -57,6 +61,10 @@ export function MapControlsPanel({
   onShowScholarNamesEnglishChange,
   showScholarNamesHebrew,
   onShowScholarNamesHebrewChange,
+  showTextNamesEnglish,
+  onShowTextNamesEnglishChange,
+  showTextNamesHebrew,
+  onShowTextNamesHebrewChange,
   cityFilter,
   onCityFilterChange,
   showOnlyScholarCities,
@@ -260,6 +268,38 @@ export function MapControlsPanel({
                   id="show-scholar-hebrew-panel"
                   checked={showScholarNamesHebrew}
                   onCheckedChange={onShowScholarNamesHebrewChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Text Labels Section */}
+          <div className="pt-3 border-t border-white/10">
+            <div className="text-sm font-semibold text-foreground/80 mb-3">
+              Text Labels
+            </div>
+            <div className="space-y-3">
+              {/* Show Text Names English Toggle */}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-text-english-panel" className="text-sm text-muted-foreground cursor-pointer">
+                  Texts (English)
+                </Label>
+                <Switch
+                  id="show-text-english-panel"
+                  checked={showTextNamesEnglish}
+                  onCheckedChange={onShowTextNamesEnglishChange}
+                />
+              </div>
+
+              {/* Show Text Names Hebrew Toggle */}
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-text-hebrew-panel" className="text-sm text-muted-foreground cursor-pointer">
+                  Texts (Hebrew)
+                </Label>
+                <Switch
+                  id="show-text-hebrew-panel"
+                  checked={showTextNamesHebrew}
+                  onCheckedChange={onShowTextNamesHebrewChange}
                 />
               </div>
             </div>

@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { useScholarNameVariants } from '@/hooks/useScholarNameVariants';
+import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
 const Scholars = () => {
@@ -13,6 +16,12 @@ const Scholars = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: scholars = [], isLoading } = useScholars();
+  const { 
+    showScholarNamesEnglish, setShowScholarNamesEnglish,
+    showScholarNamesHebrew, setShowScholarNamesHebrew,
+    showPlaceNamesEnglish,
+    showPlaceNamesHebrew,
+  } = useMapControls();
   
   // Build search index from scholar names
   const scholarNameMap = useScholarNameVariants(scholars);
@@ -51,6 +60,27 @@ const Scholars = () => {
             <span className="text-sm text-muted-foreground">
               ({filteredScholars.length} total)
             </span>
+          </div>
+          
+          {/* Language Controls */}
+          <div className="flex items-center gap-4 bg-card/50 p-3 rounded-lg border border-white/10">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Display</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="scholar-english"
+                checked={showScholarNamesEnglish}
+                onCheckedChange={setShowScholarNamesEnglish}
+              />
+              <Label htmlFor="scholar-english" className="text-xs cursor-pointer">English</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="scholar-hebrew"
+                checked={showScholarNamesHebrew}
+                onCheckedChange={setShowScholarNamesHebrew}
+              />
+              <Label htmlFor="scholar-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+            </div>
           </div>
         </div>
 
@@ -97,13 +127,23 @@ const Scholars = () => {
                         )}
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold text-sm group-hover:text-accent transition-colors">
-                            {scholar.name}
-                          </h4>
-                          {scholar.hebrew_name && (
-                            <span className="text-sm font-hebrew text-accent/80 shrink-0 ml-2">
+                          {showScholarNamesEnglish && (
+                            <h4 className="font-semibold text-sm group-hover:text-accent transition-colors">
+                              {scholar.name}
+                            </h4>
+                          )}
+                          {showScholarNamesHebrew && scholar.hebrew_name && (
+                            <span className={cn(
+                              "text-sm font-hebrew text-accent/80 shrink-0",
+                              showScholarNamesEnglish && "ml-2"
+                            )}>
                               {scholar.hebrew_name}
                             </span>
+                          )}
+                          {!showScholarNamesEnglish && !showScholarNamesHebrew && (
+                            <h4 className="font-semibold text-sm group-hover:text-accent transition-colors">
+                              {scholar.name}
+                            </h4>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">

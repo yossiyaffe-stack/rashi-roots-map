@@ -1,6 +1,9 @@
 import { useWorksWithAuthors } from '@/hooks/useWorks';
 import { useAllWorkLocations } from '@/hooks/useWorks';
+import { useMapControls } from '@/contexts/MapControlsContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ExternalLink, FileImage, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +29,14 @@ function getRepositoryName(url: string): string {
 export default function ManuscriptLinks() {
   const { data: works = [], isLoading: worksLoading } = useWorksWithAuthors();
   const { data: locations = [], isLoading: locationsLoading } = useAllWorkLocations();
+  const { 
+    showTextNamesEnglish, setShowTextNamesEnglish,
+    showTextNamesHebrew, setShowTextNamesHebrew,
+    showScholarNamesEnglish,
+    showScholarNamesHebrew,
+    showPlaceNamesEnglish,
+    showPlaceNamesHebrew,
+  } = useMapControls();
 
   // Get works with manuscript_copy locations that have IIIF or digital links
   const manuscriptLocations = locations.filter(
@@ -43,10 +54,57 @@ export default function ManuscriptLinks() {
 
   // Also include works with manuscript_url (digital access)
   const worksWithManuscriptUrl = works.filter(
-    w => w.manuscript_url && !w.manuscript_url.includes('hebrewbooks.org')
+    w => w.manuscript_url && !w.manuscript_url.includes('hebrewbooks.org') && !w.manuscript_url.includes('sefaria.org')
   );
 
   const isLoading = worksLoading || locationsLoading;
+
+  // Helper to render title based on language settings
+  const renderTitle = (title: string, hebrewTitle: string | null) => {
+    const showEnglish = showTextNamesEnglish;
+    const showHebrew = showTextNamesHebrew && hebrewTitle;
+    
+    if (showEnglish && showHebrew) {
+      return (
+        <>
+          <span>{title}</span>
+          <span className="text-sm text-muted-foreground" dir="rtl">{hebrewTitle}</span>
+        </>
+      );
+    }
+    if (showHebrew) {
+      return <span dir="rtl">{hebrewTitle}</span>;
+    }
+    return <span>{title}</span>;
+  };
+
+  // Helper to render author based on language settings
+  const renderAuthor = (name: string, hebrewName: string | null) => {
+    const showEnglish = showScholarNamesEnglish;
+    const showHebrew = showScholarNamesHebrew && hebrewName;
+    
+    if (showEnglish && showHebrew) {
+      return `${name} / ${hebrewName}`;
+    }
+    if (showHebrew) {
+      return hebrewName;
+    }
+    return name;
+  };
+
+  // Helper to render place name based on language settings
+  const renderPlace = (english: string, hebrew: string | null) => {
+    const showEnglish = showPlaceNamesEnglish;
+    const showHebrew = showPlaceNamesHebrew && hebrew;
+    
+    if (showEnglish && showHebrew) {
+      return `${english} / ${hebrew}`;
+    }
+    if (showHebrew) {
+      return hebrew;
+    }
+    return english;
+  };
 
   if (isLoading) {
     return (
@@ -60,10 +118,35 @@ export default function ManuscriptLinks() {
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
       <div className="p-6 border-b border-white/10 shrink-0">
-        <h1 className="text-2xl font-bold text-foreground">Manuscript Links</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Links to digitized manuscripts preserved in libraries around the world
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Manuscript Links</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Links to digitized manuscripts preserved in libraries around the world
+            </p>
+          </div>
+          
+          {/* Language Controls */}
+          <div className="flex flex-col gap-2 bg-card/50 p-3 rounded-lg border border-white/10">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Display</span>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="text-english"
+                checked={showTextNamesEnglish}
+                onCheckedChange={setShowTextNamesEnglish}
+              />
+              <Label htmlFor="text-english" className="text-xs cursor-pointer">English</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="text-hebrew"
+                checked={showTextNamesHebrew}
+                onCheckedChange={setShowTextNamesHebrew}
+              />
+              <Label htmlFor="text-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+            </div>
+          </div>
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
@@ -90,14 +173,11 @@ export default function ManuscriptLinks() {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-medium text-foreground">{work.title}</h3>
-                        {work.hebrew_title && (
-                          <p className="text-sm text-muted-foreground" dir="rtl">
-                            {work.hebrew_title}
-                          </p>
-                        )}
+                        <h3 className="font-medium text-foreground flex flex-col">
+                          {renderTitle(work.title, work.hebrew_title)}
+                        </h3>
                         <p className="text-xs text-muted-foreground mt-1">
-                          by {work.author_name}
+                          by {renderAuthor(work.author_name, work.author_hebrew_name)}
                         </p>
                       </div>
                     </div>
@@ -114,7 +194,7 @@ export default function ManuscriptLinks() {
                           <FileImage className="w-4 h-4 text-purple-400 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-foreground truncate">
-                              {loc.place?.name_english}
+                              {renderPlace(loc.place?.name_english || '', loc.place?.name_hebrew || null)}
                             </p>
                             {loc.notes && (
                               <p className="text-xs text-muted-foreground truncate">
@@ -166,16 +246,11 @@ export default function ManuscriptLinks() {
                         <FileImage className="w-6 h-6 text-cyan-400/60" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm text-foreground truncate group-hover:text-cyan-400 transition-colors">
-                          {work.title}
-                        </h3>
-                        {work.hebrew_title && (
-                          <p className="text-xs text-muted-foreground truncate" dir="rtl">
-                            {work.hebrew_title}
-                          </p>
-                        )}
+                        <div className="font-medium text-sm text-foreground group-hover:text-cyan-400 transition-colors flex flex-col">
+                          {renderTitle(work.title, work.hebrew_title)}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {work.author_name}
+                          {renderAuthor(work.author_name, work.author_hebrew_name)}
                         </p>
                         <p className="text-[10px] text-cyan-400/70 mt-1 truncate">
                           {repoName}
