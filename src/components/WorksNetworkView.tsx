@@ -126,12 +126,13 @@ export const WorksNetworkView = ({
     );
   }, [relationships, focusMode, selectedWork, selectedWorkConnections]);
 
-  // Calculate depth levels for works based on relationships
+  // Calculate depth levels for works based on DISPLAYED relationships only
   const workDepthLevels = useMemo(() => {
     const depths: Record<string, number> = {};
     const parentMap = new Map<string, string>();
 
-    relationships.forEach(rel => {
+    // Use displayedRelationships to only consider relationships in the current view
+    displayedRelationships.forEach(rel => {
       if (rel.work_id && rel.related_work_id) {
         if (rel.relationship_category === 'commentary' || rel.relationship_category === 'supercommentary') {
           parentMap.set(rel.work_id, rel.related_work_id);
@@ -158,7 +159,7 @@ export const WorksNetworkView = ({
     displayedWorks.forEach(work => getDepth(work.id));
 
     return depths;
-  }, [displayedWorks, relationships]);
+  }, [displayedWorks, displayedRelationships]);
 
   // Fixed viewport dimensions
   const viewWidth = layoutMode === 'timeline' ? 1200 : 1000;
