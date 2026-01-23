@@ -70,7 +70,7 @@ export function CircleFilterPanel({
             <span className="font-medium">Drawing Mode</span>
           </div>
           <p className="text-xs text-white/60 mb-3">
-            Click and drag on the map to draw a circle
+            Click with right mouse button and drag to draw a circle
           </p>
           <Button
             size="sm"
