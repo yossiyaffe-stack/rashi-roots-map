@@ -7,6 +7,7 @@ import { useScholarWithWorks, type DbScholar } from '@/hooks/useScholars';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { WorkWithTextualRelationships } from '@/hooks/useScholars';
 import { ScholarJourney } from '@/components/ScholarJourney';
+import { ScholarExternalData } from '@/components/ScholarExternalData';
 
 interface WorkCardProps {
   work: WorkWithTextualRelationships;
@@ -216,6 +217,17 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
               </div>
             </div>
           )}
+
+          {/* External Data: Sefaria & NLI */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
+              External Resources
+            </h3>
+            <ScholarExternalData 
+              scholarName={scholar.name} 
+              hebrewName={scholar.hebrew_name}
+            />
+          </div>
 
           {/* Notes */}
           {scholar.notes && (
