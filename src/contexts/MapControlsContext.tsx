@@ -44,7 +44,7 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showPlaceNamesHebrew, setShowPlaceNamesHebrew] = useState(true);
   const [showScholarNamesEnglish, setShowScholarNamesEnglish] = useState(true);
   const [showScholarNamesHebrew, setShowScholarNamesHebrew] = useState(false);
-  const [cityFilter, setCityFilter] = useState<CityFilter>('all');
+  const [cityFilter, setCityFilter] = useState<CityFilter>('major');
   const [showOnlyScholarCities, setShowOnlyScholarCities] = useState(false);
   const [showJourneyMarkers, setShowJourneyMarkers] = useState(false);
   const [journeyReasonFilter, setJourneyReasonFilter] = useState<LocationReason[]>([]);
