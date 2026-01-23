@@ -11,6 +11,7 @@ import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { PlaceSearch } from '@/components/PlaceSearch';
 import { ScholarSearch } from '@/components/ScholarSearch';
+import { WorksSearch } from '@/components/WorksSearch';
 import { CircleFilterPanel } from '@/components/CircleFilterPanel';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useCircleFilter } from '@/contexts/CircleFilterContext';
@@ -112,6 +113,19 @@ const Index = () => {
     }
   };
 
+  // Handle work selection from search
+  const handleWorkSelectFromSearch = (work: WorkWithLocation) => {
+    setSelectedWork(work);
+    // If work has location events with coordinates, fly to the first one
+    const firstLocation = work.location_events?.find(e => e.place?.latitude && e.place?.longitude);
+    if (firstLocation?.place && mapRef.current) {
+      mapRef.current.flyTo([firstLocation.place.latitude, firstLocation.place.longitude], 8, { duration: 1.5 });
+    } else if (work.latitude && work.longitude && mapRef.current) {
+      // Fall back to author's location
+      mapRef.current.flyTo([work.latitude, work.longitude], 8, { duration: 1.5 });
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col overflow-hidden relative">
       {/* Map Content - Full screen behind overlays */}
@@ -155,6 +169,7 @@ const Index = () => {
         {/* Search Controls - Top Right */}
         <div className="absolute top-6 right-24 z-[1000] flex gap-2">
           <ScholarSearch onScholarSelect={handleScholarSelect} />
+          <WorksSearch onWorkSelect={handleWorkSelectFromSearch} />
           <PlaceSearch onPlaceSelect={handlePlaceSelect} />
         </div>
 
