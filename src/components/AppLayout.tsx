@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route, ScrollText, Link2 } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route, ScrollText, Link2, ExternalLink, FileImage } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -365,6 +365,34 @@ export function AppLayout() {
               >
                 <ScrollText className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="font-medium text-sm">Work Journey</span>}
+              </NavLink>
+
+              {/* Text Links - Sefaria and HebrewBooks */}
+              <NavLink
+                to="/text-links"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <ExternalLink className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Text Links</span>}
+              </NavLink>
+
+              {/* Manuscript Links */}
+              <NavLink
+                to="/manuscript-links"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2"
+                )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
+              >
+                <FileImage className="w-5 h-5 shrink-0" />
+                {sidebarOpen && <span className="font-medium text-sm">Manuscript Links</span>}
               </NavLink>
             </div>
 
