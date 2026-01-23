@@ -636,6 +636,63 @@ export type Database = {
         }
         Relationships: []
       }
+      work_locations: {
+        Row: {
+          circa: boolean | null
+          created_at: string
+          id: string
+          location_type: Database["public"]["Enums"]["work_location_type"]
+          notes: string | null
+          place_id: string | null
+          printer_publisher: string | null
+          source: string | null
+          updated_at: string
+          work_id: string
+          year: number | null
+        }
+        Insert: {
+          circa?: boolean | null
+          created_at?: string
+          id?: string
+          location_type: Database["public"]["Enums"]["work_location_type"]
+          notes?: string | null
+          place_id?: string | null
+          printer_publisher?: string | null
+          source?: string | null
+          updated_at?: string
+          work_id: string
+          year?: number | null
+        }
+        Update: {
+          circa?: boolean | null
+          created_at?: string
+          id?: string
+          location_type?: Database["public"]["Enums"]["work_location_type"]
+          notes?: string | null
+          place_id?: string | null
+          printer_publisher?: string | null
+          source?: string | null
+          updated_at?: string
+          work_id?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_locations_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_locations_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       works: {
         Row: {
           created_at: string
@@ -723,6 +780,12 @@ export type Database = {
       relationship_certainty: "certain" | "probable" | "possible" | "speculated"
       relationship_domain: "biographical" | "textual" | "intellectual"
       relationship_type: "family" | "educational" | "literary"
+      work_location_type:
+        | "composition"
+        | "first_print"
+        | "reprint"
+        | "manuscript_copy"
+        | "translation"
       work_type:
         | "commentary"
         | "responsa"
@@ -894,6 +957,13 @@ export const Constants = {
       relationship_certainty: ["certain", "probable", "possible", "speculated"],
       relationship_domain: ["biographical", "textual", "intellectual"],
       relationship_type: ["family", "educational", "literary"],
+      work_location_type: [
+        "composition",
+        "first_print",
+        "reprint",
+        "manuscript_copy",
+        "translation",
+      ],
       work_type: [
         "commentary",
         "responsa",
