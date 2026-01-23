@@ -7,8 +7,8 @@ import { MapLegend } from '@/components/MapLegend';
 import { KingdomsLegend } from '@/components/KingdomsLegend';
 import { MapControlsPanel } from '@/components/MapControlsPanel';
 import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
+import { TextualRelationshipsPanel } from '@/components/TextualRelationshipsPanel';
 import { ScholarJourneysPanel } from '@/components/ScholarJourneysPanel';
-
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useMapControls } from '@/contexts/MapControlsContext';
@@ -447,13 +447,23 @@ export function AppLayout() {
           {/* Footer */}
         </aside>
 
-        {/* Slide-out Panel for Relationships - Full height */}
-        {(isMapPage || isNetworkPage || isWorksPage) && relationshipsPanelOpen && (
+        {/* Slide-out Panel for Scholar Relationships - Map and Network pages */}
+        {(isMapPage || isNetworkPage) && relationshipsPanelOpen && (
           <div className={cn(
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col"
           )}>
             <RelationshipFilterPanel />
+          </div>
+        )}
+
+        {/* Slide-out Panel for Text Relationships - Works page only */}
+        {isWorksPage && relationshipsPanelOpen && (
+          <div className={cn(
+            "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
+            "flex flex-col"
+          )}>
+            <TextualRelationshipsPanel />
           </div>
         )}
 
