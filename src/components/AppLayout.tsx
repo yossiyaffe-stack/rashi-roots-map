@@ -100,19 +100,23 @@ export function AppLayout() {
               )}
               
               {/* Map */}
-              <NavLink
-                to="/"
-                onClick={clearSelection}
+              <button
+                onClick={() => {
+                  clearSelection();
+                  if (location.pathname !== '/') {
+                    navigate('/');
+                  }
+                }}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
                   "hover:bg-white/10 text-white/70 hover:text-white",
-                  !sidebarOpen && "justify-center px-2"
+                  !sidebarOpen && "justify-center px-2",
+                  location.pathname === '/' && "bg-accent/20 text-accent border border-accent/30"
                 )}
-                activeClassName="bg-accent/20 text-accent border border-accent/30"
               >
                 <Map className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="font-medium text-sm">Map</span>}
-              </NavLink>
+              </button>
 
               {/* Map Controls - only on map page */}
               {isMapPage && (
