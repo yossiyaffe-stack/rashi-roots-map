@@ -326,7 +326,12 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
             
             {/* Manuscript Summary (count only, no list) */}
             {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length > 0 && (
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+              <a
+                href={`https://www.nli.org.il/en/search?keyword=${encodeURIComponent(text.title)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-colors group"
+              >
                 <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
                 <div className="flex-1">
                   <span className="text-lg font-bold text-purple-400">
@@ -336,7 +341,8 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
                     surviving manuscript{workLocations.filter(loc => loc.location_type === 'manuscript_copy').length !== 1 ? 's' : ''} worldwide
                   </span>
                 </div>
-              </div>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-purple-400 transition-colors shrink-0" />
+              </a>
             )}
           </div>
         )}
