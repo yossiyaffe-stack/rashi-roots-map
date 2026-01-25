@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { RotateCcw, Heart, GraduationCap, ChevronDown, ChevronRight } from 'lucide-react';
+import { RotateCcw, Heart, GraduationCap, ChevronDown, ChevronRight, ChevronLeft, Filter } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+
+interface RelationshipFilterPanelProps {
+  onClose?: () => void;
+}
 
 // Domain colors for visual identification - Scholar domains only (Family & Teacher-Student)
 const DOMAIN_COLORS = {
@@ -21,7 +25,7 @@ const FAMILY_TYPE_LABELS: Record<string, { label: string; isDotted?: boolean }> 
   daughter_in_law: { label: 'Daughter-in-Law', isDotted: true },
 };
 
-export function RelationshipFilterPanel() {
+export function RelationshipFilterPanel({ onClose }: RelationshipFilterPanelProps) {
   const {
     filters,
     toggleDomain,
@@ -37,22 +41,25 @@ export function RelationshipFilterPanel() {
 
   return (
     <div className="h-full flex flex-col w-[280px]">
-      {/* Header */}
+      {/* Header with back arrow */}
       <div className="p-4 border-b border-white/10 shrink-0">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-accent uppercase tracking-wider">
-            Scholar Relationships
-          </h3>
-          {activeFilterCount > 0 && (
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-1 px-2 py-1 text-[10px] text-white/50 hover:text-white border border-white/10 rounded transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Reset
-            </button>
-          )}
-        </div>
+        <button 
+          onClick={onClose}
+          className="flex items-center gap-2 text-accent font-bold hover:text-accent/80 transition-colors mb-2"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <Filter className="w-4 h-4" />
+          <span className="text-xs uppercase tracking-widest">Scholar Relationships</span>
+        </button>
+        {activeFilterCount > 0 && (
+          <button
+            onClick={resetFilters}
+            className="flex items-center gap-1 px-2 py-1 text-[10px] text-white/50 hover:text-white border border-white/10 rounded transition-colors"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Reset
+          </button>
+        )}
       </div>
 
       {/* Scrollable Content */}
