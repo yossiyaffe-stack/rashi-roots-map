@@ -1,9 +1,10 @@
-import { X, ExternalLink, BookOpen, Library, FileImage, Map } from 'lucide-react';
+import { X, ExternalLink, BookOpen, Library, FileImage, Play, MapPin } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { type WorkWithAuthor, type TextualRelationshipWithWorks, useWorkLocations } from '@/hooks/useWorks';
 import { useMapControls } from '@/contexts/MapControlsContext';
-import { WorkJourneyPanel } from '@/components/WorkJourneyPanel';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 // Helper functions for external links
 function getLinkType(url: string): 'sefaria' | 'hebrewbooks' | 'manuscript' | 'other' {
@@ -35,6 +36,7 @@ interface TextDetailPanelProps {
 }
 
 export function TextDetailPanel({ text, relationships, onClose }: TextDetailPanelProps) {
+  const navigate = useNavigate();
   // Fetch manuscript locations for this work
   const { data: workLocations = [] } = useWorkLocations(text.id);
   
@@ -143,17 +145,28 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
             </div>
           )}
           
-          {/* Work Journey Section */}
+          {/* Work Journey Button */}
           {workLocations.length > 0 && (
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                <Map className="w-3 h-3" />
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <MapPin className="w-3 h-3" />
                 Geographic Journey
               </p>
-              <WorkJourneyPanel 
-                workId={text.id} 
-                workTitle={text.title}
-              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={() => {
+                  // Navigate to map and trigger work journey
+                  navigate('/?mode=works&workId=' + text.id);
+                }}
+              >
+                <Play className="w-4 h-4" />
+                Play Journey on Map
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {workLocations.length} location{workLocations.length !== 1 ? 's' : ''} tracked
+              </p>
             </div>
           )}
         </div>
