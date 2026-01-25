@@ -4,6 +4,26 @@
  * Each domain represents a specific area of Jewish scholarship.
  * Canonical multipliers adjust base influence scores to reflect
  * a scholar's relative importance within that specific domain.
+ * 
+ * MULTIPLIER METHODOLOGY:
+ * -----------------------
+ * 2.5 = FOUNDATIONAL (everyone uses it)
+ *       Example: Shulchan Aruch in halakha, Mishneh Torah, Zohar
+ * 
+ * 2.3 = UNIVERSAL (in every collection)
+ *       Example: Rashi in Torah commentary, Tosafot in Talmud
+ * 
+ * 2.0 = MAJOR (standard reference)
+ *       Example: Ramban in Torah, Rosh in Talmud, Aruch HaShulchan
+ * 
+ * 1.8 = IMPORTANT (widely studied)
+ *       Example: Rashbam, Sforno, Maharik
+ * 
+ * 1.5 = SIGNIFICANT (specialized but valuable)
+ *       Example: Kli Yakar, Shabbetai Bass
+ * 
+ * 1.0 = BASE (no adjustment)
+ *       Applied to all scholars in "all" domain or unlisted works
  */
 
 export const DOMAINS = {
