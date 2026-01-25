@@ -74,6 +74,13 @@ const createWorkLocationIcon = (locationType: string, index: number) => {
 
 // Generate curved path between points
 function generateCurvedPath(start: [number, number], end: [number, number]): [number, number][] {
+  // Validate inputs - return empty array if invalid coordinates
+  if (!start || !end || 
+      !Number.isFinite(start[0]) || !Number.isFinite(start[1]) ||
+      !Number.isFinite(end[0]) || !Number.isFinite(end[1])) {
+    return [];
+  }
+  
   const points: [number, number][] = [];
   const midLat = (start[0] + end[0]) / 2;
   const midLng = (start[1] + end[1]) / 2;
@@ -82,6 +89,12 @@ function generateCurvedPath(start: [number, number], end: [number, number]): [nu
   const dx = end[1] - start[1];
   const dy = end[0] - start[0];
   const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  // If distance is too small (same point), return straight line
+  if (dist < 0.001) {
+    return [start, end];
+  }
+  
   const offset = dist * 0.15;
   
   const controlLat = midLat + (dx / dist) * offset;
@@ -229,6 +242,9 @@ export default function WorkJourney() {
 
     // Add connection polylines
     connectionPaths.forEach(connection => {
+      // Skip empty or invalid paths
+      if (!connection.path || connection.path.length < 2) return;
+      
       const polyline = L.polyline(connection.path, {
         color: locationTypeConfig[connection.toType]?.color || '#8B5CF6',
         weight: 2,
