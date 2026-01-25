@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
+import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { useScholarNameVariants } from '@/hooks/useScholarNameVariants';
+import { useInfluenceScores } from '@/hooks/useInfluenceScores';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +18,7 @@ const Scholars = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: scholars = [], isLoading } = useScholars();
+  const { data: influenceScores } = useInfluenceScores();
   const { 
     showScholarNamesEnglish, setShowScholarNamesEnglish,
     showScholarNamesHebrew, setShowScholarNamesHebrew,
@@ -115,47 +118,55 @@ const Scholars = () => {
                     </span>
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {periodScholars.map(scholar => (
-                      <div
-                        key={scholar.id}
-                        onClick={() => setSelectedScholar(scholar)}
-                        className={cn(
-                          "group p-4 rounded-xl cursor-pointer transition-all border bg-white/5",
-                          selectedScholar?.id === scholar.id
-                            ? "border-accent bg-accent/10"
-                            : "border-white/10 hover:border-white/20 hover:bg-white/10"
-                        )}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          {showScholarNamesEnglish && (
-                            <h4 className="font-semibold text-sm group-hover:text-accent transition-colors">
-                              {scholar.name}
-                            </h4>
+                    {periodScholars.map(scholar => {
+                      const scoreData = influenceScores?.get(scholar.id);
+                      return (
+                        <div
+                          key={scholar.id}
+                          onClick={() => setSelectedScholar(scholar)}
+                          className={cn(
+                            "group p-4 rounded-xl cursor-pointer transition-all border bg-white/5",
+                            selectedScholar?.id === scholar.id
+                              ? "border-accent bg-accent/10"
+                              : "border-white/10 hover:border-white/20 hover:bg-white/10"
                           )}
-                          {showScholarNamesHebrew && scholar.hebrew_name && (
-                            <span className={cn(
-                              "text-sm font-hebrew text-accent/80 shrink-0",
-                              showScholarNamesEnglish && "ml-2"
-                            )}>
-                              {scholar.hebrew_name}
-                            </span>
-                          )}
-                          {!showScholarNamesEnglish && !showScholarNamesHebrew && (
-                            <h4 className="font-semibold text-sm group-hover:text-accent transition-colors">
-                              {scholar.name}
-                            </h4>
+                        >
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {showScholarNamesEnglish && (
+                                <h4 className="font-semibold text-sm group-hover:text-accent transition-colors truncate">
+                                  {scholar.name}
+                                </h4>
+                              )}
+                              {!showScholarNamesEnglish && !showScholarNamesHebrew && (
+                                <h4 className="font-semibold text-sm group-hover:text-accent transition-colors truncate">
+                                  {scholar.name}
+                                </h4>
+                              )}
+                              {scoreData && (
+                                <InfluenceScoreBadge scoreData={scoreData} size="sm" />
+                              )}
+                            </div>
+                            {showScholarNamesHebrew && scholar.hebrew_name && (
+                              <span className={cn(
+                                "text-sm font-hebrew text-accent/80 shrink-0",
+                                showScholarNamesEnglish && "ml-2"
+                              )}>
+                                {scholar.hebrew_name}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            {scholar.birth_place || 'Unknown'} • {scholar.birth_year || '?'}–{scholar.death_year || '?'}
+                          </p>
+                          {scholar.bio && (
+                            <p className="text-xs text-white/60 line-clamp-2">
+                              {scholar.bio}
+                            </p>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {scholar.birth_place || 'Unknown'} • {scholar.birth_year || '?'}–{scholar.death_year || '?'}
-                        </p>
-                        {scholar.bio && (
-                          <p className="text-xs text-white/60 line-clamp-2">
-                            {scholar.bio}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))

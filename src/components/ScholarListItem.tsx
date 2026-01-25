@@ -1,13 +1,16 @@
 import { cn } from '@/lib/utils';
 import type { DbScholar } from '@/hooks/useScholars';
+import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
+import type { ScholarInfluenceScore } from '@/hooks/useInfluenceScores';
 
 interface ScholarListItemProps {
   scholar: DbScholar;
   isSelected: boolean;
   onClick: () => void;
+  influenceScore?: ScholarInfluenceScore;
 }
 
-export function ScholarListItem({ scholar, isSelected, onClick }: ScholarListItemProps) {
+export function ScholarListItem({ scholar, isSelected, onClick, influenceScore }: ScholarListItemProps) {
   return (
     <div
       onClick={onClick}
@@ -18,10 +21,15 @@ export function ScholarListItem({ scholar, isSelected, onClick }: ScholarListIte
           : "border border-transparent hover:bg-white/5"
       )}
     >
-      <div className="flex justify-between items-start">
-        <span className="font-semibold text-foreground">{scholar.name}</span>
+      <div className="flex justify-between items-start gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-semibold text-foreground truncate">{scholar.name}</span>
+          {influenceScore && (
+            <InfluenceScoreBadge scoreData={influenceScore} size="sm" />
+          )}
+        </div>
         {scholar.hebrew_name && (
-          <span className="font-hebrew text-accent text-sm">{scholar.hebrew_name}</span>
+          <span className="font-hebrew text-accent text-sm shrink-0">{scholar.hebrew_name}</span>
         )}
       </div>
       <div className="text-xs text-muted-foreground mt-1.5 flex items-center gap-2">

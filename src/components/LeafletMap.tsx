@@ -7,6 +7,8 @@ import type { CityFilter, MapEntityMode } from '@/contexts/MapControlsContext';
 import type { CircleFilter } from '@/contexts/CircleFilterContext';
 import type { WorkWithLocation } from '@/hooks/useWorks';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
+import { useInfluenceScores, type ScholarInfluenceScore } from '@/hooks/useInfluenceScores';
+import { getInfluenceBadgeColors } from '@/components/InfluenceScoreBadge';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'modern' | 'historical' | 'satellite';
@@ -466,6 +468,9 @@ export function LeafletMap({
 
   // Get relationship filters
   const { shouldShowRelationship } = useRelationshipFilters();
+  
+  // Get influence scores for all scholars
+  const { data: influenceScores } = useInfluenceScores();
 
   // Alias for internal use
   const showLines = showConnections;
@@ -1458,6 +1463,11 @@ export function LeafletMap({
       const color = getScholarColor(scholar);
       const isDimmed = selectedRegion && !inSelectedRegion;
       
+      // Get influence score for this scholar
+      const scoreData = influenceScores?.get(scholar.id);
+      const hasScore = !!scoreData && scoreData.score > 0;
+      const badgeColors = hasScore ? getInfluenceBadgeColors(scoreData.score) : null;
+      
       // Calculate size based on importance and zoom level
       const rawSize = isRashi 
         ? 24 
@@ -1492,6 +1502,28 @@ export function LeafletMap({
       const isHighImportance = importance >= 80 || isRashi;
       const glowSize = isSelected ? 16 : (isHighImportance ? 12 : 8);
       
+      // Influence badge HTML (only show if score exists and label is visible)
+      const influenceBadgeHtml = hasScore && shouldShowLabel && badgeColors ? `
+        <div style="
+          position: absolute;
+          top: -6px;
+          right: -8px;
+          background: ${badgeColors.bg};
+          color: ${badgeColors.text};
+          border: 1.5px solid ${badgeColors.border};
+          border-radius: 9999px;
+          font-size: 8px;
+          font-weight: 700;
+          min-width: 20px;
+          height: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 4px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        ">${scoreData.score}</div>
+      ` : '';
+      
       const icon = L.divIcon({
         className: 'historical-marker',
         html: `
@@ -1500,21 +1532,25 @@ export function LeafletMap({
             flex-direction: column;
             align-items: center;
             gap: 4px;
+            position: relative;
           ">
-            <div 
-              class="marker-dot ${isRashi ? 'marker-rashi-dot' : ''}" 
-              style="
-                background: ${color}; 
-                width: ${baseSize}px;
-                height: ${baseSize}px;
-                border-radius: 50%;
-                border: ${isRashi ? '2.5px solid #fbbf24' : `${borderWidth}px solid ${isHighImportance ? '#fff' : 'rgba(255,255,255,0.8)'}`};
-                box-shadow: 0 0 ${glowSize}px ${color}, 0 1px 4px rgba(0,0,0,0.4);
-                transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-                ${isSelected ? 'transform: scale(1.3);' : ''}
-                ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
-              "
-            ></div>
+            <div style="position: relative;">
+              <div 
+                class="marker-dot ${isRashi ? 'marker-rashi-dot' : ''}" 
+                style="
+                  background: ${color}; 
+                  width: ${baseSize}px;
+                  height: ${baseSize}px;
+                  border-radius: 50%;
+                  border: ${isRashi ? '2.5px solid #fbbf24' : `${borderWidth}px solid ${isHighImportance ? '#fff' : 'rgba(255,255,255,0.8)'}`};
+                  box-shadow: 0 0 ${glowSize}px ${color}, 0 1px 4px rgba(0,0,0,0.4);
+                  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+                  ${isSelected ? 'transform: scale(1.3);' : ''}
+                  ${isDimmed ? 'opacity: 0.25; filter: grayscale(0.5);' : ''}
+                "
+              ></div>
+              ${influenceBadgeHtml}
+            </div>
             ${showAnyLabel ? `<div class="marker-label" style="
               background: #1a1408;
               color: #ffd700;
@@ -1567,7 +1603,7 @@ export function LeafletMap({
     });
 
     // Note: Removed auto-pan to selected scholar - map only moves on user interaction
-  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew, zoomLevel, mapEntityMode]);
+  }, [scholars, selectedScholar, timeRange, onSelectScholar, selectedRegion, showScholarNamesEnglish, showScholarNamesHebrew, zoomLevel, mapEntityMode, influenceScores]);
 
   // Update work markers when in works mode
   useEffect(() => {
