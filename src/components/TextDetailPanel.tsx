@@ -233,25 +233,9 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
           {/* Timeline Tab */}
           <TabsContent value="timeline" className="mt-0">
             <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  Transmission History
-                </h3>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Track how {text.title}'s influence spread over time.
-                </p>
-              </div>
-              
-              <WorkTemporalView 
-                workId={text.id}
-                workTitle={text.title}
-                yearWritten={text.year_written}
-              />
-              
-              {/* Work Journey Button */}
+              {/* Work Journey Button - First */}
               {workLocations.length > 0 && (
-                <div className="pt-4 border-t border-white/10">
+                <div className="pb-4 border-b border-white/10">
                   <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
                     Geographic Journey
@@ -270,6 +254,22 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
                   </p>
                 </div>
               )}
+              
+              <div>
+                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Transmission History
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Track how {text.title}'s influence spread over time.
+                </p>
+              </div>
+              
+              <WorkTemporalView 
+                workId={text.id}
+                workTitle={text.title}
+                yearWritten={text.year_written}
+              />
             </div>
           </TabsContent>
         </ScrollArea>
