@@ -185,12 +185,22 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
     showPlaceNamesHebrew,
   } = useMapControls();
 
-  // Get relationships for this text
+  // Get relationships for this text (filtering out anonymous manuscript placeholders)
   const textRelationships = useMemo(() => {
+    // Filter to exclude anonymous works (which are manuscript placeholders, not real literary connections)
+    const isRealWork = (work: { author_name?: string | null } | undefined | null) => {
+      if (!work?.author_name) return true;
+      return !work.author_name.toLowerCase().includes('anonymous');
+    };
+    
     // Incoming: relationships where this text is the target (related_work_id)
-    const incoming = relationships.filter(r => r.related_work_id === text.id);
+    const incoming = relationships
+      .filter(r => r.related_work_id === text.id)
+      .filter(r => isRealWork(r.from_work));
     // Outgoing: relationships where this text is the source (work_id)
-    const outgoing = relationships.filter(r => r.work_id === text.id);
+    const outgoing = relationships
+      .filter(r => r.work_id === text.id)
+      .filter(r => isRealWork(r.to_work));
     
     return { incoming, outgoing };
   }, [relationships, text.id]);
@@ -314,31 +324,18 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
               </a>
             )}
             
-            {/* Manuscript Locations */}
+            {/* Manuscript Summary (count only, no list) */}
             {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] text-muted-foreground mt-2">Manuscript Copies</p>
-                {workLocations
-                  .filter(loc => loc.location_type === 'manuscript_copy')
-                  .map(loc => (
-                    <div
-                      key={loc.id}
-                      className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20"
-                    >
-                      <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs text-foreground">
-                          {showPlaceNamesEnglish && loc.place?.name_english}
-                          {showPlaceNamesEnglish && showPlaceNamesHebrew && loc.place?.name_hebrew && ' / '}
-                          {showPlaceNamesHebrew && loc.place?.name_hebrew}
-                          {!showPlaceNamesEnglish && !showPlaceNamesHebrew && loc.place?.name_english}
-                        </span>
-                        {loc.notes && (
-                          <p className="text-[10px] text-muted-foreground truncate">{loc.notes}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
+                <div className="flex-1">
+                  <span className="text-lg font-bold text-purple-400">
+                    {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    surviving manuscript{workLocations.filter(loc => loc.location_type === 'manuscript_copy').length !== 1 ? 's' : ''} worldwide
+                  </span>
+                </div>
               </div>
             )}
           </div>
