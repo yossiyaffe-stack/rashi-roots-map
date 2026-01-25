@@ -177,6 +177,7 @@ export type Database = {
           location_type: string
           notes: string | null
           scholar_id: string
+          work_id: string | null
         }
         Insert: {
           count?: number | null
@@ -186,6 +187,7 @@ export type Database = {
           location_type: string
           notes?: string | null
           scholar_id: string
+          work_id?: string | null
         }
         Update: {
           count?: number | null
@@ -195,8 +197,17 @@ export type Database = {
           location_type?: string
           notes?: string | null
           scholar_id?: string
+          work_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "geographic_distribution_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       historical_events: {
         Row: {
@@ -434,6 +445,7 @@ export type Database = {
           scholar_id: string
           script: string | null
           updated_at: string
+          work_id: string | null
         }
         Insert: {
           century?: string | null
@@ -450,6 +462,7 @@ export type Database = {
           scholar_id: string
           script?: string | null
           updated_at?: string
+          work_id?: string | null
         }
         Update: {
           century?: string | null
@@ -466,8 +479,17 @@ export type Database = {
           scholar_id?: string
           script?: string | null
           updated_at?: string
+          work_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "manuscript_sources_work_id_fkey"
+            columns: ["work_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       places: {
         Row: {
