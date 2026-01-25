@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useWorks, useAllWorkLocations } from '@/hooks/useWorks';
 import { usePlaces, useScholars } from '@/hooks/useScholars';
 import L from 'leaflet';
@@ -9,7 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink, Play, Pause, Map, Layers } from 'lucide-react';
 
 // Work location type icons and colors
 const locationTypeConfig: Record<string, { icon: string; color: string; label: string; LucideIcon: typeof BookOpen }> = {
@@ -20,9 +22,20 @@ const locationTypeConfig: Record<string, { icon: string; color: string; label: s
   translation: { icon: '🌐', color: '#EC4899', label: 'Translation', LucideIcon: Languages },
 };
 
+// Time period definitions for heatmap
+const timePeriods = [
+  { label: 'Early (1050-1200)', start: 1050, end: 1200 },
+  { label: 'Medieval (1200-1400)', start: 1200, end: 1400 },
+  { label: 'Print Era (1400-1550)', start: 1400, end: 1550 },
+  { label: 'Expansion (1550-1700)', start: 1550, end: 1700 },
+  { label: 'Modern (1700-1900)', start: 1700, end: 1900 },
+  { label: 'Digital (1900-2100)', start: 1900, end: 2100 },
+];
+
 // Create custom marker icon for work locations
-const createWorkLocationIcon = (locationType: string, index: number) => {
+const createWorkLocationIcon = (locationType: string, index: number, isActive = true) => {
   const config = locationTypeConfig[locationType] || locationTypeConfig.composition;
+  const opacity = isActive ? 1 : 0.4;
   
   return L.divIcon({
     className: 'custom-work-marker',
@@ -32,6 +45,8 @@ const createWorkLocationIcon = (locationType: string, index: number) => {
         display: flex;
         align-items: center;
         justify-content: center;
+        opacity: ${opacity};
+        transition: opacity 0.3s;
       ">
         <div style="
           width: 32px;
@@ -72,9 +87,17 @@ const createWorkLocationIcon = (locationType: string, index: number) => {
   });
 };
 
+// Create heatmap circle for region density
+const createHeatmapCircle = (count: number, maxCount: number) => {
+  const intensity = Math.min(count / maxCount, 1);
+  const radius = 30000 + intensity * 100000; // 30-130km radius
+  const opacity = 0.3 + intensity * 0.5;
+  
+  return { radius, opacity };
+};
+
 // Generate curved path between points
 function generateCurvedPath(start: [number, number], end: [number, number]): [number, number][] {
-  // Validate inputs - return empty array if invalid coordinates
   if (!start || !end || 
       !Number.isFinite(start[0]) || !Number.isFinite(start[1]) ||
       !Number.isFinite(end[0]) || !Number.isFinite(end[1])) {
@@ -85,12 +108,10 @@ function generateCurvedPath(start: [number, number], end: [number, number]): [nu
   const midLat = (start[0] + end[0]) / 2;
   const midLng = (start[1] + end[1]) / 2;
   
-  // Calculate perpendicular offset for curve
   const dx = end[1] - start[1];
   const dy = end[0] - start[0];
   const dist = Math.sqrt(dx * dx + dy * dy);
   
-  // If distance is too small (same point), return straight line
   if (dist < 0.001) {
     return [start, end];
   }
@@ -100,7 +121,6 @@ function generateCurvedPath(start: [number, number], end: [number, number]): [nu
   const controlLat = midLat + (dx / dist) * offset;
   const controlLng = midLng - (dy / dist) * offset;
   
-  // Generate bezier curve points
   for (let t = 0; t <= 1; t += 0.05) {
     const lat = (1 - t) * (1 - t) * start[0] + 2 * (1 - t) * t * controlLat + t * t * end[0];
     const lng = (1 - t) * (1 - t) * start[1] + 2 * (1 - t) * t * controlLng + t * t * end[1];
@@ -118,12 +138,20 @@ export default function WorkJourney() {
   
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null);
   const [showConnections, setShowConnections] = useState(true);
-  const [filterByType, setFilterByType] = useState<string | 'all'>('all');
+  const [filterByType, setFilterByType] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'journey' | 'heatmap'>('journey');
+  
+  // Animation state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [animationSpeed, setAnimationSpeed] = useState(2000); // ms per step
+  const animationRef = useRef<NodeJS.Timeout | null>(null);
   
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const polylinesRef = useRef<L.Polyline[]>([]);
+  const heatmapCirclesRef = useRef<L.Circle[]>([]);
   
   // Get works that have location data
   const worksWithLocations = useMemo(() => {
@@ -183,6 +211,84 @@ export default function WorkJourney() {
     return paths;
   }, [positions, showConnections, selectedWorkLocations]);
 
+  // Heatmap data by region
+  const heatmapData = useMemo(() => {
+    if (!selectedWorkId) return [];
+    
+    const regionCounts: Record<string, { lat: number; lng: number; count: number; country: string }> = {};
+    
+    selectedWorkLocations.forEach(loc => {
+      if (!loc.place) return;
+      const country = loc.place.modern_country || 'Unknown';
+      if (!regionCounts[country]) {
+        regionCounts[country] = { lat: loc.lat!, lng: loc.lng!, count: 0, country };
+      }
+      regionCounts[country].count++;
+      // Average position for the region
+      regionCounts[country].lat = (regionCounts[country].lat + loc.lat!) / 2;
+      regionCounts[country].lng = (regionCounts[country].lng + loc.lng!) / 2;
+    });
+    
+    return Object.values(regionCounts);
+  }, [selectedWorkId, selectedWorkLocations]);
+
+  // Animation logic
+  const playAnimation = useCallback(() => {
+    if (selectedWorkLocations.length === 0) return;
+    
+    setIsPlaying(true);
+    setCurrentStep(0);
+  }, [selectedWorkLocations]);
+
+  const stopAnimation = useCallback(() => {
+    setIsPlaying(false);
+    if (animationRef.current) {
+      clearTimeout(animationRef.current);
+      animationRef.current = null;
+    }
+  }, []);
+
+  // Animation step effect
+  useEffect(() => {
+    if (!isPlaying) return;
+    
+    if (currentStep >= selectedWorkLocations.length) {
+      stopAnimation();
+      return;
+    }
+
+    const map = mapRef.current;
+    const currentLoc = selectedWorkLocations[currentStep];
+    
+    if (map && currentLoc?.lat && currentLoc?.lng) {
+      map.flyTo([currentLoc.lat, currentLoc.lng], 7, {
+        duration: animationSpeed / 1000 * 0.6,
+      });
+      
+      // Open popup for current marker
+      const marker = markersRef.current[currentStep];
+      if (marker) {
+        setTimeout(() => marker.openPopup(), animationSpeed * 0.4);
+      }
+    }
+    
+    animationRef.current = setTimeout(() => {
+      setCurrentStep(prev => prev + 1);
+    }, animationSpeed);
+
+    return () => {
+      if (animationRef.current) {
+        clearTimeout(animationRef.current);
+      }
+    };
+  }, [isPlaying, currentStep, selectedWorkLocations, animationSpeed, stopAnimation]);
+
+  // Reset animation when work changes
+  useEffect(() => {
+    stopAnimation();
+    setCurrentStep(0);
+  }, [selectedWorkId, stopAnimation]);
+
   // Initialize map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -210,57 +316,99 @@ export default function WorkJourney() {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear existing markers and polylines
+    // Clear existing markers, polylines, and heatmap circles
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
     polylinesRef.current.forEach(p => p.remove());
     polylinesRef.current = [];
+    heatmapCirclesRef.current.forEach(c => c.remove());
+    heatmapCirclesRef.current = [];
 
-    // Add markers for each location
-    selectedWorkLocations.forEach((loc, index) => {
-      if (!loc.lat || !loc.lng) return;
-
-      const marker = L.marker([loc.lat, loc.lng], {
-        icon: createWorkLocationIcon(loc.location_type, index),
-      }).addTo(map);
-
-      const config = locationTypeConfig[loc.location_type] || locationTypeConfig.composition;
-      marker.bindPopup(`
-        <div style="min-width: 180px;">
-          <p style="font-weight: 600; margin: 0;">${loc.place?.name_english || 'Unknown'}</p>
-          <p style="font-size: 12px; color: #888; margin: 4px 0;">
-            ${config.label}
-          </p>
-          ${loc.year ? `<p style="font-size: 12px; margin: 4px 0;">Year: ${loc.circa ? 'c. ' : ''}${loc.year}</p>` : ''}
-          ${loc.printer_publisher ? `<p style="font-size: 12px; margin: 4px 0;">Publisher: ${loc.printer_publisher}</p>` : ''}
-          ${loc.notes ? `<p style="font-size: 11px; color: #666; margin-top: 8px;">${loc.notes}</p>` : ''}
-        </div>
-      `);
-
-      markersRef.current.push(marker);
-    });
-
-    // Add connection polylines
-    connectionPaths.forEach(connection => {
-      // Skip empty or invalid paths
-      if (!connection.path || connection.path.length < 2) return;
+    if (viewMode === 'heatmap') {
+      // Render heatmap circles
+      const maxCount = Math.max(...heatmapData.map(d => d.count), 1);
       
-      const polyline = L.polyline(connection.path, {
-        color: locationTypeConfig[connection.toType]?.color || '#8B5CF6',
-        weight: 2,
-        opacity: 0.7,
-        dashArray: '8, 8',
-      }).addTo(map);
+      heatmapData.forEach(region => {
+        const { radius, opacity } = createHeatmapCircle(region.count, maxCount);
+        
+        const circle = L.circle([region.lat, region.lng], {
+          radius,
+          color: '#8B5CF6',
+          fillColor: '#8B5CF6',
+          fillOpacity: opacity,
+          weight: 2,
+        }).addTo(map);
+        
+        circle.bindPopup(`
+          <div style="text-align: center;">
+            <p style="font-weight: 600; margin: 0;">${region.country}</p>
+            <p style="font-size: 14px; margin: 4px 0;">${region.count} location${region.count > 1 ? 's' : ''}</p>
+          </div>
+        `);
+        
+        heatmapCirclesRef.current.push(circle);
+      });
+    } else {
+      // Add markers for each location
+      selectedWorkLocations.forEach((loc, index) => {
+        if (!loc.lat || !loc.lng) return;
 
-      polylinesRef.current.push(polyline);
-    });
+        const isActive = !isPlaying || index <= currentStep;
+        
+        const marker = L.marker([loc.lat, loc.lng], {
+          icon: createWorkLocationIcon(loc.location_type, index, isActive),
+        }).addTo(map);
 
-    // Fit bounds if we have positions
-    if (positions.length > 0) {
+        const config = locationTypeConfig[loc.location_type] || locationTypeConfig.composition;
+        marker.bindPopup(`
+          <div style="min-width: 200px;">
+            <p style="font-weight: 600; margin: 0; font-size: 14px;">${loc.place?.name_english || 'Unknown'}</p>
+            <p style="font-size: 12px; color: #888; margin: 4px 0;">
+              ${config.icon} ${config.label}
+            </p>
+            ${loc.year ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Year:</strong> ${loc.circa ? 'c. ' : ''}${loc.year}</p>` : ''}
+            ${loc.printer_publisher ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Publisher:</strong> ${loc.printer_publisher}</p>` : ''}
+            ${loc.manuscript_significance ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Significance:</strong> ${loc.manuscript_significance}</p>` : ''}
+            ${loc.notes ? `<p style="font-size: 11px; color: #666; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">${loc.notes}</p>` : ''}
+          </div>
+        `);
+
+        markersRef.current.push(marker);
+      });
+
+      // Add connection polylines (only show up to current step during animation)
+      const pathsToShow = isPlaying 
+        ? connectionPaths.slice(0, currentStep)
+        : connectionPaths;
+        
+      pathsToShow.forEach(connection => {
+        if (!connection.path || connection.path.length < 2) return;
+        
+        const polyline = L.polyline(connection.path, {
+          color: locationTypeConfig[connection.toType]?.color || '#8B5CF6',
+          weight: 2,
+          opacity: 0.7,
+          dashArray: '8, 8',
+        }).addTo(map);
+
+        polylinesRef.current.push(polyline);
+      });
+    }
+
+    // Fit bounds if we have positions (and not during animation)
+    if (positions.length > 0 && !isPlaying) {
       const bounds = L.latLngBounds(positions);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
     }
-  }, [selectedWorkLocations, connectionPaths, positions]);
+  }, [selectedWorkLocations, connectionPaths, positions, viewMode, heatmapData, isPlaying, currentStep]);
+
+  const handleWorkChange = (value: string) => {
+    setSelectedWorkId(value);
+  };
+
+  const handleTypeFilterChange = (value: string) => {
+    setFilterByType(value);
+  };
   
   return (
     <div className="h-full flex">
@@ -275,7 +423,7 @@ export default function WorkJourney() {
           {/* Work Selector */}
           <div className="space-y-3">
             <Label>Select Work</Label>
-            <Select value={selectedWorkId || ''} onValueChange={setSelectedWorkId}>
+            <Select value={selectedWorkId || ''} onValueChange={handleWorkChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a work..." />
               </SelectTrigger>
@@ -297,6 +445,78 @@ export default function WorkJourney() {
             </Select>
           </div>
         </div>
+
+        {/* Animation Controls */}
+        <div className="p-4 border-b border-border space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold">Play Journey</Label>
+            <Button
+              size="sm"
+              variant={isPlaying ? "destructive" : "default"}
+              onClick={isPlaying ? stopAnimation : playAnimation}
+              disabled={selectedWorkLocations.length === 0}
+              className="gap-2"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="w-4 h-4" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4" />
+                  Play
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {isPlaying && (
+            <div className="text-sm text-muted-foreground text-center">
+              Step {currentStep + 1} of {selectedWorkLocations.length}
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Speed</Label>
+              <span className="text-xs text-muted-foreground">{animationSpeed / 1000}s</span>
+            </div>
+            <Slider
+              value={[animationSpeed]}
+              onValueChange={([value]) => setAnimationSpeed(value)}
+              min={1000}
+              max={5000}
+              step={500}
+              disabled={isPlaying}
+            />
+          </div>
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="p-4 border-b border-border">
+          <Label className="mb-3 block font-semibold">View Mode</Label>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant={viewMode === 'journey' ? 'default' : 'outline'}
+              onClick={() => setViewMode('journey')}
+              className="flex-1 gap-2"
+            >
+              <Map className="w-4 h-4" />
+              Journey
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === 'heatmap' ? 'default' : 'outline'}
+              onClick={() => setViewMode('heatmap')}
+              className="flex-1 gap-2"
+            >
+              <Layers className="w-4 h-4" />
+              Heatmap
+            </Button>
+          </div>
+        </div>
         
         {/* Filters */}
         <div className="p-4 border-b border-border space-y-4">
@@ -311,7 +531,7 @@ export default function WorkJourney() {
           
           <div className="space-y-2">
             <Label>Filter by Type</Label>
-            <Select value={filterByType} onValueChange={setFilterByType}>
+            <Select value={filterByType} onValueChange={handleTypeFilterChange}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -362,8 +582,14 @@ export default function WorkJourney() {
               <div className="space-y-3">
                 {selectedWorkLocations.map((loc, index) => {
                   const config = locationTypeConfig[loc.location_type] || locationTypeConfig.composition;
+                  const isCurrentStep = isPlaying && index === currentStep;
+                  const isPastStep = !isPlaying || index <= currentStep;
+                  
                   return (
-                    <Card key={loc.id} className="p-3">
+                    <Card 
+                      key={loc.id} 
+                      className={`p-3 transition-all ${isCurrentStep ? 'ring-2 ring-primary' : ''} ${!isPastStep ? 'opacity-40' : ''}`}
+                    >
                       <div className="flex items-start gap-3">
                         <div 
                           className="w-8 h-8 rounded flex items-center justify-center text-lg shrink-0"
@@ -442,6 +668,21 @@ export default function WorkJourney() {
           className="h-full w-full"
           style={{ background: '#1a1a2e' }}
         />
+        
+        {/* Heatmap Legend */}
+        {viewMode === 'heatmap' && heatmapData.length > 0 && (
+          <div className="absolute bottom-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-4 shadow-lg">
+            <p className="text-sm font-semibold mb-2">Regional Density</p>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-primary/30" />
+              <span className="text-xs">Low</span>
+              <div className="w-4 h-4 rounded-full bg-primary/60" />
+              <span className="text-xs">Medium</span>
+              <div className="w-4 h-4 rounded-full bg-primary/90" />
+              <span className="text-xs">High</span>
+            </div>
+          </div>
+        )}
         
         {/* Empty state overlay */}
         {worksWithLocations.length === 0 && (
