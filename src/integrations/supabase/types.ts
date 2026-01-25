@@ -947,10 +947,12 @@ export type Database = {
           created_at: string
           description: string | null
           hebrew_title: string | null
+          hebrewbooks_url: string | null
           id: string
           manuscript_id: string | null
           manuscript_url: string | null
           scholar_id: string
+          sefaria_url: string | null
           title: string
           updated_at: string
           work_type: Database["public"]["Enums"]["work_type"]
@@ -960,10 +962,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           hebrew_title?: string | null
+          hebrewbooks_url?: string | null
           id?: string
           manuscript_id?: string | null
           manuscript_url?: string | null
           scholar_id: string
+          sefaria_url?: string | null
           title: string
           updated_at?: string
           work_type?: Database["public"]["Enums"]["work_type"]
@@ -973,10 +977,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           hebrew_title?: string | null
+          hebrewbooks_url?: string | null
           id?: string
           manuscript_id?: string | null
           manuscript_url?: string | null
           scholar_id?: string
+          sefaria_url?: string | null
           title?: string
           updated_at?: string
           work_type?: Database["public"]["Enums"]["work_type"]

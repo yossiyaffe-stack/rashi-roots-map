@@ -6,20 +6,22 @@ import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
-// Helper functions for external links
-function getLinkType(url: string): 'sefaria' | 'hebrewbooks' | 'manuscript' | 'other' {
-  if (url.includes('sefaria.org')) return 'sefaria';
-  if (url.includes('hebrewbooks.org')) return 'hebrewbooks';
-  if (url.includes('nli.org') || url.includes('bodleian') || url.includes('bl.uk') || url.includes('bnf') || url.includes('bsb') || url.includes('vatican')) return 'manuscript';
-  return 'other';
+// Helper to extract HebrewBooks cover thumbnail from URL
+function getHebrewBooksCover(url: string): string | null {
+  const match = url.match(/hebrewbooks\.org\/(\d+)/);
+  if (match) {
+    return `https://hebrewbooks.org/pagefeed/${match[1]}.gif`;
+  }
+  return null;
 }
 
+// Helper to get repository name from manuscript URL
 function getRepositoryName(url: string): string {
   const repos = [
     { pattern: /bodleian|oxford/i, name: 'Bodleian Library' },
     { pattern: /bsb|bayerische/i, name: 'Bayerische Staatsbibliothek' },
     { pattern: /bnf|gallica/i, name: 'BnF' },
-    { pattern: /nli\.org|ktiv/i, name: 'NLI' },
+    { pattern: /nli\.org|ktiv/i, name: 'National Library of Israel' },
     { pattern: /vaticana|vatican/i, name: 'Vatican Library' },
     { pattern: /bl\.uk|british/i, name: 'British Library' },
   ];
@@ -30,7 +32,11 @@ function getRepositoryName(url: string): string {
 }
 
 interface TextDetailPanelProps {
-  text: WorkWithAuthor & { manuscript_url?: string | null };
+  text: WorkWithAuthor & { 
+    manuscript_url?: string | null;
+    sefaria_url?: string | null;
+    hebrewbooks_url?: string | null;
+  };
   relationships: TextualRelationshipWithWorks[];
   onClose: () => void;
 }
@@ -48,6 +54,9 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
   // Count relationships for display
   const incomingCount = relationships.filter(r => r.related_work_id === text.id).length;
   const outgoingCount = relationships.filter(r => r.work_id === text.id).length;
+
+  // Check if we have any external resources
+  const hasExternalResources = text.sefaria_url || text.hebrewbooks_url || text.manuscript_url;
 
   return (
     <div className="w-[400px] h-full border-l border-white/10 bg-card flex flex-col min-h-0">
@@ -100,48 +109,81 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
             </div>
           )}
 
-          {/* External Links Section */}
-          {text.manuscript_url && (
+          {/* External Resources Section */}
+          {hasExternalResources && (
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">External Resources</p>
-              
-              <a
-                href={text.manuscript_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  "flex items-center gap-2 p-2 rounded-lg border transition-all group",
-                  getLinkType(text.manuscript_url) === 'sefaria' 
-                    ? "bg-green-500/10 border-green-500/20 hover:border-green-500/40" 
-                    : getLinkType(text.manuscript_url) === 'hebrewbooks'
-                      ? "bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40"
-                      : "bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40"
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">External Resources</p>
+              <div className="space-y-3">
+                
+                {/* Sefaria Link */}
+                {text.sefaria_url && (
+                  <a
+                    href={text.sefaria_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-green-500/10 border-green-500/20 hover:border-green-500/40 transition-all group"
+                  >
+                    <div className="w-12 h-12 rounded bg-green-500/20 flex items-center justify-center shrink-0">
+                      <BookOpen className="w-6 h-6 text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-green-400">Sefaria</span>
+                      <p className="text-xs text-muted-foreground">Read the full text online</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                  </a>
                 )}
-              >
-                {getLinkType(text.manuscript_url) === 'sefaria' ? (
-                  <BookOpen className="w-4 h-4 text-green-400 shrink-0" />
-                ) : getLinkType(text.manuscript_url) === 'hebrewbooks' ? (
-                  <Library className="w-4 h-4 text-amber-400 shrink-0" />
-                ) : (
-                  <FileImage className="w-4 h-4 text-cyan-400 shrink-0" />
+
+                {/* HebrewBooks Link with Thumbnail */}
+                {text.hebrewbooks_url && (
+                  <a
+                    href={text.hebrewbooks_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 transition-all group"
+                  >
+                    <div className="w-12 h-16 rounded overflow-hidden bg-amber-500/20 shrink-0 flex items-center justify-center">
+                      {getHebrewBooksCover(text.hebrewbooks_url) ? (
+                        <img 
+                          src={getHebrewBooksCover(text.hebrewbooks_url)!}
+                          alt="Book cover"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.classList.add('fallback-icon');
+                          }}
+                        />
+                      ) : (
+                        <Library className="w-6 h-6 text-amber-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-amber-400">HebrewBooks.org</span>
+                      <p className="text-xs text-muted-foreground">Scanned printed edition</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                  </a>
                 )}
-                <div className="flex-1 min-w-0">
-                  <span className={cn(
-                    "text-xs font-medium",
-                    getLinkType(text.manuscript_url) === 'sefaria' ? "text-green-400" :
-                    getLinkType(text.manuscript_url) === 'hebrewbooks' ? "text-amber-400" : "text-cyan-400"
-                  )}>
-                    {getLinkType(text.manuscript_url) === 'sefaria' ? 'Sefaria' :
-                     getLinkType(text.manuscript_url) === 'hebrewbooks' ? 'HebrewBooks.org' :
-                     getRepositoryName(text.manuscript_url)}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {getLinkType(text.manuscript_url) === 'sefaria' ? 'Digital edition' : 
-                     getLinkType(text.manuscript_url) === 'hebrewbooks' ? 'Scanned text' : 'Digital manuscript'}
-                  </p>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-              </a>
+
+                {/* Manuscript Link with Thumbnail */}
+                {text.manuscript_url && (
+                  <a
+                    href={text.manuscript_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40 transition-all group"
+                  >
+                    <div className="w-12 h-16 rounded overflow-hidden bg-cyan-500/20 shrink-0 flex items-center justify-center">
+                      <FileImage className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-cyan-400">{getRepositoryName(text.manuscript_url)}</span>
+                      <p className="text-xs text-muted-foreground">View original manuscript</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                  </a>
+                )}
+              </div>
             </div>
           )}
           
