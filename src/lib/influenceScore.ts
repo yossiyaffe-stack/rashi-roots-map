@@ -22,6 +22,7 @@ export interface InfluenceData {
   manuscriptsCumulative: number;
   printEditions: number;
   geographicRegions: number;
+  citationsTotal?: number; // Sefaria citation count
   periodStart: number;
   scholarSlug?: string | null;
   domain?: DomainId;
@@ -29,14 +30,21 @@ export interface InfluenceData {
 
 /**
  * Calculate influence score with optional domain-specific multiplier
+ * 
+ * Scoring components:
+ * - Manuscripts: 2 points each (physical preservation)
+ * - Print editions: 10 points each (mass distribution)
+ * - Geographic regions: 15 points each (cultural spread)
+ * - Citations: 0.05 points each (scholarly engagement via Sefaria)
  */
 export function calculateInfluenceScore(data: InfluenceData): number {
   // Component scores with weights
   const manuscriptScore = data.manuscriptsCumulative * 2;
   const printScore = data.printEditions * 10;
   const geoScore = data.geographicRegions * 15;
+  const citationScore = (data.citationsTotal || 0) * 0.05; // 0.05 per citation
   
-  const rawScore = manuscriptScore + printScore + geoScore;
+  const rawScore = manuscriptScore + printScore + geoScore + citationScore;
   
   // Logarithmic scaling for massive range handling
   const baseScore = rawScore > 0 ? Math.log10(rawScore + 1) * 150 : 0;

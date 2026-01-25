@@ -497,6 +497,9 @@ export type Database = {
           primary_domain: string | null
           relationship_type: string | null
           secondary_domains: string[] | null
+          sefaria_citations_total: number | null
+          sefaria_citing_sources: Json | null
+          sefaria_last_updated: string | null
           slug: string | null
           updated_at: string
         }
@@ -519,6 +522,9 @@ export type Database = {
           primary_domain?: string | null
           relationship_type?: string | null
           secondary_domains?: string[] | null
+          sefaria_citations_total?: number | null
+          sefaria_citing_sources?: Json | null
+          sefaria_last_updated?: string | null
           slug?: string | null
           updated_at?: string
         }
@@ -541,6 +547,9 @@ export type Database = {
           primary_domain?: string | null
           relationship_type?: string | null
           secondary_domains?: string[] | null
+          sefaria_citations_total?: number | null
+          sefaria_citing_sources?: Json | null
+          sefaria_last_updated?: string | null
           slug?: string | null
           updated_at?: string
         }
