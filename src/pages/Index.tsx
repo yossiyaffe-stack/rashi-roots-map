@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import L from 'leaflet';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Clock, ChevronRight, ChevronLeft, Users, Search, X, Maximize2, Minimize2 } from 'lucide-react';
@@ -55,6 +55,7 @@ const Index = () => {
     showJourneyMarkers,
     journeyReasonFilter,
     mapEntityMode,
+    activeWorkJourneyId,
   } = useMapControls();
 
   const { data: scholars = [], isLoading } = useScholars();
@@ -69,6 +70,15 @@ const Index = () => {
   const { data: influenceScores } = useInfluenceScores(selectedDomain);
   const [selectedWork, setSelectedWork] = useState<WorkWithLocation | null>(null);
 
+  // Sync selectedWork with activeWorkJourneyId from context (when set from TextDetailPanel)
+  useEffect(() => {
+    if (activeWorkJourneyId) {
+      const work = works.find(w => w.id === activeWorkJourneyId);
+      if (work && work.id !== selectedWork?.id) {
+        setSelectedWork(work);
+      }
+    }
+  }, [activeWorkJourneyId, works, selectedWork?.id]);
   const filteredScholars = useMemo(() => {
     return scholars.filter(s => {
       // Filter out anonymous manuscript entries (these are works, not scholars)
