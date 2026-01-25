@@ -560,17 +560,32 @@ export const WorksNetworkView = ({
       {/* Selected work info */}
       {selectedWork && (
         <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur p-4 rounded-lg border border-border max-w-xs shadow-lg animate-fade-in">
+          {/* Close button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectWork(null);
+              if (focusMode) setFocusMode(false);
+            }}
+            className="absolute top-2 right-2 p-1 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+            title="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
           {showTextNamesEnglish && (
-            <h3 className="font-bold text-foreground">{selectedWork.title}</h3>
+            <h3 className="font-bold text-foreground pr-6">{selectedWork.title}</h3>
           )}
           {showTextNamesHebrew && selectedWork.hebrew_title && (
             <p className={cn(
-              "text-sm font-hebrew",
+              "text-sm font-hebrew pr-6",
               showTextNamesEnglish ? "text-muted-foreground" : "font-bold text-foreground"
             )} dir="rtl">{selectedWork.hebrew_title}</p>
           )}
           {!showTextNamesEnglish && !showTextNamesHebrew && (
-            <h3 className="font-bold text-foreground">{selectedWork.title}</h3>
+            <h3 className="font-bold text-foreground pr-6">{selectedWork.title}</h3>
           )}
           <p className="text-sm text-muted-foreground mt-1">
             by {showScholarNamesEnglish && selectedWork.author_name}
