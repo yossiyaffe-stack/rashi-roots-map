@@ -274,6 +274,7 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation, domain =
             <TabsContent value="score" className="mt-0">
               {scoreData ? (
                 <ScoreBreakdown
+                  scholarId={scholar.id}
                   scholarName={scholar.name}
                   scholarSlug={scholar.slug}
                   domain={domain}
@@ -283,6 +284,7 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation, domain =
                   manuscripts={scoreData.manuscripts_cumulative}
                   printEditions={scoreData.print_editions}
                   regions={scoreData.geographic_regions}
+                  citationsTotal={scholar.sefaria_citations_total ?? 0}
                   periodStart={scoreData.period_start}
                   periodEnd={scoreData.period_end}
                 />

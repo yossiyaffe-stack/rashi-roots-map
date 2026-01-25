@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Globe, Printer, TrendingUp, Calendar, Sparkles, Award, Quote } from 'lucide-react';
+import { BookOpen, Globe, Printer, TrendingUp, Calendar, Sparkles, Award, Quote, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { DOMAINS, type DomainId } from '@/lib/domains';
 import { getInfluenceTier } from '@/hooks/useInfluenceScores';
+import { useScholarSourceCounts, type ScholarSourceCounts } from '@/hooks/useScholarSourceCounts';
 
 interface ScoreBreakdownProps {
+  scholarId: string;
   scholarName: string;
   scholarSlug?: string | null;
   domain: DomainId;
@@ -23,23 +25,33 @@ interface ScoreBreakdownProps {
 }
 
 export function ScoreBreakdown({ 
+  scholarId,
   scholarName,
   scholarSlug,
   domain, 
   baseScore, 
   displayScore, 
   multiplier,
-  manuscripts,
-  printEditions,
-  regions,
+  manuscripts: legacyManuscripts,
+  printEditions: legacyPrintEditions,
+  regions: legacyRegions,
   citationsTotal = 0,
   periodStart,
   periodEnd,
   compact = false,
 }: ScoreBreakdownProps) {
+  // Fetch real counts from granular tables
+  const { data: sourceCounts, isLoading: isLoadingCounts } = useScholarSourceCounts(scholarId);
+  
+  // Use real data if available, fallback to legacy/aggregate data
+  const manuscripts = sourceCounts?.manuscripts ?? legacyManuscripts;
+  const printEditions = sourceCounts?.editions ?? legacyPrintEditions;
+  const regions = sourceCounts?.geographicLocations ?? legacyRegions;
+  
   const tier = getInfluenceTier(displayScore);
   const hasMultiplier = multiplier > 1;
   const hasCitations = citationsTotal > 0;
+  const hasRealData = !!sourceCounts && (sourceCounts.manuscripts > 0 || sourceCounts.editions > 0 || sourceCounts.geographicLocations > 0);
   
   // Calculate time span
   const currentYear = new Date().getFullYear();
@@ -56,7 +68,10 @@ export function ScoreBreakdown({
     return (
       <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-muted-foreground">Influence Score</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Influence Score</span>
+            {isLoadingCounts && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+          </div>
           <div className={cn('text-xl font-bold', tier.textColor)}>
             {displayScore}
             <span className="text-xs text-muted-foreground font-normal">/999</span>
@@ -64,9 +79,9 @@ export function ScoreBreakdown({
         </div>
         
         <div className={cn("grid gap-2 text-center", hasCitations ? "grid-cols-4" : "grid-cols-3")}>
-          <StatMini icon={<BookOpen className="w-3 h-3" />} value={manuscripts} label="MSS" />
-          <StatMini icon={<Printer className="w-3 h-3" />} value={printEditions} label="Print" />
-          <StatMini icon={<Globe className="w-3 h-3" />} value={regions} label="Regions" />
+          <StatMini icon={<BookOpen className="w-3 h-3" />} value={manuscripts} label="MSS" verified={hasRealData && sourceCounts.manuscripts > 0} />
+          <StatMini icon={<Printer className="w-3 h-3" />} value={printEditions} label="Print" verified={hasRealData && sourceCounts.editions > 0} />
+          <StatMini icon={<Globe className="w-3 h-3" />} value={regions} label="Regions" verified={hasRealData && sourceCounts.geographicLocations > 0} />
           {hasCitations && (
             <StatMini icon={<Quote className="w-3 h-3" />} value={citationsTotal} label="Citations" />
           )}
@@ -107,6 +122,22 @@ export function ScoreBreakdown({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Loading indicator */}
+        {isLoadingCounts && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>Loading source data...</span>
+          </div>
+        )}
+        
+        {/* Data source indicator */}
+        {hasRealData && (
+          <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 rounded-md px-2 py-1">
+            <Sparkles className="w-3 h-3" />
+            <span>Using verified source data ({sourceCounts.manuscripts + sourceCounts.editions + sourceCounts.geographicLocations} records)</span>
+          </div>
+        )}
+        
         {/* Impressive Statistics Grid */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard 
@@ -115,6 +146,7 @@ export function ScoreBreakdown({
             value={manuscripts}
             subtitle="preserved worldwide"
             points={manuscriptPoints}
+            verified={hasRealData && sourceCounts.manuscripts > 0}
           />
           <StatCard 
             icon={<Printer className="w-5 h-5 text-emerald-500" />}
@@ -122,13 +154,15 @@ export function ScoreBreakdown({
             value={printEditions}
             subtitle="catalogued editions"
             points={printPoints}
+            verified={hasRealData && sourceCounts.editions > 0}
           />
           <StatCard 
             icon={<Globe className="w-5 h-5 text-blue-500" />}
             label="Geographic Spread"
             value={regions}
-            subtitle="regions worldwide"
+            subtitle="locations worldwide"
             points={regionPoints}
+            verified={hasRealData && sourceCounts.geographicLocations > 0}
           />
           {hasCitations ? (
             <StatCard 
@@ -148,6 +182,48 @@ export function ScoreBreakdown({
             />
           )}
         </div>
+        
+        {/* Edition Type Breakdown - only show if we have real data */}
+        {hasRealData && Object.keys(sourceCounts.editionsByType).length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Printer className="w-4 h-4" />
+              Edition Breakdown
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(sourceCounts.editionsByType)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 6)
+                .map(([type, count]) => (
+                  <div key={type} className="flex justify-between items-center px-2 py-1 rounded bg-white/5 text-xs">
+                    <span className="text-muted-foreground truncate">{type}</span>
+                    <span className="text-foreground font-medium">{count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Geographic Breakdown - only show if we have real data */}
+        {hasRealData && Object.keys(sourceCounts.geographicByType).length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              Geographic Distribution
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(sourceCounts.geographicByType)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 6)
+                .map(([type, count]) => (
+                  <div key={type} className="flex justify-between items-center px-2 py-1 rounded bg-white/5 text-xs">
+                    <span className="text-muted-foreground truncate">{type}</span>
+                    <span className="text-foreground font-medium">{count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
         
         {hasCitations && (
           <StatCard 
@@ -227,19 +303,31 @@ export function ScoreBreakdown({
 function StatMini({ 
   icon, 
   value, 
-  label 
+  label,
+  verified = false,
 }: { 
   icon: React.ReactNode; 
   value: number; 
   label: string;
+  verified?: boolean;
 }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
       <div className="flex items-center gap-1 text-muted-foreground">
         {icon}
       </div>
-      <span className="text-lg font-bold text-foreground">{value.toLocaleString()}</span>
-      <span className="text-[10px] text-muted-foreground">{label}</span>
+      <span className={cn(
+        "text-lg font-bold",
+        verified ? "text-emerald-400" : "text-foreground"
+      )}>
+        {value.toLocaleString()}
+      </span>
+      <span className={cn(
+        "text-[10px]",
+        verified ? "text-emerald-400/70" : "text-muted-foreground"
+      )}>
+        {label}{verified && " ✓"}
+      </span>
     </div>
   );
 }
@@ -250,7 +338,8 @@ function StatCard({
   value, 
   subtitle, 
   points, 
-  showPoints = true 
+  showPoints = true,
+  verified = false,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -258,14 +347,26 @@ function StatCard({
   subtitle: string;
   points?: number;
   showPoints?: boolean;
+  verified?: boolean;
 }) {
   return (
-    <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-1">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {icon}
-        <span>{label}</span>
+    <div className={cn(
+      "p-3 rounded-lg bg-white/5 border space-y-1",
+      verified ? "border-emerald-500/30" : "border-white/10"
+    )}>
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span>{label}</span>
+        </div>
+        {verified && (
+          <span className="text-emerald-400 text-[10px]">✓ verified</span>
+        )}
       </div>
-      <p className="text-2xl font-bold text-foreground">
+      <p className={cn(
+        "text-2xl font-bold",
+        verified ? "text-emerald-400" : "text-foreground"
+      )}>
         {value.toLocaleString()}
       </p>
       <p className="text-[10px] text-muted-foreground">
