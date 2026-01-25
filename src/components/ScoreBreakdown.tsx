@@ -183,47 +183,7 @@ export function ScoreBreakdown({
           )}
         </div>
         
-        {/* Edition Type Breakdown - only show if we have real data */}
-        {hasRealData && Object.keys(sourceCounts.editionsByType).length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Printer className="w-4 h-4" />
-              Edition Breakdown
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(sourceCounts.editionsByType)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 6)
-                .map(([type, count]) => (
-                  <div key={type} className="flex justify-between items-center px-2 py-1 rounded bg-white/5 text-xs">
-                    <span className="text-muted-foreground truncate">{type}</span>
-                    <span className="text-foreground font-medium">{count}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Geographic Breakdown - only show if we have real data */}
-        {hasRealData && Object.keys(sourceCounts.geographicByType).length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              Geographic Distribution
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(sourceCounts.geographicByType)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 6)
-                .map(([type, count]) => (
-                  <div key={type} className="flex justify-between items-center px-2 py-1 rounded bg-white/5 text-xs">
-                    <span className="text-muted-foreground truncate">{type}</span>
-                    <span className="text-foreground font-medium">{count}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
+        {/* Simplified totals - no detailed lists */}
         
         {hasCitations && (
           <StatCard 
