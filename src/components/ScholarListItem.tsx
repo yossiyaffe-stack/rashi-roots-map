@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { DbScholar } from '@/hooks/useScholars';
 import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
+import { ImpressiveStatHighlight } from '@/components/ScoreStatsBadge';
 import type { ScholarInfluenceScore } from '@/hooks/useInfluenceScores';
 import { type DomainId } from '@/lib/domains';
 
@@ -34,6 +35,7 @@ export function ScholarListItem({ scholar, isSelected, onClick, influenceScore, 
           <span className="font-hebrew text-accent text-sm shrink-0">{scholar.hebrew_name}</span>
         )}
       </div>
+      
       <div className="text-xs text-muted-foreground mt-1.5 flex items-center gap-2">
         <span>
           {scholar.birth_year && scholar.death_year 
@@ -47,6 +49,17 @@ export function ScholarListItem({ scholar, isSelected, onClick, influenceScore, 
           </>
         )}
       </div>
+      
+      {/* Impressive stat highlight */}
+      {influenceScore && (
+        <div className="mt-2">
+          <ImpressiveStatHighlight
+            manuscripts={influenceScore.manuscripts_cumulative}
+            editions={influenceScore.print_editions}
+            regions={influenceScore.geographic_regions}
+          />
+        </div>
+      )}
     </div>
   );
 }

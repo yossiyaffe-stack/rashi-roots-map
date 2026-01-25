@@ -281,6 +281,7 @@ const Index = () => {
                 mapRef.current.flyTo([lat, lng], 10, { duration: 1.5 });
               }
             }}
+            domain={selectedDomain}
           />
         )}
       </div>

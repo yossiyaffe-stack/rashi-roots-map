@@ -1,4 +1,4 @@
-import { X, BookOpen, MapPin, Calendar, Users, ExternalLink, GitBranch, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
+import { X, BookOpen, MapPin, Calendar, Users, ExternalLink, GitBranch, ChevronDown, ChevronRight, TrendingUp, Award } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,7 +9,10 @@ import type { WorkWithTextualRelationships } from '@/hooks/useScholars';
 import { ScholarJourney } from '@/components/ScholarJourney';
 import { ScholarExternalData } from '@/components/ScholarExternalData';
 import { TemporalInfluenceView } from '@/components/TemporalInfluenceView';
+import { ScoreBreakdown } from '@/components/ScoreBreakdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useInfluenceScores } from '@/hooks/useInfluenceScores';
+import { type DomainId } from '@/lib/domains';
 interface WorkCardProps {
   work: WorkWithTextualRelationships;
   supercommentaries: NonNullable<WorkWithTextualRelationships['supercommentaries']>;
@@ -90,14 +93,16 @@ interface ScholarDetailPanelProps {
   scholar: DbScholar;
   onClose: () => void;
   onFlyToLocation?: (lat: number, lng: number) => void;
+  domain?: DomainId;
 }
 
-export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: ScholarDetailPanelProps) {
+export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation, domain = 'all' }: ScholarDetailPanelProps) {
   const { data: scholarDetails, isLoading } = useScholarWithWorks(scholar.id);
+  const { data: influenceScores } = useInfluenceScores(domain);
 
   const works = scholarDetails?.works || [];
   const relationships = scholarDetails?.relationships || [];
-
+  const scoreData = influenceScores?.get(scholar.id);
   return (
     <div className="absolute bottom-6 left-6 right-6 max-h-[45vh] md:max-h-none md:left-auto md:right-6 md:top-6 md:bottom-6 md:w-[400px] z-[1000]">
       <div className="bg-sidebar/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl h-full flex flex-col overflow-hidden">
@@ -138,9 +143,13 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
         <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-6 mt-2 bg-white/5 border border-white/10">
             <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="score" className="text-xs flex items-center gap-1">
+              <Award className="w-3 h-3" />
+              Score
+            </TabsTrigger>
             <TabsTrigger value="temporal" className="text-xs flex items-center gap-1">
               <TrendingUp className="w-3 h-3" />
-              Influence
+              Timeline
             </TabsTrigger>
           </TabsList>
           
@@ -262,6 +271,29 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
               )}
             </TabsContent>
 
+            <TabsContent value="score" className="mt-0">
+              {scoreData ? (
+                <ScoreBreakdown
+                  scholarName={scholar.name}
+                  scholarSlug={scholar.slug}
+                  domain={domain}
+                  baseScore={scoreData.baseScore}
+                  displayScore={scoreData.displayScore}
+                  multiplier={scoreData.canonicalMultiplier}
+                  manuscripts={scoreData.manuscripts_cumulative}
+                  printEditions={scoreData.print_editions}
+                  regions={scoreData.geographic_regions}
+                  periodStart={scoreData.period_start}
+                  periodEnd={scoreData.period_end}
+                />
+              ) : (
+                <div className="text-sm text-muted-foreground p-4 bg-muted/20 rounded-lg text-center">
+                  <Award className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No influence score data available.</p>
+                </div>
+              )}
+            </TabsContent>
+
             <TabsContent value="temporal" className="mt-0">
               <div className="space-y-4">
                 <div>
@@ -270,8 +302,7 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
                     Temporal Influence
                   </h3>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Track how {scholar.name}'s influence evolved over time based on manuscript production, 
-                    print editions, and geographic spread.
+                    Track how {scholar.name}'s influence evolved over time.
                   </p>
                 </div>
                 
@@ -279,14 +310,6 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
                   scholarId={scholar.id} 
                   scholarName={scholar.name}
                 />
-                
-                <div className="mt-6 p-3 rounded-lg bg-muted/20 border border-white/5">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">Scoring Formula</h4>
-                  <div className="text-[10px] text-muted-foreground space-y-1 font-mono">
-                    <p>Manuscripts × 2 + Print Editions × 10 + Regions × 15</p>
-                    <p>→ Log₁₀ scaling × Period Multiplier (0.6-1.2)</p>
-                  </div>
-                </div>
               </div>
             </TabsContent>
           </ScrollArea>
