@@ -62,15 +62,7 @@ export function AppLayout() {
   const isNetworkPage = location.pathname === '/network';
   const isWorksPage = location.pathname === '/works';
 
-  const handleScholarsClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    // Toggle: if on scholars page, go back to map; otherwise go to scholars
-    if (location.pathname === '/scholars') {
-      navigate('/');
-    } else {
-      navigate('/scholars');
-    }
-  };
+  // Removed handleScholarsClick - now using NavLink for consistent page navigation
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-background text-foreground">
@@ -295,27 +287,19 @@ export function AppLayout() {
                 </div>
               )}
 
-              {/* Scholars */}
-              <button
-                onClick={handleScholarsClick}
+              {/* Scholars - Page navigation, no arrow */}
+              <NavLink
+                to="/scholars"
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
                   "hover:bg-white/10 text-white/70 hover:text-white",
-                  !sidebarOpen && "justify-center px-2",
-                  (location.pathname === '/scholars' || (isMapPage && isOverlayOpen)) && "bg-accent/20 text-accent border border-accent/30"
+                  !sidebarOpen && "justify-center px-2"
                 )}
+                activeClassName="bg-accent/20 text-accent border border-accent/30"
               >
                 <GraduationCap className="w-5 h-5 shrink-0" />
-                {sidebarOpen && (
-                  <>
-                    <span className="font-medium text-sm flex-1 text-left">Scholars</span>
-                    <ChevronRight className={cn(
-                      "w-5 h-5 transition-transform duration-300 ease-out",
-                      location.pathname === '/scholars' ? "rotate-90 text-accent" : "text-white/50"
-                    )} />
-                  </>
-                )}
-              </button>
+                {sidebarOpen && <span className="font-medium text-sm">Scholars</span>}
+              </NavLink>
 
               {/* Relationships - shown on Map, Network, and Works pages */}
               {(isMapPage || isNetworkPage || isWorksPage) && (
@@ -375,7 +359,7 @@ export function AppLayout() {
                 </div>
               )}
 
-              {/* Texts Panel - Main texts listing (like Scholars panel) */}
+              {/* Texts - Page navigation, no arrow */}
               <NavLink
                 to="/texts"
                 className={cn(
@@ -386,15 +370,7 @@ export function AppLayout() {
                 activeClassName="bg-accent/20 text-accent border border-accent/30"
               >
                 <BookOpen className="w-5 h-5 shrink-0" />
-                {sidebarOpen && (
-                  <>
-                    <span className="font-medium text-sm flex-1 text-left">Texts</span>
-                    <ChevronRight className={cn(
-                      "w-5 h-5 transition-transform duration-300 ease-out",
-                      location.pathname === '/texts' ? "rotate-90 text-accent" : "text-white/50"
-                    )} />
-                  </>
-                )}
+                {sidebarOpen && <span className="font-medium text-sm">Texts</span>}
               </NavLink>
 
               {/* Works Network (renamed to Texts Network) */}
@@ -515,7 +491,7 @@ export function AppLayout() {
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col"
           )}>
-            <RelationshipFilterPanel />
+            <RelationshipFilterPanel onClose={() => setRelationshipsPanelOpen(false)} />
           </div>
         )}
 
@@ -525,7 +501,7 @@ export function AppLayout() {
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col"
           )}>
-            <TextualRelationshipsPanel />
+            <TextualRelationshipsPanel onClose={() => setRelationshipsPanelOpen(false)} />
           </div>
         )}
 
@@ -562,6 +538,7 @@ export function AppLayout() {
               onShowOnlyScholarCitiesChange={setShowOnlyScholarCities}
               mapEntityMode={mapEntityMode}
               onMapEntityModeChange={setMapEntityMode}
+              onClose={() => setMapControlsPanelOpen(false)}
             />
           </div>
         )}
@@ -570,16 +547,21 @@ export function AppLayout() {
         {isMapPage && legendsPanelOpen && (
           <div className={cn(
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
-            "flex flex-col w-72 p-4"
+            "flex flex-col w-72"
           )}>
-            <button 
-              onClick={() => setLegendsPanelOpen(false)}
-              className="flex items-center gap-2 text-sm font-semibold text-white/80 mb-3 hover:text-accent transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Map Legend</span>
-            </button>
-            <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} isEmbedded />
+            <div className="p-4 border-b border-white/10 shrink-0">
+              <button 
+                onClick={() => setLegendsPanelOpen(false)}
+                className="flex items-center gap-2 text-accent font-bold hover:text-accent/80 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <Palette className="w-4 h-4" />
+                <span className="text-xs uppercase tracking-widest">Map Legend</span>
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-auto">
+              <MapLegend showConnections={showConnections} showMigrations={showMigrations} relationships={relationships} isEmbedded />
+            </div>
           </div>
         )}
 
@@ -587,16 +569,21 @@ export function AppLayout() {
         {isMapPage && kingdomsPanelOpen && (
           <div className={cn(
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
-            "flex flex-col w-72 p-4"
+            "flex flex-col w-72"
           )}>
-            <button 
-              onClick={() => setKingdomsPanelOpen(false)}
-              className="flex items-center gap-2 text-sm font-semibold text-white/80 mb-3 hover:text-accent transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Medieval Kingdoms</span>
-            </button>
-            <KingdomsLegend isEmbedded />
+            <div className="p-4 border-b border-white/10 shrink-0">
+              <button 
+                onClick={() => setKingdomsPanelOpen(false)}
+                className="flex items-center gap-2 text-accent font-bold hover:text-accent/80 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <Crown className="w-4 h-4" />
+                <span className="text-xs uppercase tracking-widest">Medieval Kingdoms</span>
+              </button>
+            </div>
+            <div className="p-4 flex-1 overflow-auto">
+              <KingdomsLegend isEmbedded />
+            </div>
           </div>
         )}
 
@@ -622,13 +609,14 @@ export function AppLayout() {
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col w-80"
           )}>
-            <div className="p-3 border-b border-white/10">
+            <div className="p-4 border-b border-white/10 shrink-0">
               <button 
                 onClick={() => setPeriodRegionPanelOpen(false)}
-                className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-accent transition-colors"
+                className="flex items-center gap-2 text-accent font-bold hover:text-accent/80 transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
-                <span>Period & Region Filters</span>
+                <Calendar className="w-4 h-4" />
+                <span className="text-xs uppercase tracking-widest">Period & Region</span>
               </button>
             </div>
             <div className="flex-1 overflow-hidden">

@@ -1,4 +1,4 @@
-import { Settings2, Users, BookOpen } from 'lucide-react';
+import { Settings2, Users, BookOpen, ChevronLeft } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -32,6 +32,7 @@ interface MapControlsPanelProps {
   onShowOnlyScholarCitiesChange: (show: boolean) => void;
   mapEntityMode: MapEntityMode;
   onMapEntityModeChange: (mode: MapEntityMode) => void;
+  onClose?: () => void;
 }
 
 const CITY_FILTER_OPTIONS: { value: CityFilter; label: string; description: string }[] = [
@@ -71,15 +72,20 @@ export function MapControlsPanel({
   onShowOnlyScholarCitiesChange,
   mapEntityMode,
   onMapEntityModeChange,
+  onClose,
 }: MapControlsPanelProps) {
   return (
     <div className="flex flex-col h-full w-[280px]">
-      {/* Header */}
+      {/* Header with back arrow */}
       <div className="p-4 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2 text-accent font-bold">
+        <button 
+          onClick={onClose}
+          className="flex items-center gap-2 text-accent font-bold hover:text-accent/80 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
           <Settings2 className="w-4 h-4" />
           <span className="text-xs uppercase tracking-widest">Map Controls</span>
-        </div>
+        </button>
       </div>
 
       {/* Scrollable Content */}

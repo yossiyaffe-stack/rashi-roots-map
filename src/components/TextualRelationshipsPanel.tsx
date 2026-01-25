@@ -1,7 +1,11 @@
-import { RotateCcw, Layers, MessageSquareWarning, BookOpen, BookMarked, Lightbulb, FileText, Languages, LayoutGrid, Scale, CheckSquare } from 'lucide-react';
+import { RotateCcw, Layers, MessageSquareWarning, BookOpen, BookMarked, Lightbulb, FileText, Languages, LayoutGrid, Scale, CheckSquare, ChevronLeft, Filter } from 'lucide-react';
 import { useRelationshipFilters, type RelationshipFilters } from '@/contexts/RelationshipFilterContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+
+interface TextualRelationshipsPanelProps {
+  onClose?: () => void;
+}
 
 // 9 Relationship Categories with icons and descriptions - MORE VIBRANT colors
 const TEXTUAL_CATEGORIES: Record<keyof RelationshipFilters['textual']['categories'], {
@@ -86,7 +90,7 @@ const TEXTUAL_CATEGORIES: Record<keyof RelationshipFilters['textual']['categorie
   },
 };
 
-export function TextualRelationshipsPanel() {
+export function TextualRelationshipsPanel({ onClose }: TextualRelationshipsPanelProps) {
   const {
     filters,
     toggleTextualCategory,
@@ -109,12 +113,17 @@ export function TextualRelationshipsPanel() {
 
   return (
     <div className="h-full flex flex-col w-[280px]">
-      {/* Header */}
+      {/* Header with back arrow */}
       <div className="p-4 border-b border-white/10 shrink-0">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-accent uppercase tracking-wider">
-            Text Relationships
-          </h3>
+        <button 
+          onClick={onClose}
+          className="flex items-center gap-2 text-accent font-bold hover:text-accent/80 transition-colors mb-2"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <Filter className="w-4 h-4" />
+          <span className="text-xs uppercase tracking-widest">Text Relationships</span>
+        </button>
+        <div className="flex items-center gap-2">
           {activeFilterCount > 0 && (
             <button
               onClick={resetFilters}
