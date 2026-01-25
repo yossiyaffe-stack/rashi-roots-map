@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink, Play, Pause, Map, Layers, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink, Play, Pause, Map, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Work location type icons and colors - ordered: composition → manuscript → first_print → reprint → translation
 const locationTypeConfig: Record<string, { icon: string; color: string; label: string; LucideIcon: typeof BookOpen; order: number }> = {
@@ -149,56 +149,13 @@ export default function WorkJourney() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [animationSpeed, setAnimationSpeed] = useState(2000); // ms per step
-  const [narrationEnabled, setNarrationEnabled] = useState(true);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
-  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
   
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const polylinesRef = useRef<L.Polyline[]>([]);
   const heatmapCirclesRef = useRef<L.Circle[]>([]);
-
-  // Narration function using Web Speech API
-  const speakNarration = useCallback((text: string) => {
-    if (!narrationEnabled || !('speechSynthesis' in window)) return;
-    
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    
-    // Try to find a good male English voice
-    const voices = window.speechSynthesis.getVoices();
-    const maleVoice = voices.find(v => 
-      v.lang.startsWith('en') && 
-      (v.name.toLowerCase().includes('male') || 
-       v.name.toLowerCase().includes('david') || 
-       v.name.toLowerCase().includes('james') ||
-       v.name.toLowerCase().includes('daniel') ||
-       v.name.toLowerCase().includes('george') ||
-       v.name.toLowerCase().includes('guy'))
-    ) || voices.find(v => 
-      v.lang.startsWith('en-GB') // British voices often sound more formal
-    ) || voices.find(v => v.lang.startsWith('en'));
-    
-    if (maleVoice) {
-      utterance.voice = maleVoice;
-    }
-    
-    speechRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  }, [narrationEnabled]);
-
-  // Stop narration
-  const stopNarration = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-  }, []);
   
   // PROOF OF CONCEPT: Only show Rashi's Torah Commentary
   // Rashi's Torah Commentary work_id: 4ed54050-6058-44a3-9398-6ff8500a05b7
@@ -301,12 +258,11 @@ export default function WorkJourney() {
 
   const stopAnimation = useCallback(() => {
     setIsPlaying(false);
-    stopNarration();
     if (animationRef.current) {
       clearTimeout(animationRef.current);
       animationRef.current = null;
     }
-  }, [stopNarration]);
+  }, []);
 
   // Animation step effect
   useEffect(() => {
@@ -330,34 +286,6 @@ export default function WorkJourney() {
       if (marker) {
         setTimeout(() => marker.openPopup(), animationSpeed * 0.4);
       }
-      
-      // Generate narration text
-      const config = locationTypeConfig[currentLoc.location_type] || locationTypeConfig.composition;
-      const placeName = currentLoc.place?.name_english || 'an unknown location';
-      const year = currentLoc.year ? (currentLoc.circa ? `around ${currentLoc.year}` : `in ${currentLoc.year}`) : '';
-      const publisher = currentLoc.printer_publisher ? `, published by ${currentLoc.printer_publisher}` : '';
-      const significance = currentLoc.manuscript_significance ? `. ${currentLoc.manuscript_significance}` : '';
-      
-      let narrationText = '';
-      if (currentStep === 0 && selectedWork) {
-        narrationText = `${selectedWork.title}. `;
-      }
-      
-      if (currentLoc.location_type === 'composition') {
-        narrationText += `Composed in ${placeName} ${year}${significance}`;
-      } else if (currentLoc.location_type === 'first_print') {
-        narrationText += `First printed in ${placeName} ${year}${publisher}${significance}`;
-      } else if (currentLoc.location_type === 'reprint') {
-        narrationText += `Reprinted in ${placeName} ${year}${publisher}`;
-      } else if (currentLoc.location_type === 'manuscript_copy') {
-        narrationText += `Manuscript copied in ${placeName} ${year}${significance}`;
-      } else if (currentLoc.location_type === 'translation') {
-        narrationText += `Translated in ${placeName} ${year}`;
-      } else {
-        narrationText += `${config.label} in ${placeName} ${year}`;
-      }
-      
-      speakNarration(narrationText);
     }
     
     animationRef.current = setTimeout(() => {
@@ -369,7 +297,7 @@ export default function WorkJourney() {
         clearTimeout(animationRef.current);
       }
     };
-  }, [isPlaying, currentStep, selectedWorkLocations, animationSpeed, stopAnimation, speakNarration, selectedWork]);
+  }, [isPlaying, currentStep, selectedWorkLocations, animationSpeed, stopAnimation]);
 
   // Reset animation when work changes
   useEffect(() => {
@@ -579,18 +507,6 @@ export default function WorkJourney() {
               max={5000}
               step={500}
               disabled={isPlaying}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <Label htmlFor="narration-toggle" className="text-sm flex items-center gap-2">
-              {narrationEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              Voice Narration
-            </Label>
-            <Switch 
-              id="narration-toggle" 
-              checked={narrationEnabled}
-              onCheckedChange={setNarrationEnabled}
             />
           </div>
         </div>
