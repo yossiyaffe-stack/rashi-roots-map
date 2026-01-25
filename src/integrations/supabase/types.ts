@@ -886,6 +886,7 @@ export type Database = {
         Row: {
           circa: boolean | null
           created_at: string
+          digital_url: string | null
           id: string
           location_type: Database["public"]["Enums"]["work_location_type"]
           manuscript_significance: string | null
@@ -900,6 +901,7 @@ export type Database = {
         Insert: {
           circa?: boolean | null
           created_at?: string
+          digital_url?: string | null
           id?: string
           location_type: Database["public"]["Enums"]["work_location_type"]
           manuscript_significance?: string | null
@@ -914,6 +916,7 @@ export type Database = {
         Update: {
           circa?: boolean | null
           created_at?: string
+          digital_url?: string | null
           id?: string
           location_type?: Database["public"]["Enums"]["work_location_type"]
           manuscript_significance?: string | null

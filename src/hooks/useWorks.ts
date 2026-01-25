@@ -15,6 +15,7 @@ export interface WorkLocationEvent {
   printer_publisher: string | null;
   notes: string | null;
   source: string | null;
+  digital_url: string | null;
   // Joined place data
   place?: {
     id: string;
@@ -110,6 +111,7 @@ export function useWorksWithLocations() {
           printer_publisher: loc.printer_publisher,
           notes: loc.notes,
           source: loc.source,
+          digital_url: loc.digital_url,
           place: loc.place ? {
             id: loc.place.id,
             name_english: loc.place.name_english,
@@ -213,6 +215,7 @@ export function useWorkLocations(workId?: string) {
         printer_publisher: loc.printer_publisher,
         notes: loc.notes,
         source: loc.source,
+        digital_url: loc.digital_url,
         place: loc.place ? {
           id: loc.place.id,
           name_english: loc.place.name_english,
