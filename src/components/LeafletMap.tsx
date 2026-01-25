@@ -51,6 +51,8 @@ interface LeafletMapProps {
   isDrawingCircle?: boolean;
   onCircleDrawn?: (center: [number, number], radius: number) => void;
   circleFilter?: CircleFilter | null;
+  // Viewport sync callback
+  onViewportChange?: (bounds: { north: number; south: number; east: number; west: number }) => void;
 }
 
 // Tile layer definitions
@@ -444,6 +446,7 @@ export function LeafletMap({
   isDrawingCircle = false,
   onCircleDrawn,
   circleFilter,
+  onViewportChange,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -549,6 +552,25 @@ export function LeafletMap({
     map.on('zoomend', () => {
       setZoomLevel(map.getZoom());
     });
+    
+    // Emit initial viewport bounds
+    const emitBounds = () => {
+      if (onViewportChange) {
+        const bounds = map.getBounds();
+        onViewportChange({
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        });
+      }
+    };
+    
+    // Emit bounds on map move/zoom end
+    map.on('moveend', emitBounds);
+    
+    // Emit initial bounds after map is ready
+    setTimeout(emitBounds, 100);
 
     // Add initial base layer
     baseLayerRef.current = L.tileLayer(TILE_LAYERS.satellite, {

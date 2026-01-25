@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import L from 'leaflet';
 import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Clock, ChevronRight, ChevronLeft, Users, Search, X, Maximize2, Minimize2 } from 'lucide-react';
@@ -14,6 +14,7 @@ import { CircleFilterPanel } from '@/components/CircleFilterPanel';
 import { DomainSelector } from '@/components/DomainSelector';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useCircleFilter } from '@/contexts/CircleFilterContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useLocations, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
 import { useWorksWithLocations, type WorkWithLocation } from '@/hooks/useWorks';
@@ -41,6 +42,7 @@ const Index = () => {
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
   const { circleFilter, isDrawingCircle, setCircleFilter, setIsDrawingCircle } = useCircleFilter();
+  const { setMapViewportBounds, setTimelineRange } = useFilters();
   const { 
     showBoundaries, setShowBoundaries,
     showBoundaryShading,
@@ -57,6 +59,16 @@ const Index = () => {
     mapEntityMode,
     activeWorkJourneyId,
   } = useMapControls();
+  
+  // Sync map viewport bounds to FilterContext for Scholars page
+  const handleViewportChange = useCallback((bounds: { north: number; south: number; east: number; west: number }) => {
+    setMapViewportBounds(bounds);
+  }, [setMapViewportBounds]);
+  
+  // Sync timeline range to FilterContext
+  useEffect(() => {
+    setTimelineRange({ start: timeRange[0], end: timeRange[1] });
+  }, [timeRange, setTimelineRange]);
 
   const { data: scholars = [], isLoading } = useScholars();
   const { data: relationships = [] } = useRelationships();
@@ -177,6 +189,7 @@ const Index = () => {
           selectedWork={selectedWork}
           onSelectWork={setSelectedWork}
           mapEntityMode={mapEntityMode}
+          onViewportChange={handleViewportChange}
         />
 
         {/* Search Controls - Top Right */}
