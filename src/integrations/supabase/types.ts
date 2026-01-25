@@ -96,6 +96,108 @@ export type Database = {
           },
         ]
       }
+      edition_sources: {
+        Row: {
+          author: string | null
+          century: number | null
+          created_at: string
+          digital_url: string | null
+          edition_type: string
+          id: string
+          location: string | null
+          location_hebrew: string | null
+          notes: string | null
+          publisher: string | null
+          scholar_id: string
+          significance: number | null
+          specific_book: string | null
+          status: string | null
+          subjects: string | null
+          surviving_copies: string | null
+          title: string | null
+          updated_at: string
+          work_id: string | null
+          year: number | null
+          year_gregorian: number | null
+        }
+        Insert: {
+          author?: string | null
+          century?: number | null
+          created_at?: string
+          digital_url?: string | null
+          edition_type: string
+          id?: string
+          location?: string | null
+          location_hebrew?: string | null
+          notes?: string | null
+          publisher?: string | null
+          scholar_id: string
+          significance?: number | null
+          specific_book?: string | null
+          status?: string | null
+          subjects?: string | null
+          surviving_copies?: string | null
+          title?: string | null
+          updated_at?: string
+          work_id?: string | null
+          year?: number | null
+          year_gregorian?: number | null
+        }
+        Update: {
+          author?: string | null
+          century?: number | null
+          created_at?: string
+          digital_url?: string | null
+          edition_type?: string
+          id?: string
+          location?: string | null
+          location_hebrew?: string | null
+          notes?: string | null
+          publisher?: string | null
+          scholar_id?: string
+          significance?: number | null
+          specific_book?: string | null
+          status?: string | null
+          subjects?: string | null
+          surviving_copies?: string | null
+          title?: string | null
+          updated_at?: string
+          work_id?: string | null
+          year?: number | null
+          year_gregorian?: number | null
+        }
+        Relationships: []
+      }
+      geographic_distribution: {
+        Row: {
+          count: number | null
+          created_at: string
+          id: string
+          location: string
+          location_type: string
+          notes: string | null
+          scholar_id: string
+        }
+        Insert: {
+          count?: number | null
+          created_at?: string
+          id?: string
+          location: string
+          location_type: string
+          notes?: string | null
+          scholar_id: string
+        }
+        Update: {
+          count?: number | null
+          created_at?: string
+          id?: string
+          location?: string
+          location_type?: string
+          notes?: string | null
+          scholar_id?: string
+        }
+        Relationships: []
+      }
       historical_events: {
         Row: {
           category: string | null
@@ -315,6 +417,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      manuscript_sources: {
+        Row: {
+          century: string | null
+          coverage: string | null
+          created_at: string
+          date_max: number | null
+          date_min: number | null
+          digital_url: string | null
+          id: string
+          location: string | null
+          manuscript_type: string | null
+          notes: string | null
+          repository: string
+          scholar_id: string
+          script: string | null
+          updated_at: string
+        }
+        Insert: {
+          century?: string | null
+          coverage?: string | null
+          created_at?: string
+          date_max?: number | null
+          date_min?: number | null
+          digital_url?: string | null
+          id?: string
+          location?: string | null
+          manuscript_type?: string | null
+          notes?: string | null
+          repository: string
+          scholar_id: string
+          script?: string | null
+          updated_at?: string
+        }
+        Update: {
+          century?: string | null
+          coverage?: string | null
+          created_at?: string
+          date_max?: number | null
+          date_min?: number | null
+          digital_url?: string | null
+          id?: string
+          location?: string | null
+          manuscript_type?: string | null
+          notes?: string | null
+          repository?: string
+          scholar_id?: string
+          script?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       places: {
         Row: {
