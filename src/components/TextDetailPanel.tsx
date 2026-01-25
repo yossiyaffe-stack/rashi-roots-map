@@ -249,7 +249,7 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
       : textRelationships.outgoing;
 
   return (
-    <div className="w-[400px] h-full border-l border-white/10 bg-card flex flex-col">
+    <div className="w-[400px] h-full border-l border-white/10 bg-card flex flex-col min-h-0">
       {/* Header */}
       <div className="p-4 border-b border-white/10 shrink-0">
         <div className="flex items-start justify-between">
@@ -368,7 +368,7 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-4">
           {displayRelationships.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
