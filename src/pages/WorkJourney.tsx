@@ -380,16 +380,44 @@ export default function WorkJourney() {
         }).addTo(map);
 
         const config = locationTypeConfig[loc.location_type] || locationTypeConfig.composition;
+        
+        // Build search URL for manuscripts - use NLI or general search
+        const placeName = loc.place?.name_english || '';
+        const searchQuery = encodeURIComponent(`${selectedWork?.title || ''} manuscript ${placeName}`);
+        const manuscriptSearchUrl = `https://www.nli.org.il/en/search?q=${searchQuery}`;
+        
+        // Check if it's a manuscript type for showing the link
+        const isManuscript = loc.location_type === 'manuscript_copy';
+        
         marker.bindPopup(`
-          <div style="min-width: 200px;">
+          <div style="min-width: 220px;">
             <p style="font-weight: 600; margin: 0; font-size: 14px;">${loc.place?.name_english || 'Unknown'}</p>
+            ${loc.place?.name_hebrew ? `<p style="font-size: 12px; color: #888; margin: 2px 0; direction: rtl;">${loc.place.name_hebrew}</p>` : ''}
             <p style="font-size: 12px; color: #888; margin: 4px 0;">
               ${config.icon} ${config.label}
             </p>
             ${loc.year ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Year:</strong> ${loc.circa ? 'c. ' : ''}${loc.year}</p>` : ''}
             ${loc.printer_publisher ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Publisher:</strong> ${loc.printer_publisher}</p>` : ''}
-            ${loc.manuscript_significance ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Significance:</strong> ${loc.manuscript_significance}</p>` : ''}
+            ${loc.manuscript_significance ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Significance:</strong> <span style="color: ${loc.manuscript_significance === 'oldest' ? '#10B981' : loc.manuscript_significance === 'best' ? '#8B5CF6' : '#F59E0B'}; font-weight: 600;">${loc.manuscript_significance}</span></p>` : ''}
             ${loc.notes ? `<p style="font-size: 11px; color: #666; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">${loc.notes}</p>` : ''}
+            ${isManuscript ? `
+              <a href="${manuscriptSearchUrl}" target="_blank" rel="noopener noreferrer" 
+                 style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 6px 12px; 
+                        background: #8B5CF6; color: white; border-radius: 4px; text-decoration: none; font-size: 12px;
+                        transition: background 0.2s;"
+                 onmouseover="this.style.background='#7C3AED'" onmouseout="this.style.background='#8B5CF6'">
+                🔍 Search NLI Catalog
+              </a>
+            ` : ''}
+            ${loc.source ? `
+              <a href="${loc.source}" target="_blank" rel="noopener noreferrer" 
+                 style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; margin-left: ${isManuscript ? '4px' : '0'}; padding: 6px 12px; 
+                        background: #3B82F6; color: white; border-radius: 4px; text-decoration: none; font-size: 12px;
+                        transition: background 0.2s;"
+                 onmouseover="this.style.background='#2563EB'" onmouseout="this.style.background='#3B82F6'">
+                📖 View Source
+              </a>
+            ` : ''}
           </div>
         `);
 
