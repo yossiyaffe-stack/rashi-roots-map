@@ -13,14 +13,17 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink, Play, Pause, Map, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Work location type icons and colors
-const locationTypeConfig: Record<string, { icon: string; color: string; label: string; LucideIcon: typeof BookOpen }> = {
-  composition: { icon: '✍️', color: '#8B5CF6', label: 'Composition', LucideIcon: PenTool },
-  first_print: { icon: '🖨️', color: '#10B981', label: 'First Printing', LucideIcon: Printer },
-  reprint: { icon: '📖', color: '#3B82F6', label: 'Reprint', LucideIcon: BookOpen },
-  manuscript_copy: { icon: '📜', color: '#F59E0B', label: 'Manuscript', LucideIcon: ScrollText },
-  translation: { icon: '🌐', color: '#EC4899', label: 'Translation', LucideIcon: Languages },
+// Work location type icons and colors - ordered: composition → manuscript → first_print → reprint → translation
+const locationTypeConfig: Record<string, { icon: string; color: string; label: string; LucideIcon: typeof BookOpen; order: number }> = {
+  composition: { icon: '✍️', color: '#8B5CF6', label: 'Composition', LucideIcon: PenTool, order: 1 },
+  manuscript_copy: { icon: '📜', color: '#F59E0B', label: 'Manuscript', LucideIcon: ScrollText, order: 2 },
+  first_print: { icon: '🖨️', color: '#10B981', label: 'First Printing', LucideIcon: Printer, order: 3 },
+  reprint: { icon: '📖', color: '#3B82F6', label: 'Reprint', LucideIcon: BookOpen, order: 4 },
+  translation: { icon: '🌐', color: '#EC4899', label: 'Translation', LucideIcon: Languages, order: 5 },
 };
+
+// Ordered location types for display
+const orderedLocationTypes = ['composition', 'manuscript_copy', 'first_print', 'reprint', 'translation'];
 
 // Time period definitions for heatmap
 const timePeriods = [
@@ -187,7 +190,15 @@ export default function WorkJourney() {
         };
       })
       .filter(wl => wl.lat && wl.lng)
-      .sort((a, b) => (a.year || 0) - (b.year || 0));
+      .sort((a, b) => {
+        // First sort by year
+        const yearDiff = (a.year || 0) - (b.year || 0);
+        if (yearDiff !== 0) return yearDiff;
+        // If same year, sort by location type order
+        const orderA = locationTypeConfig[a.location_type]?.order || 99;
+        const orderB = locationTypeConfig[b.location_type]?.order || 99;
+        return orderA - orderB;
+      });
   }, [selectedWorkId, workLocations, places, filterByType]);
   
   // Get positions for map bounds
@@ -540,14 +551,17 @@ export default function WorkJourney() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {Object.entries(locationTypeConfig).map(([key, config]) => (
-                  <SelectItem key={key} value={key}>
-                    <span className="flex items-center gap-2">
-                      <span>{config.icon}</span>
-                      <span>{config.label}</span>
-                    </span>
-                  </SelectItem>
-                ))}
+                {orderedLocationTypes.map((key) => {
+                  const config = locationTypeConfig[key];
+                  return (
+                    <SelectItem key={key} value={key}>
+                      <span className="flex items-center gap-2">
+                        <span>{config.icon}</span>
+                        <span>{config.label}</span>
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -557,17 +571,20 @@ export default function WorkJourney() {
         <div className="p-4 border-b border-border">
           <Label className="mb-3 block">Location Types</Label>
           <div className="grid grid-cols-1 gap-2">
-            {Object.entries(locationTypeConfig).map(([key, config]) => (
-              <div key={key} className="flex items-center gap-2 text-sm">
-                <div 
-                  className="w-6 h-6 rounded flex items-center justify-center text-sm"
-                  style={{ backgroundColor: config.color }}
-                >
-                  {config.icon}
+            {orderedLocationTypes.map((key) => {
+              const config = locationTypeConfig[key];
+              return (
+                <div key={key} className="flex items-center gap-2 text-sm">
+                  <div 
+                    className="w-6 h-6 rounded flex items-center justify-center text-sm"
+                    style={{ backgroundColor: config.color }}
+                  >
+                    {config.icon}
+                  </div>
+                  <span>{config.label}</span>
                 </div>
-                <span>{config.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         
