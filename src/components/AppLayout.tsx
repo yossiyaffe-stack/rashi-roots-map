@@ -387,19 +387,24 @@ export function AppLayout() {
                 {sidebarOpen && <span className="font-medium text-sm">Texts Network</span>}
               </NavLink>
 
-              {/* Work Journey */}
-              <NavLink
-                to="/work-journey"
+              {/* Work Journey - navigates to main map in works mode */}
+              <button
+                onClick={() => {
+                  setMapEntityMode('works');
+                  navigate('/');
+                }}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all w-full text-left",
                   "hover:bg-white/10 text-white/70 hover:text-white",
+                  isMapPage && mapEntityMode === 'works' 
+                    ? "bg-accent/20 text-accent border border-accent/30" 
+                    : "",
                   !sidebarOpen && "justify-center px-2"
                 )}
-                activeClassName="bg-accent/20 text-accent border border-accent/30"
               >
                 <ScrollText className="w-5 h-5 shrink-0" />
                 {sidebarOpen && <span className="font-medium text-sm">Work Journey</span>}
-              </NavLink>
+              </button>
 
             </div>
 

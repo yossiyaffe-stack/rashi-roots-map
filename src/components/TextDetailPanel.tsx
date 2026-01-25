@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { X, Book, GitBranch, AlertCircle, Layers, Link2, FileText, Languages, Scissors, ArrowRightLeft, Scale, ExternalLink, ChevronDown, ChevronRight, BookOpen, Library, FileImage, MapPin } from 'lucide-react';
+import { X, Book, GitBranch, AlertCircle, Layers, Link2, FileText, Languages, Scissors, ArrowRightLeft, Scale, ExternalLink, ChevronDown, ChevronRight, BookOpen, Library, FileImage, MapPin, Map } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { type WorkWithAuthor, type TextualRelationshipWithWorks, useWorkLocations } from '@/hooks/useWorks';
 import { useMapControls } from '@/contexts/MapControlsContext';
+import { WorkJourneyPanel } from '@/components/WorkJourneyPanel';
 import { cn } from '@/lib/utils';
 
 // Helper functions for external links
@@ -324,24 +325,20 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
               </a>
             )}
             
-            {/* Manuscript Summary - clickable to show on Work Journey map */}
-            {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length > 0 && (
-              <a
-                href={`/work-journey?workId=${text.id}`}
-                className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer group"
-              >
-                <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
-                <div className="flex-1">
-                  <span className="text-lg font-bold text-purple-400">
-                    {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    surviving manuscript{workLocations.filter(loc => loc.location_type === 'manuscript_copy').length !== 1 ? 's' : ''} worldwide
-                  </span>
-                </div>
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-purple-400 transition-colors shrink-0" />
-              </a>
-            )}
+          </div>
+        )}
+        
+        {/* Work Journey Section */}
+        {workLocations.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-white/10">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <Map className="w-3 h-3" />
+              Geographic Journey
+            </p>
+            <WorkJourneyPanel 
+              workId={text.id} 
+              workTitle={text.title}
+            />
           </div>
         )}
       </div>

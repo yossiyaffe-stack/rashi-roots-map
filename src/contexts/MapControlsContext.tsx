@@ -35,6 +35,13 @@ interface MapControlsContextType {
   setJourneyReasonFilter: (reasons: LocationReason[]) => void;
   mapEntityMode: MapEntityMode;
   setMapEntityMode: (mode: MapEntityMode) => void;
+  // Work journey animation
+  activeWorkJourneyId: string | null;
+  setActiveWorkJourneyId: (id: string | null) => void;
+  workJourneyStep: number;
+  setWorkJourneyStep: (step: number) => void;
+  isWorkJourneyPlaying: boolean;
+  setIsWorkJourneyPlaying: (playing: boolean) => void;
 }
 
 const MapControlsContext = createContext<MapControlsContextType | undefined>(undefined);
@@ -55,6 +62,10 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
   const [showJourneyMarkers, setShowJourneyMarkers] = useState(false);
   const [journeyReasonFilter, setJourneyReasonFilter] = useState<LocationReason[]>([]);
   const [mapEntityMode, setMapEntityMode] = useState<MapEntityMode>('scholars');
+  // Work journey animation state
+  const [activeWorkJourneyId, setActiveWorkJourneyId] = useState<string | null>(null);
+  const [workJourneyStep, setWorkJourneyStep] = useState(0);
+  const [isWorkJourneyPlaying, setIsWorkJourneyPlaying] = useState(false);
 
   return (
     <MapControlsContext.Provider value={{
@@ -88,6 +99,12 @@ export function MapControlsProvider({ children }: { children: ReactNode }) {
       setJourneyReasonFilter,
       mapEntityMode,
       setMapEntityMode,
+      activeWorkJourneyId,
+      setActiveWorkJourneyId,
+      workJourneyStep,
+      setWorkJourneyStep,
+      isWorkJourneyPlaying,
+      setIsWorkJourneyPlaying,
     }}>
       {children}
     </MapControlsContext.Provider>
@@ -129,6 +146,12 @@ export function useMapControls() {
       setJourneyReasonFilter: () => {},
       mapEntityMode: 'scholars' as MapEntityMode,
       setMapEntityMode: () => {},
+      activeWorkJourneyId: null,
+      setActiveWorkJourneyId: () => {},
+      workJourneyStep: 0,
+      setWorkJourneyStep: () => {},
+      isWorkJourneyPlaying: false,
+      setIsWorkJourneyPlaying: () => {},
     };
   }
   return context;

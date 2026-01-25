@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { ScholarsOverlayProvider } from "@/contexts/ScholarsOverlayContext";
 import { MapControlsProvider } from "@/contexts/MapControlsContext";
@@ -14,13 +14,20 @@ import Scholars from "./pages/Scholars";
 import Timeline from "./pages/Timeline";
 import Network from "./pages/Network";
 import WorksNetwork from "./pages/WorksNetwork";
-import WorkJourney from "./pages/WorkJourney";
 import Texts from "./pages/Texts";
 import TextLinks from "./pages/TextLinks";
 import ManuscriptLinks from "./pages/ManuscriptLinks";
 import NliSearch from "./pages/NliSearch";
 import HistoricalContext from "./pages/HistoricalContext";
 import NotFound from "./pages/NotFound";
+
+// Redirect /work-journey to main map - work journey now plays on the main map
+function WorkJourneyRedirect() {
+  const [searchParams] = useSearchParams();
+  const workId = searchParams.get('workId');
+  // Redirect to main map; the workId param can be handled by the main map if needed
+  return <Navigate to={workId ? `/?workId=${workId}` : '/'} replace />;
+}
 
 const queryClient = new QueryClient();
 
@@ -43,7 +50,7 @@ const App = () => (
                       <Route path="/network" element={<Network />} />
                       <Route path="/texts" element={<Texts />} />
                       <Route path="/works" element={<WorksNetwork />} />
-                      <Route path="/work-journey" element={<WorkJourney />} />
+                      <Route path="/work-journey" element={<WorkJourneyRedirect />} />
                       <Route path="/text-links" element={<TextLinks />} />
                       <Route path="/manuscript-links" element={<ManuscriptLinks />} />
                       <Route path="/nli-search" element={<NliSearch />} />
