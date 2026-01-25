@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useScholars, type DbScholar } from './useScholars';
 import { useInfluenceScores, type ScholarInfluenceScore } from './useInfluenceScores';
 import { useFilters } from '@/contexts/FilterContext';
@@ -24,17 +25,21 @@ export function useFilteredScholars(
     isInMapViewport, 
     isInTimelineRange 
   } = useFilters();
+  
+  const location = useLocation();
+  const isOnMapPage = location.pathname === '/' || location.pathname === '/map';
 
   const filteredAndSortedScholars = useMemo(() => {
     let result = [...scholars];
 
-    // 1. Apply spatial filter (map viewport)
-    if (mapViewportBounds) {
+    // 1. Apply spatial filter (map viewport) - ONLY if user came from map page
+    // This prevents filtering out all scholars when navigating directly to /scholars
+    if (mapViewportBounds && isOnMapPage) {
       result = result.filter(s => isInMapViewport(s.latitude, s.longitude));
     }
 
-    // 2. Apply temporal filter (timeline range)
-    if (timelineRange) {
+    // 2. Apply temporal filter (timeline range) - ONLY if user came from map page
+    if (timelineRange && isOnMapPage) {
       result = result.filter(s => isInTimelineRange(s.birth_year, s.death_year));
     }
 
@@ -87,6 +92,7 @@ export function useFilteredScholars(
     influenceScores, 
     mapViewportBounds, 
     timelineRange,
+    isOnMapPage,
     isInMapViewport,
     isInTimelineRange,
     scholarNameMap
@@ -109,6 +115,6 @@ export function useFilteredScholars(
     isLoading: scholarsLoading,
     totalCount: scholars.length,
     filteredCount: filteredAndSortedScholars.length,
-    hasActiveFilters: Boolean(mapViewportBounds || timelineRange || searchTerm),
+    hasActiveFilters: Boolean((mapViewportBounds && isOnMapPage) || (timelineRange && isOnMapPage) || searchTerm),
   };
 }
