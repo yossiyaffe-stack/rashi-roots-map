@@ -559,30 +559,32 @@ export const WorksNetworkView = ({
 
       {/* Selected work info */}
       {selectedWork && (
-        <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur p-4 rounded-lg border border-border max-w-xs shadow-lg animate-fade-in">
-          {/* Back button */}
+        <div 
+          className="absolute bottom-4 left-4 bg-card/95 backdrop-blur p-4 rounded-lg border border-border max-w-xs shadow-lg animate-fade-in z-50 pointer-events-auto"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {/* Back button - matching sidebar pattern */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={() => {
               onSelectWork(null);
               if (focusMode) setFocusMode(false);
             }}
-            className="absolute top-3 right-3 p-1 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute top-2 right-2 p-1.5 rounded-md bg-muted/30 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors"
             title="Close"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           {showTextNamesEnglish && (
-            <h3 className="font-bold text-foreground pr-6">{selectedWork.title}</h3>
+            <h3 className="font-bold text-foreground pr-8">{selectedWork.title}</h3>
           )}
           {showTextNamesHebrew && selectedWork.hebrew_title && (
             <p className={cn(
-              "text-sm font-hebrew pr-6",
+              "text-sm font-hebrew pr-8",
               showTextNamesEnglish ? "text-muted-foreground" : "font-bold text-foreground"
             )} dir="rtl">{selectedWork.hebrew_title}</p>
           )}
           {!showTextNamesEnglish && !showTextNamesHebrew && (
-            <h3 className="font-bold text-foreground pr-6">{selectedWork.title}</h3>
+            <h3 className="font-bold text-foreground pr-8">{selectedWork.title}</h3>
           )}
           <p className="text-sm text-muted-foreground mt-1">
             by {showScholarNamesEnglish && selectedWork.author_name}
