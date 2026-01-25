@@ -1,4 +1,4 @@
-import { X, BookOpen, MapPin, Calendar, Users, ExternalLink, GitBranch, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, BookOpen, MapPin, Calendar, Users, ExternalLink, GitBranch, ChevronDown, ChevronRight, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,7 +8,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import type { WorkWithTextualRelationships } from '@/hooks/useScholars';
 import { ScholarJourney } from '@/components/ScholarJourney';
 import { ScholarExternalData } from '@/components/ScholarExternalData';
-
+import { TemporalInfluenceView } from '@/components/TemporalInfluenceView';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface WorkCardProps {
   work: WorkWithTextualRelationships;
   supercommentaries: NonNullable<WorkWithTextualRelationships['supercommentaries']>;
@@ -134,122 +135,162 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation }: Schola
         </div>
 
         {/* Content */}
-        <ScrollArea className="flex-1 p-6">
-          {/* Dates & Location */}
-          <div className="space-y-3 mb-6">
-            {(scholar.birth_year || scholar.death_year) && (
-              <div className="flex items-center gap-3 text-sm">
-                <Calendar className="w-4 h-4 text-accent" />
-                <span className="text-muted-foreground">
-                  {scholar.birth_year || '?'} – {scholar.death_year || '?'}
-                </span>
-              </div>
-            )}
-            {scholar.birth_place && (
-              <div className="flex items-center gap-3 text-sm">
-                <MapPin className="w-4 h-4 text-accent" />
-                <span className="text-muted-foreground">{scholar.birth_place}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Biography */}
-          {scholar.bio && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
-                Biography
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{scholar.bio}</p>
-            </div>
-          )}
-
-          {/* Life Journey */}
-          <ScholarJourney 
-            scholarId={scholar.id} 
-            scholarName={scholar.name}
-            onLocationClick={onFlyToLocation}
-          />
-
-          {/* Works with Supercommentaries */}
-          {works.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                Works ({works.length})
-              </h3>
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="mx-6 mt-2 bg-white/5 border border-white/10">
+            <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="temporal" className="text-xs flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" />
+              Influence
+            </TabsTrigger>
+          </TabsList>
+          
+          <ScrollArea className="flex-1 p-6">
+            <TabsContent value="overview" className="mt-0 space-y-6">
+              {/* Dates & Location */}
               <div className="space-y-3">
-                {works.map(work => {
-                  const supercommentaries = work.supercommentaries || [];
-                  const hasSupercommentaries = supercommentaries.length > 0;
-                  
-                  return (
-                    <WorkCard 
-                      key={work.id} 
-                      work={work} 
-                      supercommentaries={supercommentaries}
-                      hasSupercommentaries={hasSupercommentaries}
-                    />
-                  );
-                })}
+                {(scholar.birth_year || scholar.death_year) && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Calendar className="w-4 h-4 text-accent" />
+                    <span className="text-muted-foreground">
+                      {scholar.birth_year || '?'} – {scholar.death_year || '?'}
+                    </span>
+                  </div>
+                )}
+                {scholar.birth_place && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <MapPin className="w-4 h-4 text-accent" />
+                    <span className="text-muted-foreground">{scholar.birth_place}</span>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
 
-          {/* Relationships */}
-          {relationships.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Connections ({relationships.length})
-              </h3>
-              <div className="space-y-2">
-                {relationships.map(rel => {
-                  // Determine who the "other" scholar is
-                  const isFromScholar = rel.from_scholar_id === scholar.id;
-                  const otherScholar = isFromScholar ? rel.to_scholar : rel.from_scholar;
-                  const relationDirection = isFromScholar ? 'to' : 'from';
-                  
-                  return (
-                    <div 
-                      key={rel.id}
-                      className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline">{rel.type}</Badge>
-                        {otherScholar && (
-                          <span className="text-accent font-medium">
-                            {relationDirection === 'to' ? '→' : '←'} {otherScholar.name}
-                          </span>
-                        )}
-                      </div>
-                      {rel.description && (
-                        <p className="text-xs text-muted-foreground">{rel.description}</p>
-                      )}
-                    </div>
-                  );
-                })}
+              {/* Biography */}
+              {scholar.bio && (
+                <div>
+                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
+                    Biography
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{scholar.bio}</p>
+                </div>
+              )}
+
+              {/* Life Journey */}
+              <ScholarJourney 
+                scholarId={scholar.id} 
+                scholarName={scholar.name}
+                onLocationClick={onFlyToLocation}
+              />
+
+              {/* Works with Supercommentaries */}
+              {works.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Works ({works.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {works.map(work => {
+                      const supercommentaries = work.supercommentaries || [];
+                      const hasSupercommentaries = supercommentaries.length > 0;
+                      
+                      return (
+                        <WorkCard 
+                          key={work.id} 
+                          work={work} 
+                          supercommentaries={supercommentaries}
+                          hasSupercommentaries={hasSupercommentaries}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Relationships */}
+              {relationships.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Connections ({relationships.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {relationships.map(rel => {
+                      // Determine who the "other" scholar is
+                      const isFromScholar = rel.from_scholar_id === scholar.id;
+                      const otherScholar = isFromScholar ? rel.to_scholar : rel.from_scholar;
+                      const relationDirection = isFromScholar ? 'to' : 'from';
+                      
+                      return (
+                        <div 
+                          key={rel.id}
+                          className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline">{rel.type}</Badge>
+                            {otherScholar && (
+                              <span className="text-accent font-medium">
+                                {relationDirection === 'to' ? '→' : '←'} {otherScholar.name}
+                              </span>
+                            )}
+                          </div>
+                          {rel.description && (
+                            <p className="text-xs text-muted-foreground">{rel.description}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* External Data: Sefaria & NLI */}
+              <div>
+                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
+                  External Resources
+                </h3>
+                <ScholarExternalData 
+                  scholarName={scholar.name} 
+                  hebrewName={scholar.hebrew_name}
+                />
               </div>
-            </div>
-          )}
 
-          {/* External Data: Sefaria & NLI */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
-              External Resources
-            </h3>
-            <ScholarExternalData 
-              scholarName={scholar.name} 
-              hebrewName={scholar.hebrew_name}
-            />
-          </div>
+              {/* Notes */}
+              {scholar.notes && (
+                <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
+                  <p className="text-xs text-accent">{scholar.notes}</p>
+                </div>
+              )}
+            </TabsContent>
 
-          {/* Notes */}
-          {scholar.notes && (
-            <div className="mt-6 p-3 rounded-lg bg-accent/10 border border-accent/20">
-              <p className="text-xs text-accent">{scholar.notes}</p>
-            </div>
-          )}
-        </ScrollArea>
+            <TabsContent value="temporal" className="mt-0">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Temporal Influence
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Track how {scholar.name}'s influence evolved over time based on manuscript production, 
+                    print editions, and geographic spread.
+                  </p>
+                </div>
+                
+                <TemporalInfluenceView 
+                  scholarId={scholar.id} 
+                  scholarName={scholar.name}
+                />
+                
+                <div className="mt-6 p-3 rounded-lg bg-muted/20 border border-white/5">
+                  <h4 className="text-xs font-semibold text-muted-foreground mb-2">Scoring Formula</h4>
+                  <div className="text-[10px] text-muted-foreground space-y-1 font-mono">
+                    <p>Manuscripts × 2 + Print Editions × 10 + Regions × 15</p>
+                    <p>→ Log₁₀ scaling × Period Multiplier (0.6-1.2)</p>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
       </div>
     </div>
   );
