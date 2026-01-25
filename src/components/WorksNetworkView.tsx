@@ -560,20 +560,17 @@ export const WorksNetworkView = ({
       {/* Selected work info */}
       {selectedWork && (
         <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur p-4 rounded-lg border border-border max-w-xs shadow-lg animate-fade-in">
-          {/* Close button */}
+          {/* Back button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               onSelectWork(null);
               if (focusMode) setFocusMode(false);
             }}
-            className="absolute top-2 right-2 p-1 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute top-3 right-3 p-1 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
             title="Close"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <ChevronDown className="w-4 h-4" />
           </button>
           {showTextNamesEnglish && (
             <h3 className="font-bold text-foreground pr-6">{selectedWork.title}</h3>
