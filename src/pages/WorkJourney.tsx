@@ -157,10 +157,14 @@ export default function WorkJourney() {
   const polylinesRef = useRef<L.Polyline[]>([]);
   const heatmapCirclesRef = useRef<L.Circle[]>([]);
   
-  // Get works that have location data
+  // PROOF OF CONCEPT: Only show Rashi's Torah Commentary
+  // Rashi's Torah Commentary work_id: 4ed54050-6058-44a3-9398-6ff8500a05b7
+  const RASHI_TORAH_WORK_ID = '4ed54050-6058-44a3-9398-6ff8500a05b7';
+  
+  // Get works that have location data - filtered to only Rashi's Torah for POC
   const worksWithLocations = useMemo(() => {
     const workIdsWithLocations = new Set(workLocations.map(wl => wl.work_id));
-    return works.filter(w => workIdsWithLocations.has(w.id));
+    return works.filter(w => workIdsWithLocations.has(w.id) && w.id === RASHI_TORAH_WORK_ID);
   }, [works, workLocations]);
   
   // Auto-select first work with locations
