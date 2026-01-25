@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus, Languages, Link2, ChevronDown, ChevronUp, Layers, MessageSquareWarning, BookMarked, Lightbulb, FileText, LayoutGrid, Scale, CheckSquare, RotateCcw as ResetIcon } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Eye, EyeOff, ExternalLink, BookOpen, Scroll, Focus, Languages, Link2, ChevronDown, ChevronUp, ChevronLeft, Layers, MessageSquareWarning, BookMarked, Lightbulb, FileText, LayoutGrid, Scale, CheckSquare, RotateCcw as ResetIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { WorkWithAuthor, TextualRelationshipWithWorks } from '@/hooks/useWorks';
 import { LayoutMode, HoveredWork } from './works-network/types';
@@ -570,7 +570,7 @@ export const WorksNetworkView = ({
             className="absolute top-3 right-3 p-1 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
             title="Close"
           >
-            <ChevronDown className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
           {showTextNamesEnglish && (
             <h3 className="font-bold text-foreground pr-6">{selectedWork.title}</h3>
