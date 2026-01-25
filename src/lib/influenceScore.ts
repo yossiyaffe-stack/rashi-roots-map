@@ -6,16 +6,30 @@
  * - Print editions: weight 10x
  * - Geographic regions: weight 15x
  * 
- * Period multipliers account for different eras of text production
+ * Period multipliers account for different eras of text production.
+ * Domain-specific canonical multipliers adjust scores based on context.
+ * 
+ * Example calculation:
+ * Rashi with 100 manuscripts, 200 prints, 20 regions in 1500s:
+ * = (100×2) + (200×10) + (20×15) = 200 + 2000 + 300 = 2500 raw
+ * = log₁₀(2501) × 150 × 1.2 = 3.4 × 150 × 1.2 = 612 base score
+ * With Torah Commentary domain multiplier (2.3): 612 × 2.3 = 999 (capped)
  */
+
+import { getCanonicalMultiplier, type DomainId } from './domains';
 
 export interface InfluenceData {
   manuscriptsCumulative: number;
   printEditions: number;
   geographicRegions: number;
   periodStart: number;
+  scholarSlug?: string | null;
+  domain?: DomainId;
 }
 
+/**
+ * Calculate influence score with optional domain-specific multiplier
+ */
 export function calculateInfluenceScore(data: InfluenceData): number {
   // Component scores with weights
   const manuscriptScore = data.manuscriptsCumulative * 2;
@@ -28,18 +42,38 @@ export function calculateInfluenceScore(data: InfluenceData): number {
   const baseScore = rawScore > 0 ? Math.log10(rawScore + 1) * 150 : 0;
   
   // Period multipliers
-  let multiplier = 1.0;
+  let periodMultiplier = 1.0;
   if (data.periodStart < 1475) {
-    multiplier = 0.6; // Manuscript era - fewer sources
+    periodMultiplier = 0.6; // Manuscript era - fewer sources
   } else if (data.periodStart < 1550) {
-    multiplier = 1.2; // Early print revolution
+    periodMultiplier = 1.2; // Early print revolution
   } else if (data.periodStart < 1900) {
-    multiplier = 1.0; // Established print era
+    periodMultiplier = 1.0; // Established print era
   } else {
-    multiplier = 0.9; // Modern - normalized for volume
+    periodMultiplier = 0.9; // Modern - normalized for volume
   }
   
-  return Math.min(Math.floor(baseScore * multiplier), 999);
+  let score = baseScore * periodMultiplier;
+  
+  // Apply canonical multiplier if domain specified
+  if (data.scholarSlug && data.domain && data.domain !== 'all') {
+    const canonicalMultiplier = getCanonicalMultiplier(data.scholarSlug, data.domain);
+    score = score * canonicalMultiplier;
+  }
+  
+  return Math.min(Math.floor(score), 999);
+}
+
+/**
+ * Calculate base influence score without domain multiplier
+ * Used for displaying the "base" score in tooltips
+ */
+export function calculateBaseInfluenceScore(data: Omit<InfluenceData, 'scholarSlug' | 'domain'>): number {
+  return calculateInfluenceScore({
+    ...data,
+    scholarSlug: undefined,
+    domain: undefined,
+  });
 }
 
 /**

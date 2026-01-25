@@ -1,9 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { calculateInfluenceScore, calculateBaseInfluenceScore } from '@/lib/influenceScore';
+import { getCanonicalMultiplier, type DomainId } from '@/lib/domains';
 
 export interface ScholarInfluenceScore {
   scholar_id: string;
   score: number;
+  baseScore: number;
+  displayScore: number;
+  manuscripts_cumulative: number;
+  print_editions: number;
+  geographic_regions: number;
+  period_start: number;
+  period_end: number;
+  scholarSlug?: string | null;
+  canonicalMultiplier: number;
+}
+
+export interface TemporalInfluenceRecord {
+  scholar_id: string;
+  influence_score: number;
   manuscripts_cumulative: number;
   print_editions: number;
   geographic_regions: number;
@@ -15,32 +31,70 @@ export interface ScholarInfluenceScore {
  * Fetch the most recent influence score for each scholar
  * Returns a map of scholar_id -> score data for efficient lookup
  */
-export function useInfluenceScores() {
+export function useInfluenceScores(domain: DomainId = 'all') {
   return useQuery({
-    queryKey: ['influence-scores-latest'],
+    queryKey: ['influence-scores-latest', domain],
     queryFn: async () => {
       // Get all temporal influence records, ordered by period descending
       // We'll pick the most recent period for each scholar
-      const { data, error } = await supabase
+      const { data: influenceData, error: influenceError } = await supabase
         .from('temporal_influence')
         .select('scholar_id, influence_score, manuscripts_cumulative, print_editions, geographic_regions, period_start, period_end')
         .order('period_start', { ascending: false });
       
-      if (error) throw error;
+      if (influenceError) throw influenceError;
+
+      // Get scholar slugs for domain multiplier calculation
+      const { data: scholarsData, error: scholarsError } = await supabase
+        .from('scholars')
+        .select('id, slug');
+      
+      if (scholarsError) throw scholarsError;
+      
+      // Create a slug lookup map
+      const slugMap = new Map<string, string | null>();
+      (scholarsData || []).forEach(s => {
+        slugMap.set(s.id, s.slug);
+      });
       
       // Create a map with only the most recent (highest period_start) for each scholar
       const scoreMap = new Map<string, ScholarInfluenceScore>();
       
-      (data || []).forEach(record => {
+      (influenceData || []).forEach(record => {
         if (!scoreMap.has(record.scholar_id)) {
+          const scholarSlug = slugMap.get(record.scholar_id);
+          const canonicalMultiplier = getCanonicalMultiplier(scholarSlug, domain);
+          
+          // Calculate base score (without domain multiplier)
+          const baseScore = calculateBaseInfluenceScore({
+            manuscriptsCumulative: record.manuscripts_cumulative ?? 0,
+            printEditions: record.print_editions ?? 0,
+            geographicRegions: record.geographic_regions ?? 0,
+            periodStart: record.period_start,
+          });
+          
+          // Calculate display score (with domain multiplier)
+          const displayScore = calculateInfluenceScore({
+            manuscriptsCumulative: record.manuscripts_cumulative ?? 0,
+            printEditions: record.print_editions ?? 0,
+            geographicRegions: record.geographic_regions ?? 0,
+            periodStart: record.period_start,
+            scholarSlug,
+            domain,
+          });
+          
           scoreMap.set(record.scholar_id, {
             scholar_id: record.scholar_id,
-            score: record.influence_score ?? 0,
+            score: displayScore, // Primary score to display
+            baseScore,
+            displayScore,
             manuscripts_cumulative: record.manuscripts_cumulative ?? 0,
             print_editions: record.print_editions ?? 0,
             geographic_regions: record.geographic_regions ?? 0,
             period_start: record.period_start,
             period_end: record.period_end,
+            scholarSlug,
+            canonicalMultiplier,
           });
         }
       });

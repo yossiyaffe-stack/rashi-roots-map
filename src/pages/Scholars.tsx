@@ -7,18 +7,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
+import { DomainSelector } from '@/components/DomainSelector';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { useScholarNameVariants } from '@/hooks/useScholarNameVariants';
 import { useInfluenceScores } from '@/hooks/useInfluenceScores';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
+import { type DomainId } from '@/lib/domains';
 
 const Scholars = () => {
   const [selectedScholar, setSelectedScholar] = useState<DbScholar | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState<DomainId>('all');
 
   const { data: scholars = [], isLoading } = useScholars();
-  const { data: influenceScores } = useInfluenceScores();
+  const { data: influenceScores } = useInfluenceScores(selectedDomain);
   const { 
     showScholarNamesEnglish, setShowScholarNamesEnglish,
     showScholarNamesHebrew, setShowScholarNamesHebrew,
@@ -65,24 +68,32 @@ const Scholars = () => {
             </span>
           </div>
           
-          {/* Language Controls */}
-          <div className="flex items-center gap-4 bg-card/50 p-3 rounded-lg border border-white/10">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Display</span>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="scholar-english"
-                checked={showScholarNamesEnglish}
-                onCheckedChange={setShowScholarNamesEnglish}
-              />
-              <Label htmlFor="scholar-english" className="text-xs cursor-pointer">English</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="scholar-hebrew"
-                checked={showScholarNamesHebrew}
-                onCheckedChange={setShowScholarNamesHebrew}
-              />
-              <Label htmlFor="scholar-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+          {/* Controls */}
+          <div className="flex items-center gap-4">
+            <DomainSelector
+              value={selectedDomain}
+              onChange={setSelectedDomain}
+            />
+            
+            {/* Language Controls */}
+            <div className="flex items-center gap-4 bg-card/50 p-3 rounded-lg border border-white/10">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Display</span>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="scholar-english"
+                  checked={showScholarNamesEnglish}
+                  onCheckedChange={setShowScholarNamesEnglish}
+                />
+                <Label htmlFor="scholar-english" className="text-xs cursor-pointer">English</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="scholar-hebrew"
+                  checked={showScholarNamesHebrew}
+                  onCheckedChange={setShowScholarNamesHebrew}
+                />
+                <Label htmlFor="scholar-hebrew" className="text-xs cursor-pointer">Hebrew</Label>
+              </div>
             </div>
           </div>
         </div>
@@ -144,7 +155,11 @@ const Scholars = () => {
                                 </h4>
                               )}
                               {scoreData && (
-                                <InfluenceScoreBadge scoreData={scoreData} size="sm" />
+                                <InfluenceScoreBadge 
+                                  scoreData={scoreData} 
+                                  size="sm" 
+                                  domain={selectedDomain}
+                                />
                               )}
                             </div>
                             {showScholarNamesHebrew && scholar.hebrew_name && (
