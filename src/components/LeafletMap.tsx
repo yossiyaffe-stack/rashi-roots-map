@@ -1988,6 +1988,7 @@ export function LeafletMap({
           ${event.year ? `<span class="scholar-meta">${event.circa ? 'c. ' : ''}${event.year}</span>` : ''}
           ${event.printer_publisher ? `<span class="work-type-badge">Publisher: ${event.printer_publisher}</span>` : ''}
           ${event.notes ? `<span class="scholar-meta" style="font-style: italic;">${event.notes}</span>` : ''}
+          ${event.digital_url ? `<a href="${event.digital_url}" target="_blank" rel="noopener noreferrer" class="work-type-badge" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">🔗 View Online</a>` : ''}
         </div>
       `;
 
@@ -1995,6 +1996,7 @@ export function LeafletMap({
         className: 'historical-tooltip',
         direction: 'top',
         offset: [0, -8],
+        interactive: true,
       });
 
       marker.addTo(map);
