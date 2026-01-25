@@ -537,6 +537,59 @@ export type Database = {
         }
         Relationships: []
       }
+      temporal_influence: {
+        Row: {
+          created_at: string
+          geographic_regions: number | null
+          id: string
+          influence_score: number | null
+          manuscripts_cumulative: number | null
+          manuscripts_new: number | null
+          period_end: number
+          period_label: string | null
+          period_start: number
+          print_editions: number | null
+          scholar_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          geographic_regions?: number | null
+          id?: string
+          influence_score?: number | null
+          manuscripts_cumulative?: number | null
+          manuscripts_new?: number | null
+          period_end: number
+          period_label?: string | null
+          period_start: number
+          print_editions?: number | null
+          scholar_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          geographic_regions?: number | null
+          id?: string
+          influence_score?: number | null
+          manuscripts_cumulative?: number | null
+          manuscripts_new?: number | null
+          period_end?: number
+          period_label?: string | null
+          period_start?: number
+          print_editions?: number | null
+          scholar_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temporal_influence_scholar_id_fkey"
+            columns: ["scholar_id"]
+            isOneToOne: false
+            referencedRelation: "scholars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       textual_relationships: {
         Row: {
           certainty:
