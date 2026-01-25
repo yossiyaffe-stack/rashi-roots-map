@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route, ScrollText, Link2, ExternalLink, FileImage } from 'lucide-react';
+import { Map, Clock, Share2, Grape, Menu, X, BookOpen, GraduationCap, ChevronRight, ChevronLeft, Filter, Settings2, Library, Crown, Palette, Route, ScrollText, Link2, ExternalLink, FileImage, Calendar, MapPin } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -9,9 +9,11 @@ import { MapControlsPanel } from '@/components/MapControlsPanel';
 import { RelationshipFilterPanel } from '@/components/RelationshipFilterPanel';
 import { TextualRelationshipsPanel } from '@/components/TextualRelationshipsPanel';
 import { ScholarJourneysPanel } from '@/components/ScholarJourneysPanel';
+import { FilterPanel } from '@/components/filters';
 import { useRelationships } from '@/hooks/useScholars';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useMapControls } from '@/contexts/MapControlsContext';
+import { useFilters } from '@/contexts/FilterContext';
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -20,6 +22,7 @@ export function AppLayout() {
   const [legendsPanelOpen, setLegendsPanelOpen] = useState(false);
   const [kingdomsPanelOpen, setKingdomsPanelOpen] = useState(false);
   const [journeysPanelOpen, setJourneysPanelOpen] = useState(false);
+  const [periodRegionPanelOpen, setPeriodRegionPanelOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { data: relationships = [] } = useRelationships();
@@ -41,6 +44,19 @@ export function AppLayout() {
     showBoundaryShading, setShowBoundaryShading,
     mapEntityMode, setMapEntityMode,
   } = useMapControls();
+  
+  const {
+    selectedPeriods,
+    setSelectedPeriods,
+    periodMode,
+    setPeriodMode,
+    setDerivedTimeRange,
+    selectedRegions,
+    setSelectedRegions,
+    regionMode,
+    setRegionMode,
+    hasActiveFilters,
+  } = useFilters();
   
   const isMapPage = location.pathname === '/';
   const isNetworkPage = location.pathname === '/network';
@@ -221,6 +237,47 @@ export function AppLayout() {
                     <ChevronRight className={cn(
                       "w-5 h-5 transition-transform duration-300 ease-out",
                       kingdomsPanelOpen && isMapPage ? "rotate-180 text-accent" : "text-white/50"
+                    )} />
+                  </>
+                )}
+              </button>
+
+              {/* Period & Region Filters */}
+              <button
+                onClick={() => {
+                  if (!isMapPage) {
+                    navigate('/');
+                    setTimeout(() => setPeriodRegionPanelOpen(true), 100);
+                  } else {
+                    setPeriodRegionPanelOpen(!periodRegionPanelOpen);
+                    if (!periodRegionPanelOpen) {
+                      setMapControlsPanelOpen(false);
+                      setRelationshipsPanelOpen(false);
+                      setLegendsPanelOpen(false);
+                      setKingdomsPanelOpen(false);
+                      setJourneysPanelOpen(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                  "hover:bg-white/10 text-white/70 hover:text-white",
+                  !sidebarOpen && "justify-center px-2",
+                  (periodRegionPanelOpen && isMapPage) && "bg-accent/20 text-accent border border-accent/30"
+                )}
+              >
+                <Calendar className="w-5 h-5 shrink-0" />
+                {sidebarOpen && (
+                  <>
+                    <span className="font-medium text-sm flex-1 text-left">Period & Region</span>
+                    {hasActiveFilters && (
+                      <span className="px-1.5 py-0.5 bg-primary/30 text-primary text-xs rounded-full mr-1">
+                        {selectedPeriods.length + selectedRegions.length}
+                      </span>
+                    )}
+                    <ChevronRight className={cn(
+                      "w-5 h-5 transition-transform duration-300 ease-out",
+                      periodRegionPanelOpen && isMapPage ? "rotate-180 text-accent" : "text-white/50"
                     )} />
                   </>
                 )}
@@ -556,6 +613,39 @@ export function AppLayout() {
               onJourneyReasonFilterChange={setJourneyReasonFilter}
               onClose={() => setJourneysPanelOpen(false)}
             />
+          </div>
+        )}
+
+        {/* Slide-out Panel for Period & Region Filters - Full height */}
+        {isMapPage && periodRegionPanelOpen && (
+          <div className={cn(
+            "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
+            "flex flex-col w-80"
+          )}>
+            <div className="p-3 border-b border-white/10">
+              <button 
+                onClick={() => setPeriodRegionPanelOpen(false)}
+                className="flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-accent transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Period & Region Filters</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <FilterPanel
+                isOpen={true}
+                onClose={() => setPeriodRegionPanelOpen(false)}
+                selectedPeriods={selectedPeriods}
+                onPeriodsChange={setSelectedPeriods}
+                periodMode={periodMode}
+                onPeriodModeChange={setPeriodMode}
+                onTimeRangeChange={setDerivedTimeRange}
+                selectedRegions={selectedRegions}
+                onRegionsChange={setSelectedRegions}
+                regionMode={regionMode}
+                onRegionModeChange={setRegionMode}
+              />
+            </div>
           </div>
         )}
       </div>
