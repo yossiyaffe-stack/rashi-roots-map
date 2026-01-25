@@ -381,10 +381,10 @@ export default function WorkJourney() {
 
         const config = locationTypeConfig[loc.location_type] || locationTypeConfig.composition;
         
-        // Build search URL for manuscripts - use NLI or general search
+        // Build an in-app manuscript search URL (avoids direct www.nli.org.il navigation which can be blocked)
         const placeName = loc.place?.name_english || '';
         const searchQuery = encodeURIComponent(`${selectedWork?.title || ''} manuscript ${placeName}`);
-        const manuscriptSearchUrl = `https://www.nli.org.il/en/search?q=${searchQuery}`;
+        const manuscriptSearchUrl = `/nli-search?query=${searchQuery}`;
         
         // Check if it's a manuscript type for showing the link
         const isManuscript = loc.location_type === 'manuscript_copy';
@@ -401,12 +401,12 @@ export default function WorkJourney() {
             ${loc.manuscript_significance ? `<p style="font-size: 12px; margin: 4px 0;"><strong>Significance:</strong> <span style="color: ${loc.manuscript_significance === 'oldest' ? '#10B981' : loc.manuscript_significance === 'best' ? '#8B5CF6' : '#F59E0B'}; font-weight: 600;">${loc.manuscript_significance}</span></p>` : ''}
             ${loc.notes ? `<p style="font-size: 11px; color: #666; margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">${loc.notes}</p>` : ''}
             ${isManuscript ? `
-              <a href="${manuscriptSearchUrl}" target="_blank" rel="noopener noreferrer" 
+              <a href="${manuscriptSearchUrl}" 
                  style="display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; padding: 6px 12px; 
                         background: #8B5CF6; color: white; border-radius: 4px; text-decoration: none; font-size: 12px;
                         transition: background 0.2s;"
                  onmouseover="this.style.background='#7C3AED'" onmouseout="this.style.background='#8B5CF6'">
-                🔍 Search NLI Catalog
+                🔍 Search manuscripts
               </a>
             ` : ''}
             ${loc.source ? `

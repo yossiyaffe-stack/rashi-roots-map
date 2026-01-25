@@ -18,6 +18,7 @@ import WorkJourney from "./pages/WorkJourney";
 import Texts from "./pages/Texts";
 import TextLinks from "./pages/TextLinks";
 import ManuscriptLinks from "./pages/ManuscriptLinks";
+import NliSearch from "./pages/NliSearch";
 import HistoricalContext from "./pages/HistoricalContext";
 import NotFound from "./pages/NotFound";
 
@@ -45,6 +46,7 @@ const App = () => (
                       <Route path="/work-journey" element={<WorkJourney />} />
                       <Route path="/text-links" element={<TextLinks />} />
                       <Route path="/manuscript-links" element={<ManuscriptLinks />} />
+                      <Route path="/nli-search" element={<NliSearch />} />
                       <Route path="/context" element={<HistoricalContext />} />
                     </Route>
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
