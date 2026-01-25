@@ -219,28 +219,6 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
                 </div>
               </div>
             )}
-            
-            {/* Work Journey Button */}
-            {workLocations.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Geographic Journey
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={() => navigate('/?mode=works&workId=' + text.id)}
-                >
-                  <Play className="w-4 h-4" />
-                  Play Journey on Map
-                </Button>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  {workLocations.length} location{workLocations.length !== 1 ? 's' : ''} tracked
-                </p>
-              </div>
-            )}
           </TabsContent>
 
           {/* Score Tab */}
@@ -270,6 +248,28 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
                 workTitle={text.title}
                 yearWritten={text.year_written}
               />
+              
+              {/* Work Journey Button */}
+              {workLocations.length > 0 && (
+                <div className="pt-4 border-t border-white/10">
+                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Geographic Journey
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => navigate('/?mode=works&workId=' + text.id)}
+                  >
+                    <Play className="w-4 h-4" />
+                    Play Journey on Map
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {workLocations.length} location{workLocations.length !== 1 ? 's' : ''} tracked
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </ScrollArea>
