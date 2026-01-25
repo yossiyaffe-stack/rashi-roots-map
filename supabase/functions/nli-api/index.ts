@@ -8,6 +8,40 @@ const corsHeaders = {
 // NLI API base URL - correct endpoint
 const NLI_SEARCH_URL = "https://api.nli.org.il/openlibrary/search";
 
+// Helpers for NLI's JSON-LD-ish responses (Dublin Core keys)
+function getJsonLdValue(obj: any, key: string): string | undefined {
+  if (!obj) return undefined;
+
+  // Direct key (non JSON-LD)
+  if (obj[key]) {
+    const v = obj[key];
+    if (typeof v === 'string') return v;
+    if (Array.isArray(v)) return v[0]?.['@value'] ?? v[0];
+  }
+
+  // Dublin Core elements namespace
+  const dcKey = `http://purl.org/dc/elements/1.1/${key}`;
+  if (obj[dcKey]) return obj[dcKey][0]?.['@value'] || obj[dcKey];
+
+  // Dublin Core terms namespace
+  const dcTermsKey = `http://purl.org/dc/terms/${key}`;
+  if (obj[dcTermsKey]) return obj[dcTermsKey][0]?.['@value'] || obj[dcTermsKey];
+
+  return undefined;
+}
+
+function extractRecordId(item: any): string | undefined {
+  // Sometimes provided explicitly
+  const recordId = getJsonLdValue(item, 'recordid');
+  if (recordId) return recordId;
+
+  // Fallback: extract trailing digits from @id
+  const atId = item?.['@id'];
+  if (typeof atId !== 'string') return undefined;
+  const match = atId.match(/(\d{6,})/g);
+  return match?.[match.length - 1];
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -105,9 +139,12 @@ async function searchNLI(query: string, apiKey?: string) {
   }
 
   try {
-    // NLI Search API format: query=keyword,contains,{term}
-    const searchQuery = `keyword,contains,${query}`;
-    const apiUrl = `${NLI_SEARCH_URL}?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&items_per_page=20`;
+    // NLI Search API format: query={field},{operator},{term}
+    // Valid fields/operators are listed by NLI at:
+    //   /openlibrary/values/getRulesOfQuery
+    // Common fields: any,title,desc,creator,subject,start_date,end_date,system_number...
+    const searchQuery = `any,contains,${query}`;
+    const apiUrl = `${NLI_SEARCH_URL}?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&material_type=manuscript&items_per_page=20&output_format=json`;
     console.log('Fetching from NLI API:', apiUrl.replace(apiKey, '[REDACTED]'));
     
     const response = await fetch(apiUrl, {
@@ -150,20 +187,47 @@ async function searchNLI(query: string, apiKey?: string) {
     }
     
     const totalCount = data.total_count || data.totalRecords || results.length;
+    console.log(
+      'Parsed search results:',
+      'count=',
+      results.length,
+      'first=',
+      JSON.stringify(results[0])?.substring(0, 800),
+    );
     
     return {
       query,
       totalResults: totalCount,
-      results: results.slice(0, 20).map((item: any) => ({
-        id: item.record_id || item.recordid || item.id,
-        title: item.title,
-        creator: item.creator,
-        date: item.date || item.creation_date,
-        description: item.description,
-        type: item.type || item.material_type,
-        thumbnail: item.thumbnail,
-        viewerUrl: `https://www.nli.org.il/en/manuscripts/${item.record_id || item.recordid || item.id}`,
-      })),
+      results: results.slice(0, 20).map((item: any) => {
+        const id =
+          extractRecordId(item) ||
+          item.system_number ||
+          item.systemNumber ||
+          item.systemnumber ||
+          item.record_id ||
+          item.recordid ||
+          item.id;
+
+        const title = getJsonLdValue(item, 'title') || item.title;
+        const creator = getJsonLdValue(item, 'creator') || item.creator;
+        const date = getJsonLdValue(item, 'date') || getJsonLdValue(item, 'created') || item.date || item.creation_date;
+        const description = getJsonLdValue(item, 'description') || getJsonLdValue(item, 'format') || item.description;
+        const type = getJsonLdValue(item, 'type') || item.type || item.material_type;
+        const thumbnail = getJsonLdValue(item, 'thumbnail') || item.thumbnail;
+        const viewerUrl = (typeof item?.['@id'] === 'string' ? item['@id'] : undefined) ||
+          `https://www.nli.org.il/en/manuscripts/${id}`;
+
+        return {
+          id,
+          title,
+          creator,
+          date,
+          description,
+          type,
+          thumbnail,
+          viewerUrl,
+        };
+      }),
       searchUrl,
     };
   } catch (err) {
@@ -192,8 +256,8 @@ async function getItem(id: string, apiKey?: string) {
   }
 
   try {
-    // Search by record ID
-    const apiUrl = `${NLI_SEARCH_URL}?api_key=${apiKey}&query=recordid,exact,${id}`;
+    // Search by system number (NLI field name)
+    const apiUrl = `${NLI_SEARCH_URL}?api_key=${apiKey}&query=${encodeURIComponent(`system_number,exact,${id}`)}&items_per_page=1&output_format=json`;
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
