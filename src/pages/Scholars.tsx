@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
+import { ImpressiveStatHighlight } from '@/components/ScoreStatsBadge';
 import { DomainSelector } from '@/components/DomainSelector';
 import { useScholars, type DbScholar } from '@/hooks/useScholars';
 import { useScholarNameVariants } from '@/hooks/useScholarNameVariants';
@@ -179,6 +180,16 @@ const Scholars = () => {
                               {scholar.bio}
                             </p>
                           )}
+                          {/* Impressive stat highlight */}
+                          {scoreData && (
+                            <div className="mt-2">
+                              <ImpressiveStatHighlight
+                                manuscripts={scoreData.manuscripts_cumulative}
+                                editions={scoreData.print_editions}
+                                regions={scoreData.geographic_regions}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -195,6 +206,7 @@ const Scholars = () => {
         <ScholarDetailPanel
           scholar={selectedScholar}
           onClose={() => setSelectedScholar(null)}
+          domain={selectedDomain}
         />
       )}
     </div>
