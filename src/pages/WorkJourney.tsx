@@ -171,12 +171,22 @@ export default function WorkJourney() {
     utterance.pitch = 1;
     utterance.volume = 1;
     
-    // Try to find a good English voice
+    // Try to find a good male English voice
     const voices = window.speechSynthesis.getVoices();
-    const englishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) 
-      || voices.find(v => v.lang.startsWith('en'));
-    if (englishVoice) {
-      utterance.voice = englishVoice;
+    const maleVoice = voices.find(v => 
+      v.lang.startsWith('en') && 
+      (v.name.toLowerCase().includes('male') || 
+       v.name.toLowerCase().includes('david') || 
+       v.name.toLowerCase().includes('james') ||
+       v.name.toLowerCase().includes('daniel') ||
+       v.name.toLowerCase().includes('george') ||
+       v.name.toLowerCase().includes('guy'))
+    ) || voices.find(v => 
+      v.lang.startsWith('en-GB') // British voices often sound more formal
+    ) || voices.find(v => v.lang.startsWith('en'));
+    
+    if (maleVoice) {
+      utterance.voice = maleVoice;
     }
     
     speechRef.current = utterance;
