@@ -422,25 +422,24 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
       polygon.addTo(mapRef.current!);
       boundariesRef.current[key] = polygon;
 
-      // Add region label at centroid
+      // Add region label at centroid - use lower zIndexOffset so scholars appear above
       const centroid = polygon.getBounds().getCenter();
       const labelIcon = L.divIcon({
         className: 'region-label',
         html: `
           <div style="
             font-family: 'Playfair Display', serif;
-            font-size: ${isSelected ? '14px' : '12px'};
-            font-weight: ${isSelected ? '700' : '600'};
+            font-size: ${isSelected ? '13px' : '11px'};
+            font-weight: ${isSelected ? '600' : '500'};
             color: ${region.color};
             text-shadow: 
-              2px 2px 0 white,
-              -2px -2px 0 white,
-              2px -2px 0 white,
-              -2px 2px 0 white,
-              0 2px 4px rgba(0,0,0,0.3);
+              1px 1px 0 rgba(255,255,255,0.8),
+              -1px -1px 0 rgba(255,255,255,0.8),
+              1px -1px 0 rgba(255,255,255,0.8),
+              -1px 1px 0 rgba(255,255,255,0.8);
             white-space: nowrap;
             pointer-events: none;
-            opacity: ${isSelected ? 1 : 0.9};
+            opacity: ${isSelected ? 0.9 : 0.7};
             transition: all 0.3s ease;
           ">
             ${region.name}
@@ -451,7 +450,7 @@ export const MapView = ({ scholars, selectedScholar, onSelectScholar }: MapViewP
         iconAnchor: [90, 10]
       });
 
-      const label = L.marker(centroid, { icon: labelIcon, interactive: false });
+      const label = L.marker(centroid, { icon: labelIcon, interactive: false, zIndexOffset: -1000 });
       label.addTo(mapRef.current!);
       labelsRef.current.push(label);
     });
