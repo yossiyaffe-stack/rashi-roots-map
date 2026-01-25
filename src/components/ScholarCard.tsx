@@ -1,14 +1,17 @@
 import { MapPin } from 'lucide-react';
 import type { Scholar } from '@/data/scholars';
 import { cn } from '@/lib/utils';
+import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
+import type { ScholarInfluenceScore } from '@/hooks/useInfluenceScores';
 
 interface ScholarCardProps {
   scholar: Scholar;
   isSelected: boolean;
   onClick: () => void;
+  influenceScore?: ScholarInfluenceScore;
 }
 
-export const ScholarCard = ({ scholar, isSelected, onClick }: ScholarCardProps) => {
+export const ScholarCard = ({ scholar, isSelected, onClick, influenceScore }: ScholarCardProps) => {
   return (
     <div
       className={cn(
@@ -25,8 +28,13 @@ export const ScholarCard = ({ scholar, isSelected, onClick }: ScholarCardProps) 
       {/* Top accent bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary" />
       
-      <div className="font-display text-base font-bold mb-0.5 leading-tight">
-        {scholar.name.split('(')[0].trim()}
+      <div className="flex items-start justify-between gap-2">
+        <div className="font-display text-base font-bold mb-0.5 leading-tight">
+          {scholar.name.split('(')[0].trim()}
+        </div>
+        {influenceScore && (
+          <InfluenceScoreBadge scoreData={influenceScore} size="sm" />
+        )}
       </div>
       
       <div className={cn(
