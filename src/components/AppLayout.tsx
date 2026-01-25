@@ -301,8 +301,8 @@ export function AppLayout() {
                 {sidebarOpen && <span className="font-medium text-sm">Scholars</span>}
               </NavLink>
 
-              {/* Relationships - shown on Map, Network, and Works pages */}
-              {(isMapPage || isNetworkPage || isWorksPage) && (
+              {/* Relationships - shown on Map and Works pages (NOT Network - it has its own inline panel) */}
+              {(isMapPage || isWorksPage) && (
                 <button
                   onClick={() => {
                     setRelationshipsPanelOpen(!relationshipsPanelOpen);
@@ -490,8 +490,8 @@ export function AppLayout() {
           {/* Footer */}
         </aside>
 
-        {/* Slide-out Panel for Scholar Relationships - Map and Network pages */}
-        {(isMapPage || isNetworkPage) && relationshipsPanelOpen && (
+        {/* Slide-out Panel for Scholar Relationships - Map page only (Network has inline controls) */}
+        {isMapPage && relationshipsPanelOpen && (
           <div className={cn(
             "h-full bg-sidebar/95 backdrop-blur-md border-r border-white/10 shadow-xl transition-all duration-300",
             "flex flex-col"
