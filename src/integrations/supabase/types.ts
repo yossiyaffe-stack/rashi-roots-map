@@ -494,7 +494,10 @@ export type Database = {
           name: string
           notes: string | null
           period: string | null
+          primary_domain: string | null
           relationship_type: string | null
+          secondary_domains: string[] | null
+          slug: string | null
           updated_at: string
         }
         Insert: {
@@ -513,7 +516,10 @@ export type Database = {
           name: string
           notes?: string | null
           period?: string | null
+          primary_domain?: string | null
           relationship_type?: string | null
+          secondary_domains?: string[] | null
+          slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -532,7 +538,10 @@ export type Database = {
           name?: string
           notes?: string | null
           period?: string | null
+          primary_domain?: string | null
           relationship_type?: string | null
+          secondary_domains?: string[] | null
+          slug?: string | null
           updated_at?: string
         }
         Relationships: []

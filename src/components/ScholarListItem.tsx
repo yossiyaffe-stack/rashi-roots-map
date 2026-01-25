@@ -2,15 +2,17 @@ import { cn } from '@/lib/utils';
 import type { DbScholar } from '@/hooks/useScholars';
 import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
 import type { ScholarInfluenceScore } from '@/hooks/useInfluenceScores';
+import { type DomainId } from '@/lib/domains';
 
 interface ScholarListItemProps {
   scholar: DbScholar;
   isSelected: boolean;
   onClick: () => void;
   influenceScore?: ScholarInfluenceScore;
+  domain?: DomainId;
 }
 
-export function ScholarListItem({ scholar, isSelected, onClick, influenceScore }: ScholarListItemProps) {
+export function ScholarListItem({ scholar, isSelected, onClick, influenceScore, domain = 'all' }: ScholarListItemProps) {
   return (
     <div
       onClick={onClick}
@@ -25,7 +27,7 @@ export function ScholarListItem({ scholar, isSelected, onClick, influenceScore }
         <div className="flex items-center gap-2 min-w-0">
           <span className="font-semibold text-foreground truncate">{scholar.name}</span>
           {influenceScore && (
-            <InfluenceScoreBadge scoreData={influenceScore} size="sm" />
+            <InfluenceScoreBadge scoreData={influenceScore} size="sm" domain={domain} />
           )}
         </div>
         {scholar.hebrew_name && (

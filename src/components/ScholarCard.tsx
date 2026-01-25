@@ -3,15 +3,17 @@ import type { Scholar } from '@/data/scholars';
 import { cn } from '@/lib/utils';
 import { InfluenceScoreBadge } from '@/components/InfluenceScoreBadge';
 import type { ScholarInfluenceScore } from '@/hooks/useInfluenceScores';
+import { type DomainId } from '@/lib/domains';
 
 interface ScholarCardProps {
   scholar: Scholar;
   isSelected: boolean;
   onClick: () => void;
   influenceScore?: ScholarInfluenceScore;
+  domain?: DomainId;
 }
 
-export const ScholarCard = ({ scholar, isSelected, onClick, influenceScore }: ScholarCardProps) => {
+export const ScholarCard = ({ scholar, isSelected, onClick, influenceScore, domain = 'all' }: ScholarCardProps) => {
   return (
     <div
       className={cn(
@@ -33,7 +35,7 @@ export const ScholarCard = ({ scholar, isSelected, onClick, influenceScore }: Sc
           {scholar.name.split('(')[0].trim()}
         </div>
         {influenceScore && (
-          <InfluenceScoreBadge scoreData={influenceScore} size="sm" />
+          <InfluenceScoreBadge scoreData={influenceScore} size="sm" domain={domain} />
         )}
       </div>
       

@@ -11,14 +11,17 @@ import { LeafletMap } from '@/components/LeafletMap';
 import { ScholarDetailPanel } from '@/components/ScholarDetailPanel';
 import { UnifiedSearch } from '@/components/UnifiedSearch';
 import { CircleFilterPanel } from '@/components/CircleFilterPanel';
+import { DomainSelector } from '@/components/DomainSelector';
 import { useScholarsOverlay } from '@/contexts/ScholarsOverlayContext';
 import { useCircleFilter } from '@/contexts/CircleFilterContext';
 
 import { useScholars, useRelationships, useHistoricalEvents, usePlaces, useLocationNames, useLocations, useBiographicalRelationships, useTextualRelationships, type DbScholar } from '@/hooks/useScholars';
 import { useWorksWithLocations, type WorkWithLocation } from '@/hooks/useWorks';
+import { useInfluenceScores } from '@/hooks/useInfluenceScores';
 import { TimelineEvents } from '@/components/TimelineEvents';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
+import { type DomainId } from '@/lib/domains';
 
 // Helper to format year with BCE/CE
 const formatYear = (year: number): string => {
@@ -33,6 +36,7 @@ const Index = () => {
   const [timelineFullscreen, setTimelineFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSecularHistory, setShowSecularHistory] = useState(false);
+  const [selectedDomain, setSelectedDomain] = useState<DomainId>('all');
   const mapRef = useRef<L.Map | null>(null);
   
   const { isOverlayOpen: scholarsOverlayOpen, setIsOverlayOpen: setScholarsOverlayOpen } = useScholarsOverlay();
@@ -62,6 +66,7 @@ const Index = () => {
   const { data: biographicalRelationships = [] } = useBiographicalRelationships();
   const { data: textualRelationships = [] } = useTextualRelationships();
   const { data: works = [] } = useWorksWithLocations();
+  const { data: influenceScores } = useInfluenceScores(selectedDomain);
   const [selectedWork, setSelectedWork] = useState<WorkWithLocation | null>(null);
 
   const filteredScholars = useMemo(() => {
@@ -165,7 +170,12 @@ const Index = () => {
         />
 
         {/* Search Controls - Top Right */}
-        <div className="absolute top-6 right-6 z-[1000]">
+        <div className="absolute top-6 right-6 z-[1000] flex items-center gap-3">
+          <DomainSelector
+            value={selectedDomain}
+            onChange={setSelectedDomain}
+            compact
+          />
           <UnifiedSearch
             onScholarSelect={handleScholarSelect}
             onWorkSelect={handleWorkSelectFromSearch}
