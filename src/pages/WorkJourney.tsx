@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink, Play, Pause, Map, Layers } from 'lucide-react';
+import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink, Play, Pause, Map, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Work location type icons and colors
 const locationTypeConfig: Record<string, { icon: string; color: string; label: string; LucideIcon: typeof BookOpen }> = {
@@ -140,6 +140,7 @@ export default function WorkJourney() {
   const [showConnections, setShowConnections] = useState(true);
   const [filterByType, setFilterByType] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'journey' | 'heatmap'>('journey');
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
   
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -411,9 +412,10 @@ export default function WorkJourney() {
   };
   
   return (
-    <div className="h-full flex">
+    <div className="h-full flex relative">
       {/* Left Panel */}
-      <div className="w-80 border-r border-border bg-card flex flex-col">
+      <div className={`${isPanelOpen ? 'w-80' : 'w-0'} border-r border-border bg-card flex flex-col transition-all duration-300 overflow-hidden`}>
+        <div className="w-80 h-full flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold mb-3">Work Journey</h2>
           <p className="text-sm text-muted-foreground mb-4">
@@ -659,7 +661,22 @@ export default function WorkJourney() {
             )}
           </div>
         )}
+        </div>
       </div>
+      
+      {/* Panel Toggle Button */}
+      <button
+        onClick={() => setIsPanelOpen(!isPanelOpen)}
+        className="absolute top-4 z-10 bg-card border border-border rounded-r-lg p-2 hover:bg-muted transition-all shadow-lg"
+        style={{ left: isPanelOpen ? '320px' : '0px', transition: 'left 0.3s' }}
+        aria-label={isPanelOpen ? 'Close panel' : 'Open panel'}
+      >
+        {isPanelOpen ? (
+          <ChevronLeft className="w-5 h-5" />
+        ) : (
+          <ChevronRight className="w-5 h-5" />
+        )}
+      </button>
       
       {/* Map */}
       <div className="flex-1 relative">
