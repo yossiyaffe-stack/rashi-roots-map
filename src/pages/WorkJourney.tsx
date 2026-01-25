@@ -254,6 +254,8 @@ export default function WorkJourney() {
     
     setIsPlaying(true);
     setCurrentStep(0);
+    // Auto-collapse panel for immersive experience
+    setIsPanelOpen(false);
   }, [selectedWorkLocations]);
 
   const stopAnimation = useCallback(() => {
@@ -262,6 +264,8 @@ export default function WorkJourney() {
       clearTimeout(animationRef.current);
       animationRef.current = null;
     }
+    // Re-open panel when animation stops
+    setIsPanelOpen(true);
   }, []);
 
   // Animation step effect
@@ -721,6 +725,32 @@ export default function WorkJourney() {
               <div className="w-4 h-4 rounded-full bg-primary/90" />
               <span className="text-xs">High</span>
             </div>
+          </div>
+        )}
+        
+        {/* Floating playback controls during animation */}
+        {isPlaying && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] animate-fade-in">
+            <Card className="p-3 bg-card/95 backdrop-blur-sm shadow-lg border-primary/20">
+              <div className="flex items-center gap-4">
+                <div className="text-sm font-medium">
+                  Step {currentStep + 1} of {selectedWorkLocations.length}
+                </div>
+                <div className="h-4 w-px bg-border" />
+                <div className="text-sm text-muted-foreground">
+                  {selectedWorkLocations[currentStep]?.place?.name_english || 'Loading...'}
+                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={stopAnimation}
+                  className="gap-2"
+                >
+                  <Pause className="w-4 h-4" />
+                  Stop
+                </Button>
+              </div>
+            </Card>
           </div>
         )}
         
