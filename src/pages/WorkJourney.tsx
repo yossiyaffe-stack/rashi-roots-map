@@ -413,9 +413,10 @@ export default function WorkJourney() {
   
   return (
     <div className="h-full flex relative">
-      {/* Left Panel */}
-      <div className={`${isPanelOpen ? 'w-80' : 'w-0'} border-r border-border bg-card flex flex-col transition-all duration-300 overflow-hidden`}>
-        <div className="w-80 h-full flex flex-col">
+      {/* Left Panel with Toggle */}
+      <div className="relative flex-shrink-0">
+        <div className={`${isPanelOpen ? 'w-80' : 'w-0'} border-r border-border bg-card flex flex-col transition-all duration-300 overflow-hidden h-full`}>
+          <div className="w-80 h-full flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold mb-3">Work Journey</h2>
           <p className="text-sm text-muted-foreground mb-4">
@@ -661,22 +662,23 @@ export default function WorkJourney() {
             )}
           </div>
         )}
+          </div>
         </div>
+        
+        {/* Toggle Button - positioned on the edge of the panel */}
+        {/* Toggle Button - positioned on the edge of the panel */}
+        <button
+          onClick={() => setIsPanelOpen(!isPanelOpen)}
+          className="absolute top-1/2 -translate-y-1/2 -right-4 z-[100] bg-primary text-primary-foreground border-2 border-primary rounded-full p-2 hover:bg-primary/90 transition-all shadow-xl"
+          aria-label={isPanelOpen ? 'Close panel' : 'Open panel'}
+        >
+          {isPanelOpen ? (
+            <ChevronLeft className="w-5 h-5" />
+          ) : (
+            <ChevronRight className="w-5 h-5" />
+          )}
+        </button>
       </div>
-      
-      {/* Panel Toggle Button */}
-      <button
-        onClick={() => setIsPanelOpen(!isPanelOpen)}
-        className="absolute top-4 z-10 bg-card border border-border rounded-r-lg p-2 hover:bg-muted transition-all shadow-lg"
-        style={{ left: isPanelOpen ? '320px' : '0px', transition: 'left 0.3s' }}
-        aria-label={isPanelOpen ? 'Close panel' : 'Open panel'}
-      >
-        {isPanelOpen ? (
-          <ChevronLeft className="w-5 h-5" />
-        ) : (
-          <ChevronRight className="w-5 h-5" />
-        )}
-      </button>
       
       {/* Map */}
       <div className="flex-1 relative">
