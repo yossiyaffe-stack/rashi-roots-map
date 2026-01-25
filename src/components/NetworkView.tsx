@@ -1,11 +1,12 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Heart, GraduationCap, FileText, Filter, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Heart, GraduationCap, FileText, Filter, ZoomIn, ZoomOut, Maximize2, Link2, ChevronDown, ChevronUp, Eye, EyeOff, Focus } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 interface NetworkViewProps {
   scholars: DbScholar[];
   biographicalRelationships: DbBiographicalRelationship[];
@@ -30,10 +31,11 @@ export const NetworkView = ({
   selectedScholar, 
   onSelectScholar 
 }: NetworkViewProps) => {
-  const { filters, shouldShowRelationship } = useRelationshipFilters();
+  const { filters, toggleDomain, toggleFamilyType, shouldShowRelationship } = useRelationshipFilters();
   const [showOnlyConnected, setShowOnlyConnected] = useState(true);
   const [focusOnSelected, setFocusOnSelected] = useState(false);
   const [highlightSelected, setHighlightSelected] = useState(false);
+  const [showRelationshipsPanel, setShowRelationshipsPanel] = useState(true); // Open by default
   
   // Zoom and pan state
   const [zoom, setZoom] = useState(1);
@@ -41,6 +43,7 @@ export const NetworkView = ({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+
 
   // Filter biographical relationships - split into family and teacher-student
   const filteredFamily = useMemo(() => {
@@ -474,83 +477,173 @@ export const NetworkView = ({
         </g>
       </svg>
 
-      {/* Zoom Controls */}
-      <div className="absolute top-6 left-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-2 flex flex-col gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleZoomIn}
-          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
-          title="Zoom in"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleZoomOut}
-          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
-          title="Zoom out"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleResetView}
-          className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/10"
-          title="Reset view"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
-        <div className="text-[10px] text-center text-muted-foreground mt-1">
-          {Math.round(zoom * 100)}%
+      {/* Left Control Column - matches Texts Network pattern */}
+      <div className="absolute top-4 left-4 flex flex-col gap-2">
+        {/* Zoom Controls */}
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={handleZoomIn}
+            className="p-2 bg-card/90 backdrop-blur rounded-lg border border-border hover:bg-accent/20 transition-colors"
+            title="Zoom in"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="p-2 bg-card/90 backdrop-blur rounded-lg border border-border hover:bg-accent/20 transition-colors"
+            title="Zoom out"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleResetView}
+            className="p-2 bg-card/90 backdrop-blur rounded-lg border border-border hover:bg-accent/20 transition-colors"
+            title="Reset view"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          <div className="text-[10px] text-center text-muted-foreground mt-1">
+            {Math.round(zoom * 100)}%
+          </div>
         </div>
-      </div>
 
-      {/* Controls */}
-      <div className="absolute top-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-3">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-accent" />
-          <span className="font-bold text-accent uppercase tracking-wide">Display</span>
-        </div>
+        {/* Toggle Controls */}
+        <button
+          onClick={() => setShowOnlyConnected(!showOnlyConnected)}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            showOnlyConnected 
+              ? "bg-accent/20 border-accent/50 text-accent" 
+              : "bg-card/90 border-border text-foreground"
+          )}
+        >
+          {showOnlyConnected ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          Connected Only
+        </button>
         
-        <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="show-connected" className="text-sm text-muted-foreground cursor-pointer">
-            Connected scholars only
-          </Label>
-          <Switch
-            id="show-connected"
-            checked={showOnlyConnected}
-            onCheckedChange={setShowOnlyConnected}
-            disabled={focusOnSelected}
-          />
-        </div>
-
-        <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="highlight-selected" className="text-sm text-muted-foreground cursor-pointer">
-            Highlight selected
-          </Label>
-          <Switch
-            id="highlight-selected"
-            checked={highlightSelected}
-            onCheckedChange={setHighlightSelected}
-          />
-        </div>
-
-        <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="focus-selected" className="text-sm text-muted-foreground cursor-pointer">
-            Focus on selected
-          </Label>
-          <Switch
-            id="focus-selected"
-            checked={focusOnSelected}
-            onCheckedChange={setFocusOnSelected}
-          />
-        </div>
+        <button
+          onClick={() => setFocusOnSelected(!focusOnSelected)}
+          disabled={!selectedScholar}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            focusOnSelected && selectedScholar
+              ? "bg-amber-500/20 border-amber-500/50 text-amber-300" 
+              : "bg-card/90 border-border text-foreground",
+            !selectedScholar && "opacity-50 cursor-not-allowed"
+          )}
+          title={selectedScholar ? "Show only relationships for selected scholar" : "Select a scholar first"}
+        >
+          <Focus className="w-4 h-4" />
+          Focus Mode
+        </button>
         
+        <button
+          onClick={() => setHighlightSelected(!highlightSelected)}
+          disabled={focusOnSelected}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            highlightSelected && !focusOnSelected
+              ? "bg-accent/20 border-accent/50 text-accent" 
+              : "bg-card/90 border-border text-foreground",
+            focusOnSelected && "opacity-50"
+          )}
+        >
+          Highlight Selected
+        </button>
+
+        {/* Relationships - Collapsible inline panel */}
+        <button
+          onClick={() => setShowRelationshipsPanel(!showRelationshipsPanel)}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm",
+            showRelationshipsPanel
+              ? "bg-purple-500/20 border-purple-500/50 text-purple-300" 
+              : "bg-card/90 border-border text-foreground"
+          )}
+        >
+          <Link2 className="w-4 h-4" />
+          Relationships
+          {showRelationshipsPanel ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </button>
+
+        {showRelationshipsPanel && (
+          <div className="bg-card/90 backdrop-blur border border-border rounded-lg p-3 space-y-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Scholar Relationships</span>
+            
+            {/* Family toggle */}
+            <button
+              onClick={() => toggleDomain('family')}
+              className={cn(
+                "w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left text-xs",
+                filters.domains.family 
+                  ? "bg-amber-500/30 text-amber-300 border-amber-400/60" 
+                  : "bg-amber-500/10 text-amber-400/50 border-amber-500/20",
+                "hover:brightness-110"
+              )}
+            >
+              <Heart className={cn("w-3.5 h-3.5 shrink-0", filters.domains.family ? "" : "opacity-60")} />
+              <span className={cn("flex-1", filters.domains.family ? "text-white" : "")}>
+                Family ({connectionCounts.family})
+              </span>
+              <div className={cn(
+                "w-3 h-3 rounded border shrink-0 flex items-center justify-center",
+                filters.domains.family ? "border-white/80 bg-white/20" : "border-current/50"
+              )}>
+                {filters.domains.family && <div className="w-1.5 h-1.5 rounded-sm bg-white" />}
+              </div>
+            </button>
+            
+            {/* Teacher-Student toggle */}
+            <button
+              onClick={() => toggleDomain('teacherStudent')}
+              className={cn(
+                "w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left text-xs",
+                filters.domains.teacherStudent 
+                  ? "bg-green-500/30 text-green-300 border-green-400/60" 
+                  : "bg-green-500/10 text-green-400/50 border-green-500/20",
+                "hover:brightness-110"
+              )}
+            >
+              <GraduationCap className={cn("w-3.5 h-3.5 shrink-0", filters.domains.teacherStudent ? "" : "opacity-60")} />
+              <span className={cn("flex-1", filters.domains.teacherStudent ? "text-white" : "")}>
+                Teacher-Student ({connectionCounts.teacherStudent})
+              </span>
+              <div className={cn(
+                "w-3 h-3 rounded border shrink-0 flex items-center justify-center",
+                filters.domains.teacherStudent ? "border-white/80 bg-white/20" : "border-current/50"
+              )}>
+                {filters.domains.teacherStudent && <div className="w-1.5 h-1.5 rounded-sm bg-white" />}
+              </div>
+            </button>
+            
+            {/* Textual toggle */}
+            <button
+              onClick={() => toggleDomain('textual')}
+              className={cn(
+                "w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left text-xs",
+                filters.domains.textual 
+                  ? "bg-blue-500/30 text-blue-300 border-blue-400/60" 
+                  : "bg-blue-500/10 text-blue-400/50 border-blue-500/20",
+                "hover:brightness-110"
+              )}
+            >
+              <FileText className={cn("w-3.5 h-3.5 shrink-0", filters.domains.textual ? "" : "opacity-60")} />
+              <span className={cn("flex-1", filters.domains.textual ? "text-white" : "")}>
+                Textual ({connectionCounts.textual})
+              </span>
+              <div className={cn(
+                "w-3 h-3 rounded border shrink-0 flex items-center justify-center",
+                filters.domains.textual ? "border-white/80 bg-white/20" : "border-current/50"
+              )}>
+                {filters.domains.textual && <div className="w-1.5 h-1.5 rounded-sm bg-white" />}
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Selected scholar info */}
         {selectedScholar && (
-          <div className="pt-2 border-t border-white/10">
+          <div className="bg-card/90 backdrop-blur border border-border rounded-lg p-3 text-xs">
             <div className="text-accent font-medium">{selectedScholar.name}</div>
             <div className="text-muted-foreground/70">
               {selectedScholarConnections.size - 1} connections
@@ -563,7 +656,14 @@ export const NetworkView = ({
             </button>
           </div>
         )}
-        
+      </div>
+
+      {/* Display panel - top right */}
+      <div className="absolute top-4 right-4 bg-card/90 backdrop-blur border border-border rounded-lg p-3 text-xs">
+        <div className="flex items-center gap-2 mb-2">
+          <Filter className="w-4 h-4 text-accent" />
+          <span className="font-bold text-accent uppercase tracking-wide">Display</span>
+        </div>
         {!selectedScholar && (
           <div className="text-muted-foreground/70 italic">
             Click a scholar to see connections
@@ -571,8 +671,8 @@ export const NetworkView = ({
         )}
       </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-6 right-6 bg-sidebar/90 backdrop-blur-md border border-white/10 rounded-lg p-4 text-xs space-y-2">
+      {/* Legend - bottom right */}
+      <div className="absolute bottom-4 right-4 bg-card/90 backdrop-blur border border-border rounded-lg p-3 text-xs space-y-2">
         <div className="font-bold text-accent mb-2">Relationship Types</div>
         
         {connectionCounts.family > 0 && (
@@ -604,7 +704,6 @@ export const NetworkView = ({
             </span>
           </div>
         )}
-        
         
         {connectionCounts.family === 0 && connectionCounts.teacherStudent === 0 && connectionCounts.textual === 0 && (
           <div className="text-muted-foreground italic">No relationships to display</div>
