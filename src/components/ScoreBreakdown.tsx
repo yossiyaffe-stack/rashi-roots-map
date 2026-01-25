@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Globe, Printer, TrendingUp, Calendar, Sparkles, Award } from 'lucide-react';
+import { BookOpen, Globe, Printer, TrendingUp, Calendar, Sparkles, Award, Quote } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { DOMAINS, type DomainId } from '@/lib/domains';
@@ -16,6 +16,7 @@ interface ScoreBreakdownProps {
   manuscripts: number;
   printEditions: number;
   regions: number;
+  citationsTotal?: number;
   periodStart?: number;
   periodEnd?: number;
   compact?: boolean;
@@ -31,12 +32,14 @@ export function ScoreBreakdown({
   manuscripts,
   printEditions,
   regions,
+  citationsTotal = 0,
   periodStart,
   periodEnd,
   compact = false,
 }: ScoreBreakdownProps) {
   const tier = getInfluenceTier(displayScore);
   const hasMultiplier = multiplier > 1;
+  const hasCitations = citationsTotal > 0;
   
   // Calculate time span
   const currentYear = new Date().getFullYear();
@@ -46,7 +49,8 @@ export function ScoreBreakdown({
   const manuscriptPoints = manuscripts * 2;
   const printPoints = printEditions * 10;
   const regionPoints = regions * 15;
-  const rawScore = manuscriptPoints + printPoints + regionPoints;
+  const citationPoints = Math.floor(citationsTotal * 0.05);
+  const rawScore = manuscriptPoints + printPoints + regionPoints + citationPoints;
   
   if (compact) {
     return (
@@ -59,10 +63,13 @@ export function ScoreBreakdown({
           </div>
         </div>
         
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className={cn("grid gap-2 text-center", hasCitations ? "grid-cols-4" : "grid-cols-3")}>
           <StatMini icon={<BookOpen className="w-3 h-3" />} value={manuscripts} label="MSS" />
           <StatMini icon={<Printer className="w-3 h-3" />} value={printEditions} label="Print" />
           <StatMini icon={<Globe className="w-3 h-3" />} value={regions} label="Regions" />
+          {hasCitations && (
+            <StatMini icon={<Quote className="w-3 h-3" />} value={citationsTotal} label="Citations" />
+          )}
         </div>
         
         {hasMultiplier && domain !== 'all' && (
@@ -123,6 +130,26 @@ export function ScoreBreakdown({
             subtitle="regions worldwide"
             points={regionPoints}
           />
+          {hasCitations ? (
+            <StatCard 
+              icon={<Quote className="w-5 h-5 text-cyan-500" />}
+              label="Sefaria Citations"
+              value={citationsTotal}
+              subtitle="scholarly references"
+              points={citationPoints}
+            />
+          ) : (
+            <StatCard 
+              icon={<Calendar className="w-5 h-5 text-purple-500" />}
+              label="Time Span"
+              value={timeSpan}
+              subtitle="years of influence"
+              showPoints={false}
+            />
+          )}
+        </div>
+        
+        {hasCitations && (
           <StatCard 
             icon={<Calendar className="w-5 h-5 text-purple-500" />}
             label="Time Span"
@@ -130,7 +157,7 @@ export function ScoreBreakdown({
             subtitle="years of influence"
             showPoints={false}
           />
-        </div>
+        )}
 
         <Separator className="bg-white/10" />
         
@@ -154,6 +181,12 @@ export function ScoreBreakdown({
               <span>Geographic Regions ({regions} × 15)</span>
               <span className="text-blue-400">+{regionPoints}</span>
             </div>
+            {hasCitations && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Sefaria Citations ({citationsTotal.toLocaleString()} × 0.05)</span>
+                <span className="text-cyan-400">+{citationPoints}</span>
+              </div>
+            )}
             
             <Separator className="bg-white/10 my-2" />
             
@@ -184,6 +217,7 @@ export function ScoreBreakdown({
           regions={regions}
           timeSpan={timeSpan}
           displayScore={displayScore}
+          citationsTotal={citationsTotal}
         />
       </CardContent>
     </Card>
@@ -253,6 +287,7 @@ function ImpressiveContext({
   regions,
   timeSpan,
   displayScore,
+  citationsTotal = 0,
 }: { 
   scholarSlug?: string | null;
   manuscripts: number;
@@ -260,6 +295,7 @@ function ImpressiveContext({
   regions: number;
   timeSpan: number;
   displayScore: number;
+  citationsTotal?: number;
 }) {
   const facts: { icon: React.ReactNode; text: string }[] = [];
   
@@ -312,6 +348,19 @@ function ImpressiveContext({
     facts.push({
       icon: <Calendar className="w-4 h-4 text-purple-500" />,
       text: `Over ${timeSpan} years of continuous scholarly engagement`
+    });
+  }
+  
+  // Citation facts
+  if (citationsTotal > 10000) {
+    facts.push({
+      icon: <Quote className="w-4 h-4 text-cyan-500" />,
+      text: `Over ${Math.floor(citationsTotal / 1000)}K scholarly citations in Sefaria`
+    });
+  } else if (citationsTotal > 1000) {
+    facts.push({
+      icon: <Quote className="w-4 h-4 text-cyan-500" />,
+      text: `${citationsTotal.toLocaleString()} citations from later commentaries`
     });
   }
 
