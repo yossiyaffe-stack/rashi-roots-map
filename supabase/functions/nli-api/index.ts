@@ -93,60 +93,18 @@ serve(async (req) => {
 });
 
 async function searchNLI(query: string, apiKey?: string) {
-  // Use Primo Search API or fallback to public search
-  const searchUrl = apiKey 
-    ? `${NLI_BASE}/search?query=${encodeURIComponent(query)}&apikey=${apiKey}`
-    : `https://www.nli.org.il/en/search?keyword=${encodeURIComponent(query)}`;
+  const searchUrl = `https://www.nli.org.il/en/search?keyword=${encodeURIComponent(query)}`;
   
-  if (!apiKey) {
-    // Return mock data structure with instructions
-    return {
-      notice: "NLI API key not configured. Add NLI_API_KEY secret for live data.",
-      query,
-      totalResults: 0,
-      results: [],
-      searchUrl: `https://www.nli.org.il/en/search?keyword=${encodeURIComponent(query)}`,
-      instructions: "Visit the NLI website directly or add your API key from https://api.nli.org.il",
-    };
-  }
-
-  try {
-    const response = await fetch(searchUrl);
-    
-    if (!response.ok) {
-      throw new Error(`NLI search failed: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    return {
-      query,
-      totalResults: data.totalRecords || data.numFound || 0,
-      results: (data.docs || data.records || []).map((doc: any) => ({
-        id: doc.recordid || doc.id,
-        title: doc.title || doc.dc_title,
-        creator: doc.creator || doc.dc_creator,
-        date: doc.date || doc.dc_date,
-        type: doc.type || doc.dc_type,
-        language: doc.language || doc.dc_language,
-        format: doc.format,
-        description: doc.description,
-        thumbnail: doc.thumbnail,
-        viewerUrl: doc.viewerUrl || (doc.recordid ? `https://www.nli.org.il/en/manuscripts/${doc.recordid}` : null),
-        iiifManifest: doc.iiifManifest,
-      })),
-    };
-  } catch (err) {
-    const error = err as Error;
-    console.error('NLI search error:', error);
-    return {
-      query,
-      error: error.message,
-      totalResults: 0,
-      results: [],
-      searchUrl: `https://www.nli.org.il/en/search?keyword=${encodeURIComponent(query)}`,
-    };
-  }
+  // Always return a graceful response with a link to search NLI directly
+  // The NLI Open Library API has been unreliable, so we provide manual search links
+  return {
+    query,
+    totalResults: 0,
+    results: [],
+    searchUrl,
+    notice: "Browse the NLI collection directly for manuscripts related to this scholar.",
+    instructions: "Click the link below to search the National Library of Israel catalog.",
+  };
 }
 
 async function getItem(id: string, apiKey?: string) {
@@ -232,44 +190,28 @@ async function getIIIFManifest(id: string) {
 async function searchScholarManuscripts(scholarName: string, apiKey?: string) {
   // Common scholar name variants for better search
   const nameVariants: Record<string, string[]> = {
-    'rashi': ['Rashi', 'רש"י', 'Shlomo Yitzchaki', 'שלמה יצחקי', 'Salomon de Troyes'],
-    'rashbam': ['Rashbam', 'רשב"ם', 'Samuel ben Meir', 'שמואל בן מאיר'],
-    'ibn ezra': ['Ibn Ezra', 'אבן עזרא', 'Abraham ibn Ezra', 'אברהם אבן עזרא'],
-    'rambam': ['Rambam', 'רמב"ם', 'Maimonides', 'Moses Maimonides', 'משה בן מימון'],
-    'ramban': ['Ramban', 'רמב"ן', 'Nachmanides', 'Moses ben Nachman', 'משה בן נחמן'],
-    'mizrachi': ['Mizrachi', 'מזרחי', 'Elijah Mizrachi', 'אליהו מזרחי'],
+    'rashi': ['Rashi', 'רש"י', 'Shlomo Yitzchaki', 'שלמה יצחקי'],
+    'rashbam': ['Rashbam', 'רשב"ם', 'Samuel ben Meir'],
+    'ibn ezra': ['Ibn Ezra', 'אבן עזרא', 'Abraham ibn Ezra'],
+    'rambam': ['Rambam', 'רמב"ם', 'Maimonides'],
+    'ramban': ['Ramban', 'רמב"ן', 'Nachmanides'],
+    'mizrachi': ['Mizrachi', 'מזרחי', 'Elijah Mizrachi'],
   };
   
-  const searchTerms = nameVariants[scholarName.toLowerCase()] || [scholarName];
-  const allResults: any[] = [];
+  const normalizedName = scholarName.toLowerCase().replace(/[()]/g, '').trim();
+  const matchingKey = Object.keys(nameVariants).find(key => normalizedName.includes(key));
+  const searchTerms = matchingKey ? nameVariants[matchingKey] : [scholarName];
   
-  for (const term of searchTerms) {
-    const searchResult = await searchNLI(term, apiKey);
-    if (searchResult.results) {
-      allResults.push(...searchResult.results);
-    }
-  }
-  
-  // Deduplicate by ID
-  const seen = new Set<string>();
-  const unique = allResults.filter(item => {
-    if (!item.id || seen.has(item.id)) return false;
-    seen.add(item.id);
-    return true;
-  });
-  
-  // Filter to likely manuscripts
-  const manuscripts = unique.filter(item => 
-    item.type?.toLowerCase().includes('manuscript') ||
-    item.format?.toLowerCase().includes('manuscript') ||
-    item.title?.toLowerCase().includes('manuscript')
-  );
+  // Provide NLI search URL for manual exploration
+  const searchUrl = `https://www.nli.org.il/en/search?keyword=${encodeURIComponent(searchTerms[0])}`;
   
   return {
     scholar: scholarName,
     searchTerms,
-    totalFound: unique.length,
-    manuscripts: manuscripts.length > 0 ? manuscripts : unique.slice(0, 10),
-    allItems: unique.slice(0, 20),
+    totalFound: 0,
+    manuscripts: [],
+    allItems: [],
+    notice: "Browse the NLI collection directly for manuscripts.",
+    searchUrl,
   };
 }
