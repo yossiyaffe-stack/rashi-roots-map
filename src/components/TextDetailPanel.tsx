@@ -324,9 +324,12 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
               </a>
             )}
             
-            {/* Manuscript Summary (count only, no external link) */}
+            {/* Manuscript Summary - clickable to show on Work Journey map */}
             {workLocations.filter(loc => loc.location_type === 'manuscript_copy').length > 0 && (
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+              <a
+                href={`/work-journey?workId=${text.id}`}
+                className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all cursor-pointer group"
+              >
                 <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
                 <div className="flex-1">
                   <span className="text-lg font-bold text-purple-400">
@@ -336,7 +339,8 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
                     surviving manuscript{workLocations.filter(loc => loc.location_type === 'manuscript_copy').length !== 1 ? 's' : ''} worldwide
                   </span>
                 </div>
-              </div>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground group-hover:text-purple-400 transition-colors shrink-0" />
+              </a>
             )}
           </div>
         )}
