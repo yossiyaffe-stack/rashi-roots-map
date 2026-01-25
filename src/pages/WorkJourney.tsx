@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useWorks, useAllWorkLocations } from '@/hooks/useWorks';
 import { usePlaces, useScholars } from '@/hooks/useScholars';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Printer, ScrollText, PenTool, Languages, ExternalLink } from 'lucide-react';
-
-// Fix for default markers
-import 'leaflet/dist/leaflet.css';
 
 // Work location type icons and colors
 const locationTypeConfig: Record<string, { icon: string; color: string; label: string; LucideIcon: typeof BookOpen }> = {
@@ -75,20 +72,6 @@ const createWorkLocationIcon = (locationType: string, index: number) => {
   });
 };
 
-// Component to fit bounds when work changes
-function FitBounds({ positions }: { positions: [number, number][] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (positions.length > 0) {
-      const bounds = L.latLngBounds(positions);
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
-    }
-  }, [positions, map]);
-  
-  return null;
-}
-
 // Generate curved path between points
 function generateCurvedPath(start: [number, number], end: [number, number]): [number, number][] {
   const points: [number, number][] = [];
@@ -123,6 +106,11 @@ export default function WorkJourney() {
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null);
   const [showConnections, setShowConnections] = useState(true);
   const [filterByType, setFilterByType] = useState<string | 'all'>('all');
+  
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.Marker[]>([]);
+  const polylinesRef = useRef<L.Polyline[]>([]);
   
   // Get works that have location data
   const worksWithLocations = useMemo(() => {
@@ -181,6 +169,82 @@ export default function WorkJourney() {
     }
     return paths;
   }, [positions, showConnections, selectedWorkLocations]);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = L.map(mapContainerRef.current, {
+      center: [48.5, 9],
+      zoom: 5,
+      zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Update markers and polylines
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear existing markers and polylines
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+    polylinesRef.current.forEach(p => p.remove());
+    polylinesRef.current = [];
+
+    // Add markers for each location
+    selectedWorkLocations.forEach((loc, index) => {
+      if (!loc.lat || !loc.lng) return;
+
+      const marker = L.marker([loc.lat, loc.lng], {
+        icon: createWorkLocationIcon(loc.location_type, index),
+      }).addTo(map);
+
+      const config = locationTypeConfig[loc.location_type] || locationTypeConfig.composition;
+      marker.bindPopup(`
+        <div style="min-width: 180px;">
+          <p style="font-weight: 600; margin: 0;">${loc.place?.name_english || 'Unknown'}</p>
+          <p style="font-size: 12px; color: #888; margin: 4px 0;">
+            ${config.label}
+          </p>
+          ${loc.year ? `<p style="font-size: 12px; margin: 4px 0;">Year: ${loc.circa ? 'c. ' : ''}${loc.year}</p>` : ''}
+          ${loc.printer_publisher ? `<p style="font-size: 12px; margin: 4px 0;">Publisher: ${loc.printer_publisher}</p>` : ''}
+          ${loc.notes ? `<p style="font-size: 11px; color: #666; margin-top: 8px;">${loc.notes}</p>` : ''}
+        </div>
+      `);
+
+      markersRef.current.push(marker);
+    });
+
+    // Add connection polylines
+    connectionPaths.forEach(connection => {
+      const polyline = L.polyline(connection.path, {
+        color: locationTypeConfig[connection.toType]?.color || '#8B5CF6',
+        weight: 2,
+        opacity: 0.7,
+        dashArray: '8, 8',
+      }).addTo(map);
+
+      polylinesRef.current.push(polyline);
+    });
+
+    // Fit bounds if we have positions
+    if (positions.length > 0) {
+      const bounds = L.latLngBounds(positions);
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+    }
+  }, [selectedWorkLocations, connectionPaths, positions]);
   
   return (
     <div className="h-full flex">
@@ -357,65 +421,11 @@ export default function WorkJourney() {
       
       {/* Map */}
       <div className="flex-1 relative">
-        <MapContainer
-          center={[48.5, 9]}
-          zoom={5}
+        <div 
+          ref={mapContainerRef}
           className="h-full w-full"
           style={{ background: '#1a1a2e' }}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          />
-          
-          {/* Fit bounds when work changes */}
-          {positions.length > 0 && <FitBounds positions={positions} />}
-          
-          {/* Connection lines */}
-          {connectionPaths.map((connection, index) => (
-            <Polyline
-              key={index}
-              positions={connection.path}
-              pathOptions={{
-                color: locationTypeConfig[connection.toType]?.color || '#8B5CF6',
-                weight: 2,
-                opacity: 0.7,
-                dashArray: '8, 8',
-              }}
-            />
-          ))}
-          
-          {/* Location markers */}
-          {selectedWorkLocations.map((loc, index) => (
-            loc.lat && loc.lng && (
-              <Marker
-                key={loc.id}
-                position={[loc.lat, loc.lng]}
-                icon={createWorkLocationIcon(loc.location_type, index)}
-              >
-                <Popup>
-                  <div className="min-w-48">
-                    <p className="font-semibold">{loc.place?.name_english || 'Unknown'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {locationTypeConfig[loc.location_type]?.label || loc.location_type}
-                    </p>
-                    {loc.year && (
-                      <p className="text-sm">
-                        Year: {loc.circa && 'c. '}{loc.year}
-                      </p>
-                    )}
-                    {loc.printer_publisher && (
-                      <p className="text-sm">Publisher: {loc.printer_publisher}</p>
-                    )}
-                    {loc.notes && (
-                      <p className="text-xs mt-2 text-muted-foreground">{loc.notes}</p>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            )
-          ))}
-        </MapContainer>
+        />
         
         {/* Empty state overlay */}
         {worksWithLocations.length === 0 && (
