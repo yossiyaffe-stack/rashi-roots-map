@@ -950,8 +950,15 @@ export type Database = {
           hebrewbooks_url: string | null
           id: string
           manuscript_id: string | null
+          manuscript_link_text: string | null
+          manuscript_link_url: string | null
+          manuscript_repository: string | null
           manuscript_url: string | null
+          print_link_text: string | null
+          print_link_url: string | null
+          print_repository: string | null
           scholar_id: string
+          sefaria_text: string | null
           sefaria_url: string | null
           title: string
           updated_at: string
@@ -965,8 +972,15 @@ export type Database = {
           hebrewbooks_url?: string | null
           id?: string
           manuscript_id?: string | null
+          manuscript_link_text?: string | null
+          manuscript_link_url?: string | null
+          manuscript_repository?: string | null
           manuscript_url?: string | null
+          print_link_text?: string | null
+          print_link_url?: string | null
+          print_repository?: string | null
           scholar_id: string
+          sefaria_text?: string | null
           sefaria_url?: string | null
           title: string
           updated_at?: string
@@ -980,8 +994,15 @@ export type Database = {
           hebrewbooks_url?: string | null
           id?: string
           manuscript_id?: string | null
+          manuscript_link_text?: string | null
+          manuscript_link_url?: string | null
+          manuscript_repository?: string | null
           manuscript_url?: string | null
+          print_link_text?: string | null
+          print_link_url?: string | null
+          print_repository?: string | null
           scholar_id?: string
+          sefaria_text?: string | null
           sefaria_url?: string | null
           title?: string
           updated_at?: string
