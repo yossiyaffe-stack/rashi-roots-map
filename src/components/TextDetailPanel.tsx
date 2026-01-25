@@ -1,10 +1,14 @@
-import { X, ExternalLink, BookOpen, Library, FileImage, Play, MapPin } from 'lucide-react';
+import { X, ExternalLink, BookOpen, Library, FileImage, Play, MapPin, Award, TrendingUp, Calendar } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { type WorkWithAuthor, type TextualRelationshipWithWorks, useWorkLocations } from '@/hooks/useWorks';
 import { useMapControls } from '@/contexts/MapControlsContext';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { WorkScoreBreakdown } from './WorkScoreBreakdown';
+import { WorkTemporalView } from './WorkTemporalView';
 
 // Helper to extract HebrewBooks cover thumbnail from URL
 function getHebrewBooksCover(url: string): string | null {
@@ -31,6 +35,22 @@ function getRepositoryName(url: string): string {
   return 'Digital Repository';
 }
 
+// Work type display names
+const WORK_TYPE_LABELS: Record<string, string> = {
+  commentary: 'Commentary',
+  responsa: 'Responsa',
+  talmud_commentary: 'Talmud Commentary',
+  halakha: 'Halakha',
+  philosophy: 'Philosophy',
+  kabbalah: 'Kabbalah',
+  supercommentary: 'Supercommentary',
+  poetry: 'Poetry',
+  grammar: 'Grammar',
+  ethics: 'Ethics',
+  homiletics: 'Homiletics',
+  other: 'Other',
+};
+
 interface TextDetailPanelProps {
   text: WorkWithAuthor & { 
     manuscript_url?: string | null;
@@ -43,7 +63,6 @@ interface TextDetailPanelProps {
 
 export function TextDetailPanel({ text, relationships, onClose }: TextDetailPanelProps) {
   const navigate = useNavigate();
-  // Fetch manuscript locations for this work
   const { data: workLocations = [] } = useWorkLocations(text.id);
   
   const { 
@@ -51,20 +70,16 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
     showTextNamesHebrew,
   } = useMapControls();
 
-  // Count relationships for display
-  const incomingCount = relationships.filter(r => r.related_work_id === text.id).length;
-  const outgoingCount = relationships.filter(r => r.work_id === text.id).length;
-
   // Check if we have any external resources
   const hasExternalResources = text.sefaria_url || text.hebrewbooks_url || text.manuscript_url;
 
   return (
     <div className="w-[400px] h-full border-l border-white/10 bg-card flex flex-col min-h-0">
       {/* Header */}
-      <div className="p-4 border-b border-white/10 shrink-0">
-        <div className="flex items-start justify-between">
+      <div className="p-4 bg-gradient-to-b from-accent/20 to-transparent border-b border-white/10 shrink-0">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1 pr-4">
-            <h2 className="text-lg font-bold mb-1">
+            <h2 className="text-xl font-bold">
               {showTextNamesEnglish && text.title}
               {showTextNamesEnglish && showTextNamesHebrew && text.hebrew_title && ' • '}
               {showTextNamesHebrew && text.hebrew_title && (
@@ -72,8 +87,8 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
               )}
               {!showTextNamesEnglish && !showTextNamesHebrew && text.title}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {text.author_name || 'Unknown author'} • {text.year_written || '?'}
+            <p className="text-sm text-muted-foreground mt-1">
+              {text.author_name || 'Unknown author'}
             </p>
           </div>
           <button
@@ -83,136 +98,182 @@ export function TextDetailPanel({ text, relationships, onClose }: TextDetailPane
             <X className="w-5 h-5" />
           </button>
         </div>
-      </div>
 
-      {/* Content */}
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-4 space-y-4">
-          {/* Description */}
-          {text.description && (
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Description</p>
-              <p className="text-sm text-white/70">{text.description}</p>
-            </div>
+        <div className="flex flex-wrap gap-2">
+          {text.work_type && (
+            <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">
+              {WORK_TYPE_LABELS[text.work_type] || text.work_type}
+            </Badge>
           )}
-
-          {/* Relationship Summary */}
-          {(incomingCount > 0 || outgoingCount > 0) && (
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2">Relationships</p>
-              <p className="text-sm text-white/70">
-                {incomingCount > 0 && `${incomingCount} work${incomingCount !== 1 ? 's' : ''} reference this text`}
-                {incomingCount > 0 && outgoingCount > 0 && ' • '}
-                {outgoingCount > 0 && `References ${outgoingCount} other work${outgoingCount !== 1 ? 's' : ''}`}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">View in Texts Network for details</p>
-            </div>
-          )}
-
-          {/* External Resources Section */}
-          {hasExternalResources && (
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">External Resources</p>
-              <div className="space-y-3">
-                
-                {/* Sefaria Link */}
-                {text.sefaria_url && (
-                  <a
-                    href={text.sefaria_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-green-500/10 border-green-500/20 hover:border-green-500/40 transition-all group"
-                  >
-                    <div className="w-12 h-12 rounded bg-green-500/20 flex items-center justify-center shrink-0">
-                      <BookOpen className="w-6 h-6 text-green-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-green-400">Sefaria</span>
-                      <p className="text-xs text-muted-foreground">Read the full text online</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-                  </a>
-                )}
-
-                {/* HebrewBooks Link with Thumbnail */}
-                {text.hebrewbooks_url && (
-                  <a
-                    href={text.hebrewbooks_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 transition-all group"
-                  >
-                    <div className="w-12 h-16 rounded overflow-hidden bg-amber-500/20 shrink-0 flex items-center justify-center">
-                      {getHebrewBooksCover(text.hebrewbooks_url) ? (
-                        <img 
-                          src={getHebrewBooksCover(text.hebrewbooks_url)!}
-                          alt="Book cover"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement?.classList.add('fallback-icon');
-                          }}
-                        />
-                      ) : (
-                        <Library className="w-6 h-6 text-amber-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-amber-400">HebrewBooks.org</span>
-                      <p className="text-xs text-muted-foreground">Scanned printed edition</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-                  </a>
-                )}
-
-                {/* Manuscript Link with Thumbnail */}
-                {text.manuscript_url && (
-                  <a
-                    href={text.manuscript_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40 transition-all group"
-                  >
-                    <div className="w-12 h-16 rounded overflow-hidden bg-cyan-500/20 shrink-0 flex items-center justify-center">
-                      <FileImage className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-cyan-400">{getRepositoryName(text.manuscript_url)}</span>
-                      <p className="text-xs text-muted-foreground">View original manuscript</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {/* Work Journey Button */}
-          {workLocations.length > 0 && (
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <MapPin className="w-3 h-3" />
-                Geographic Journey
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full gap-2"
-                onClick={() => {
-                  // Navigate to map and trigger work journey
-                  navigate('/?mode=works&workId=' + text.id);
-                }}
-              >
-                <Play className="w-4 h-4" />
-                Play Journey on Map
-              </Button>
-              <p className="text-xs text-muted-foreground mt-1.5">
-                {workLocations.length} location{workLocations.length !== 1 ? 's' : ''} tracked
-              </p>
-            </div>
+          {text.year_written && (
+            <Badge variant="outline" className="border-white/20 text-muted-foreground">
+              <Calendar className="w-3 h-3 mr-1" />
+              c. {text.year_written}
+            </Badge>
           )}
         </div>
-      </ScrollArea>
+      </div>
+
+      {/* Tabbed Content */}
+      <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="mx-4 mt-2 bg-white/5 border border-white/10">
+          <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+          <TabsTrigger value="score" className="text-xs flex items-center gap-1">
+            <Award className="w-3 h-3" />
+            Score
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="text-xs flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" />
+            Timeline
+          </TabsTrigger>
+        </TabsList>
+        
+        <ScrollArea className="flex-1 p-4">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="mt-0 space-y-4">
+            {/* Description */}
+            {text.description && (
+              <div>
+                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
+                  Description
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{text.description}</p>
+              </div>
+            )}
+
+            {/* External Resources */}
+            {hasExternalResources && (
+              <div>
+                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3">
+                  External Resources
+                </h3>
+                <div className="space-y-3">
+                  {/* Sefaria Link */}
+                  {text.sefaria_url && (
+                    <a
+                      href={text.sefaria_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-green-500/10 border-green-500/20 hover:border-green-500/40 transition-all group"
+                    >
+                      <div className="w-12 h-12 rounded bg-green-500/20 flex items-center justify-center shrink-0">
+                        <BookOpen className="w-6 h-6 text-green-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-green-400">Sefaria</span>
+                        <p className="text-xs text-muted-foreground">Read the full text online</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </a>
+                  )}
+
+                  {/* HebrewBooks Link with Thumbnail */}
+                  {text.hebrewbooks_url && (
+                    <a
+                      href={text.hebrewbooks_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 transition-all group"
+                    >
+                      <div className="w-12 h-16 rounded overflow-hidden bg-amber-500/20 shrink-0 flex items-center justify-center">
+                        {getHebrewBooksCover(text.hebrewbooks_url) ? (
+                          <img 
+                            src={getHebrewBooksCover(text.hebrewbooks_url)!}
+                            alt="Book cover"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement?.classList.add('fallback-icon');
+                            }}
+                          />
+                        ) : (
+                          <Library className="w-6 h-6 text-amber-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-amber-400">HebrewBooks.org</span>
+                        <p className="text-xs text-muted-foreground">Scanned printed edition</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </a>
+                  )}
+
+                  {/* Manuscript Link */}
+                  {text.manuscript_url && (
+                    <a
+                      href={text.manuscript_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/40 transition-all group"
+                    >
+                      <div className="w-12 h-16 rounded overflow-hidden bg-cyan-500/20 shrink-0 flex items-center justify-center">
+                        <FileImage className="w-6 h-6 text-cyan-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-cyan-400">{getRepositoryName(text.manuscript_url)}</span>
+                        <p className="text-xs text-muted-foreground">View original manuscript</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Work Journey Button */}
+            {workLocations.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Geographic Journey
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={() => navigate('/?mode=works&workId=' + text.id)}
+                >
+                  <Play className="w-4 h-4" />
+                  Play Journey on Map
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {workLocations.length} location{workLocations.length !== 1 ? 's' : ''} tracked
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Score Tab */}
+          <TabsContent value="score" className="mt-0">
+            <WorkScoreBreakdown
+              workId={text.id}
+              workTitle={text.title}
+              yearWritten={text.year_written}
+            />
+          </TabsContent>
+
+          {/* Timeline Tab */}
+          <TabsContent value="timeline" className="mt-0">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Transmission History
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Track how {text.title}'s influence spread over time.
+                </p>
+              </div>
+              
+              <WorkTemporalView 
+                workId={text.id}
+                workTitle={text.title}
+                yearWritten={text.year_written}
+              />
+            </div>
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
     </div>
   );
 }
