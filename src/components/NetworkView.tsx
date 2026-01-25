@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { DbScholar, DbBiographicalRelationship, DbTextualRelationship, DbIntellectualRelationship } from '@/hooks/useScholars';
 import { useRelationshipFilters } from '@/contexts/RelationshipFilterContext';
-import { Heart, GraduationCap, FileText, Filter, ZoomIn, ZoomOut, Maximize2, Link2, ChevronDown, ChevronUp, Eye, EyeOff, Focus } from 'lucide-react';
+import { Heart, GraduationCap, FileText, Filter, ZoomIn, ZoomOut, Maximize2, Link2, ChevronDown, ChevronLeft, Eye, EyeOff, Focus } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -563,7 +563,7 @@ export const NetworkView = ({
         >
           <Link2 className="w-4 h-4" />
           Relationships
-          {showRelationshipsPanel ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          {showRelationshipsPanel ? <ChevronLeft className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </button>
 
         {showRelationshipsPanel && (
