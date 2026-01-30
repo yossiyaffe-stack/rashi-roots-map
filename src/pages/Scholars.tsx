@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Users, ArrowUpDown, LayoutGrid, Clock, TrendingUp, MapPin } from 'lucide-react';
+import { Search, Users, LayoutGrid, Clock, TrendingUp, MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -19,8 +19,9 @@ import { useMapControls } from '@/contexts/MapControlsContext';
 import { useFilters } from '@/contexts/FilterContext';
 import { cn } from '@/lib/utils';
 import { type DomainId } from '@/lib/domains';
+import { useSefariaScholar, getBriefBio } from '@/hooks/useSefariaScholar';
 
-const SORT_OPTIONS: { mode: ScholarSortMode; icon: typeof ArrowUpDown; label: string }[] = [
+const SORT_OPTIONS: { mode: ScholarSortMode; icon: typeof Clock; label: string }[] = [
   { mode: 'period', icon: Clock, label: 'Period' },
   { mode: 'alphabetical', icon: LayoutGrid, label: 'A-Z' },
   { mode: 'influence', icon: TrendingUp, label: 'Influence' },
@@ -236,6 +237,11 @@ function ScholarCard({
   showHebrew,
   domain 
 }: ScholarCardProps) {
+  const { data: sefariaData } = useSefariaScholar(scholar.name, scholar.slug);
+  
+  // Use Sefaria bio if available, otherwise fall back to local bio
+  const briefBio = getBriefBio(sefariaData?.description) || scholar.bio;
+  
   return (
     <div
       onClick={onClick}
@@ -278,9 +284,9 @@ function ScholarCard({
       <p className="text-xs text-muted-foreground mb-2">
         {scholar.birth_place || 'Unknown'} • {scholar.birth_year || '?'}–{scholar.death_year || '?'}
       </p>
-      {scholar.bio && (
+      {briefBio && (
         <p className="text-xs text-white/60 line-clamp-2">
-          {scholar.bio}
+          {briefBio}
         </p>
       )}
       {/* Impressive stat highlight */}
