@@ -4,6 +4,7 @@ const SEFARIA_TOPIC_DETAIL_API = 'https://www.sefaria.org/api/v2/topics';
 
 /**
  * Map common scholar names to Sefaria topic slugs
+ * Expanded from SefariaScholars.jsx reference file
  */
 export const SCHOLAR_SLUG_MAP: Record<string, string> = {
   // === RASHI'S FAMILY & STUDENTS ===
@@ -13,6 +14,7 @@ export const SCHOLAR_SLUG_MAP: Record<string, string> = {
   'רשב"ם': 'rashbam',
   'Rabbeinu Tam': 'rabbeinu-tam',
   'רבינו תם': 'rabbeinu-tam',
+  'Rivam': 'rivam',
   
   // === SPANISH SCHOOL ===
   'Ibn Ezra': 'ibn-ezra',
@@ -23,6 +25,8 @@ export const SCHOLAR_SLUG_MAP: Record<string, string> = {
   'רמב"ן': 'nachmanides',
   'Rashba': 'rashba',
   'רשב"א': 'rashba',
+  'Ritva': 'ritva',
+  'ריטב"א': 'ritva',
   
   // === MAIMONIDES ===
   'Rambam': 'maimonides',
@@ -32,19 +36,27 @@ export const SCHOLAR_SLUG_MAP: Record<string, string> = {
   // === ITALIAN ===
   'Sforno': 'sforno',
   'ספורנו': 'sforno',
+  'Isaiah di Trani': 'isaiah-di-trani',
   
   // === RASHI SUPERCOMMENTATORS ===
   'Elijah Mizrachi': 'elijah-mizrachi',
   'Mizrachi': 'elijah-mizrachi',
+  "Re'em": 'elijah-mizrachi',
+  'רא"ם': 'elijah-mizrachi',
   'Maharal': 'maharal',
+  'Gur Aryeh': 'maharal',
   'מהר"ל': 'maharal',
   'Chizkuni': 'chizkuni',
   'חזקוני': 'chizkuni',
+  'Siftei Chakhamim': 'siftei-chakhamim',
   
   // === CODES & HALACHA ===
   'Rosh': 'rosh',
   'רא"ש': 'rosh',
+  'Tur': 'tur',
+  'טור': 'tur',
   'Joseph Karo': 'joseph-karo',
+  'Shulchan Aruch': 'joseph-karo',
   'Rema': 'rema',
   'רמ"א': 'rema',
   
@@ -52,6 +64,23 @@ export const SCHOLAR_SLUG_MAP: Record<string, string> = {
   'Vilna Gaon': 'vilna-gaon',
   'Gra': 'vilna-gaon',
   'הגר"א': 'vilna-gaon',
+  'Netziv': 'netziv',
+  'נצי"ב': 'netziv',
+  'Malbim': 'malbim',
+  'מלבי"ם': 'malbim',
+  'Chatam Sofer': 'chatam-sofer',
+  'חתם סופר': 'chatam-sofer',
+  'Chofetz Chaim': 'chofetz-chaim',
+  'חפץ חיים': 'chofetz-chaim',
+  
+  // === HASIDIC ===
+  'Baal Shem Tov': 'baal-shem-tov',
+  'בעש"ט': 'baal-shem-tov',
+  
+  // === MODERN ===
+  'Rav Kook': 'rav-kook',
+  'הרב קוק': 'rav-kook',
+  'Rav Soloveitchik': 'rav-soloveitchik',
   
   // === TANNAIM ===
   'Hillel': 'hillel',
@@ -60,9 +89,18 @@ export const SCHOLAR_SLUG_MAP: Record<string, string> = {
   'שמאי': 'shammai',
   'Rabbi Akiva': 'rabbi-akiva',
   'רבי עקיבא': 'rabbi-akiva',
+  'Rabbi Yehudah HaNasi': 'rabbi-yehudah-hanasi',
+  'רבי יהודה הנשיא': 'rabbi-yehudah-hanasi',
+  'Rebbi': 'rabbi-yehudah-hanasi',
   
   // === AMORAIM ===
   'Rav': 'rav',
+  'Shmuel': 'shmuel',
+  'שמואל': 'shmuel',
+  'Rabbi Yochanan': 'rabbi-yochanan-b-napacha',
+  'רבי יוחנן': 'rabbi-yochanan-b-napacha',
+  'Reish Lakish': 'reish-lakish',
+  'ריש לקיש': 'reish-lakish',
   'Rava': 'rava',
   'רבא': 'rava',
   'Abaye': 'abaye',
