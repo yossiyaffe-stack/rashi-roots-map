@@ -536,7 +536,7 @@ export function LeafletMap({
       zoomControl: false,
     });
 
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    L.control.zoom({ position: 'bottomleft' }).addTo(map);
     leafletMap.current = map;
     
     // Expose map to parent via ref
