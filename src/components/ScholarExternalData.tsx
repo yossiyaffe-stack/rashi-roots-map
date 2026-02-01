@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { IIIFManuscriptViewer } from './IIIFManuscriptViewer';
+import { getSefariaSearchName } from '@/hooks/useScholarNameVariants';
 
 interface SefariaWork {
   ref: string;
@@ -35,11 +36,14 @@ export function ScholarExternalData({ scholarName, hebrewName }: ScholarExternal
   const [showManuscriptViewer, setShowManuscriptViewer] = useState(false);
   const [selectedManuscript, setSelectedManuscript] = useState<NLIManuscript | null>(null);
 
+  // Get simplified name for Sefaria searches (e.g., "Nachmanides" instead of full format)
+  const sefariaSearchName = getSefariaSearchName(scholarName);
+
   // Fetch Sefaria works
   const { data: sefariaData, isLoading: sefariaLoading, error: sefariaError } = useQuery({
-    queryKey: ['sefaria-works', scholarName],
+    queryKey: ['sefaria-works', sefariaSearchName],
     queryFn: async () => {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sefaria-api?action=author-works&query=${encodeURIComponent(scholarName)}`;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sefaria-api?action=author-works&query=${encodeURIComponent(sefariaSearchName)}`;
       const res = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
@@ -106,7 +110,7 @@ export function ScholarExternalData({ scholarName, hebrewName }: ScholarExternal
             <Card className="p-4 bg-white/5">
               <p className="text-sm text-muted-foreground">No texts found on Sefaria</p>
               <a 
-                href={`https://www.sefaria.org/search?q=${encodeURIComponent(scholarName)}`}
+                href={`https://www.sefaria.org/search?q=${encodeURIComponent(sefariaSearchName)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-accent hover:underline flex items-center gap-1 mt-2"
@@ -153,7 +157,7 @@ export function ScholarExternalData({ scholarName, hebrewName }: ScholarExternal
                   )}
                   
                   <a
-                    href={`https://www.sefaria.org/search?q=${encodeURIComponent(scholarName)}`}
+                    href={`https://www.sefaria.org/search?q=${encodeURIComponent(sefariaSearchName)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
