@@ -13,6 +13,8 @@ import { ScoreBreakdown } from '@/components/ScoreBreakdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInfluenceScores } from '@/hooks/useInfluenceScores';
 import { type DomainId } from '@/lib/domains';
+import { cn } from '@/lib/utils';
+
 interface WorkCardProps {
   work: WorkWithTextualRelationships;
   supercommentaries: NonNullable<WorkWithTextualRelationships['supercommentaries']>;
@@ -99,6 +101,12 @@ interface ScholarDetailPanelProps {
 export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation, domain = 'all' }: ScholarDetailPanelProps) {
   const { data: scholarDetails, isLoading } = useScholarWithWorks(scholar.id);
   const { data: influenceScores } = useInfluenceScores(domain);
+  
+  // Collapsible section states - default to expanded for the first two, collapsed for others
+  const [journeyOpen, setJourneyOpen] = useState(true);
+  const [worksOpen, setWorksOpen] = useState(false);
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const [externalOpen, setExternalOpen] = useState(false);
 
   const works = scholarDetails?.works || [];
   const relationships = scholarDetails?.relationships || [];
@@ -183,85 +191,127 @@ export function ScholarDetailPanel({ scholar, onClose, onFlyToLocation, domain =
                 </div>
               )}
 
-              {/* Life Journey */}
-              <ScholarJourney 
-                scholarId={scholar.id} 
-                scholarName={scholar.name}
-                onLocationClick={onFlyToLocation}
-              />
-
-              {/* Works with Supercommentaries */}
-              {works.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Works ({works.length})
-                  </h3>
-                  <div className="space-y-3">
-                    {works.map(work => {
-                      const supercommentaries = work.supercommentaries || [];
-                      const hasSupercommentaries = supercommentaries.length > 0;
-                      
-                      return (
-                        <WorkCard 
-                          key={work.id} 
-                          work={work} 
-                          supercommentaries={supercommentaries}
-                          hasSupercommentaries={hasSupercommentaries}
-                        />
-                      );
-                    })}
+              {/* Life Journey - Collapsible */}
+              <Collapsible open={journeyOpen} onOpenChange={setJourneyOpen}>
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-accent" />
+                    <span className="text-sm font-semibold text-accent uppercase tracking-wider">Life Journey</span>
                   </div>
-                </div>
+                  {journeyOpen ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <ScholarJourney 
+                    scholarId={scholar.id} 
+                    scholarName={scholar.name}
+                    onLocationClick={onFlyToLocation}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Works - Collapsible */}
+              {works.length > 0 && (
+                <Collapsible open={worksOpen} onOpenChange={setWorksOpen}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-accent" />
+                      <span className="text-sm font-semibold text-accent uppercase tracking-wider">Works ({works.length})</span>
+                    </div>
+                    {worksOpen ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3">
+                    <div className="space-y-3">
+                      {works.map(work => {
+                        const supercommentaries = work.supercommentaries || [];
+                        const hasSupercommentaries = supercommentaries.length > 0;
+                        
+                        return (
+                          <WorkCard 
+                            key={work.id} 
+                            work={work} 
+                            supercommentaries={supercommentaries}
+                            hasSupercommentaries={hasSupercommentaries}
+                          />
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               )}
 
-              {/* Relationships */}
+              {/* Connections - Collapsible */}
               {relationships.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Connections ({relationships.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {relationships.map(rel => {
-                      // Determine who the "other" scholar is
-                      const isFromScholar = rel.from_scholar_id === scholar.id;
-                      const otherScholar = isFromScholar ? rel.to_scholar : rel.from_scholar;
-                      const relationDirection = isFromScholar ? 'to' : 'from';
-                      
-                      return (
-                        <div 
-                          key={rel.id}
-                          className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm"
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline">{rel.type}</Badge>
-                            {otherScholar && (
-                              <span className="text-accent font-medium">
-                                {relationDirection === 'to' ? '→' : '←'} {otherScholar.name}
-                              </span>
+                <Collapsible open={connectionsOpen} onOpenChange={setConnectionsOpen}>
+                  <CollapsibleTrigger className="w-full flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-accent" />
+                      <span className="text-sm font-semibold text-accent uppercase tracking-wider">Connections ({relationships.length})</span>
+                    </div>
+                    {connectionsOpen ? (
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3">
+                    <div className="space-y-2">
+                      {relationships.map(rel => {
+                        const isFromScholar = rel.from_scholar_id === scholar.id;
+                        const otherScholar = isFromScholar ? rel.to_scholar : rel.from_scholar;
+                        const relationDirection = isFromScholar ? 'to' : 'from';
+                        
+                        return (
+                          <div 
+                            key={rel.id}
+                            className="p-3 rounded-lg bg-white/5 border border-white/10 text-sm"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline">{rel.type}</Badge>
+                              {otherScholar && (
+                                <span className="text-accent font-medium">
+                                  {relationDirection === 'to' ? '→' : '←'} {otherScholar.name}
+                                </span>
+                              )}
+                            </div>
+                            {rel.description && (
+                              <p className="text-xs text-muted-foreground">{rel.description}</p>
                             )}
                           </div>
-                          {rel.description && (
-                            <p className="text-xs text-muted-foreground">{rel.description}</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               )}
 
-              {/* External Data: Sefaria & NLI */}
-              <div>
-                <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-2">
-                  External Resources
-                </h3>
-                <ScholarExternalData 
-                  scholarName={scholar.name} 
-                  hebrewName={scholar.hebrew_name}
-                />
-              </div>
+              {/* External Resources - Collapsible */}
+              <Collapsible open={externalOpen} onOpenChange={setExternalOpen}>
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-accent" />
+                    <span className="text-sm font-semibold text-accent uppercase tracking-wider">External Resources</span>
+                  </div>
+                  {externalOpen ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  <ScholarExternalData 
+                    scholarName={scholar.name} 
+                    hebrewName={scholar.hebrew_name}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
 
               {/* Notes */}
               {scholar.notes && (

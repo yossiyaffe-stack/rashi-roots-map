@@ -13,6 +13,9 @@ interface ScholarJourneyProps {
   onLocationClick?: (lat: number, lng: number) => void;
 }
 
+// Refs for each location item to enable scroll-into-view
+const locationRefs: Record<number, HTMLDivElement | null> = {};
+
 export function ScholarJourney({ scholarId, scholarName, onLocationClick }: ScholarJourneyProps) {
   const { data: locations = [], isLoading } = useScholarLocations(scholarId);
   const { showJourneyMarkers, setShowJourneyMarkers } = useMapControls();
@@ -67,8 +70,16 @@ export function ScholarJourney({ scholarId, scholarName, onLocationClick }: Scho
     setCurrentStep(step);
     setDisplayYear(location.start_year || null);
     
-    // Pan to location
+    // Pan to location on map
     onLocationClick?.(location.latitude, location.longitude);
+    
+    // Scroll the current location item into view within the panel
+    setTimeout(() => {
+      const ref = locationRefs[step];
+      if (ref) {
+        ref.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 50);
 
     // Schedule next step if playing
     if (autoAdvance && step < locations.length - 1) {
@@ -281,6 +292,7 @@ export function ScholarJourney({ scholarId, scholarName, onLocationClick }: Scho
             return (
               <div
                 key={location.id}
+                ref={(el) => { locationRefs[index] = el; }}
                 onClick={() => {
                   onLocationClick?.(location.latitude, location.longitude);
                   setCurrentStep(index);
