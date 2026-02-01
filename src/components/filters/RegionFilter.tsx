@@ -142,9 +142,9 @@ export const RegionFilter = ({
                   'w-full flex items-start gap-2 px-3 py-2.5 rounded-md text-sm transition-all cursor-pointer',
                   isSelected
                     ? mode === 'rabbinic'
-                      ? 'bg-primary/20 text-primary border border-primary/30'
-                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : 'bg-card hover:bg-muted border border-border'
+                      ? 'bg-primary/20 text-primary border-2 border-primary'
+                      : 'bg-blue-500/20 text-blue-400 border-2 border-blue-500'
+                    : 'bg-card hover:bg-muted border border-muted-foreground/20'
                 )}
                 onClick={() => toggleRegion(region.id, region)}
               >

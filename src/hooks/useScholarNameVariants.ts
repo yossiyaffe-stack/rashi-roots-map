@@ -54,6 +54,21 @@ function extractNameVariants(name: string): string[] {
   return [...new Set(variants)]; // Remove duplicates
 }
 
+// Extracts the best search-friendly name for external APIs like Sefaria
+// For "Ramban - Nachmanides (Rabbi Moshe ben Nachman)" returns "Nachmanides"
+// For "Rashi (Rabbi Shlomo Yitzchaki)" returns "Rashi"
+export function getSefariaSearchName(name: string): string {
+  // If there's an alternative name after " - ", prefer that (e.g., "Nachmanides")
+  const dashMatch = name.match(/ - ([^(]+)/);
+  if (dashMatch) {
+    return dashMatch[1].trim();
+  }
+  
+  // Otherwise use the common name/acronym before any parentheses
+  const beforeParen = name.split(' (')[0].trim();
+  return beforeParen;
+}
+
 export function useScholarNameVariants(scholars: DbScholar[]): Map<string, string[]> {
   return useMemo(() => {
     const map = new Map<string, string[]>();
