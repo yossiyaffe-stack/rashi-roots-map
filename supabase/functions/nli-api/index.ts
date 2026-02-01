@@ -303,39 +303,59 @@ async function getItem(id: string, apiKey?: string) {
 }
 
 async function getIIIFManifest(id: string) {
-  // NLI IIIF manifest URL pattern
-  const manifestUrl = `https://iiif.nli.org.il/IIIFv21/${id}/manifest`;
+  // NLI uses different ID formats:
+  // - Search returns: 990038071830205171
+  // - IIIF needs: NNL_ALEPH + different numeric ID
+  // We'll try multiple patterns to find the manifest
   
-  try {
-    const response = await fetch(manifestUrl);
-    
-    if (!response.ok) {
-      // Try alternative pattern
-      const altUrl = `https://www.nli.org.il/iiif/presentation/2.0/${id}/manifest.json`;
-      const altResponse = await fetch(altUrl);
+  const cleanId = id.replace(/^NNL_ALEPH/, '');
+  
+  // Generate multiple URL patterns to try
+  const urlPatterns = [
+    // Pattern 1: DOCID with NNL_ALEPH prefix (most common)
+    `https://iiif.nli.org.il/IIIFv21/DOCID/NNL_ALEPH${cleanId}/manifest`,
+    // Pattern 2: Direct ID without prefix
+    `https://iiif.nli.org.il/IIIFv21/${cleanId}/manifest`,
+    // Pattern 3: With NNL_ALEPH prefix directly
+    `https://iiif.nli.org.il/IIIFv21/NNL_ALEPH${cleanId}/manifest`,
+    // Pattern 4: Alternative presentation API endpoint
+    `https://www.nli.org.il/iiif/presentation/2.0/${cleanId}/manifest.json`,
+    // Pattern 5: DOCID without NNL_ALEPH 
+    `https://iiif.nli.org.il/IIIFv21/DOCID/${cleanId}/manifest`,
+  ];
+  
+  console.log('Trying IIIF manifest for ID:', id, 'Patterns:', urlPatterns.length);
+  
+  for (const manifestUrl of urlPatterns) {
+    try {
+      console.log('Trying IIIF URL:', manifestUrl);
+      const response = await fetch(manifestUrl);
       
-      if (!altResponse.ok) {
-        return {
-          id,
-          error: 'IIIF manifest not found',
-          manifestUrl,
-          viewerUrl: `https://www.nli.org.il/en/manuscripts/${id}`,
-        };
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        // Only accept JSON responses (not HTML error pages)
+        if (contentType?.includes('application/json') || contentType?.includes('application/ld+json')) {
+          const manifest = await response.json();
+          // Verify it's actually a valid manifest
+          if (manifest['@context'] || manifest.items || manifest.sequences) {
+            console.log('Found valid manifest at:', manifestUrl);
+            return manifest;
+          }
+        }
       }
-      
-      return await altResponse.json();
+    } catch (err) {
+      console.log('Failed to fetch from:', manifestUrl, (err as Error).message);
+      // Continue to next pattern
     }
-    
-    return await response.json();
-  } catch (err) {
-    const error = err as Error;
-    return {
-      id,
-      error: error.message,
-      manifestUrl,
-      viewerUrl: `https://www.nli.org.il/en/manuscripts/${id}`,
-    };
   }
+  
+  // All patterns failed - return error with helpful info
+  return {
+    id,
+    error: 'IIIF manifest not found. This manuscript may not have digitized images available via IIIF.',
+    triedUrls: urlPatterns,
+    viewerUrl: `https://www.nli.org.il/en/manuscripts/NNL_ALEPH${cleanId}`,
+  };
 }
 
 async function searchScholarManuscripts(scholarName: string, apiKey?: string) {
