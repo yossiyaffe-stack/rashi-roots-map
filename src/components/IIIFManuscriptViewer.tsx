@@ -189,7 +189,15 @@ export function IIIFManuscriptViewer({
     );
   }
 
-  if (error || manifest?.error || images.length === 0) {
+  // Check for empty sequences (manifest exists but has no images)
+  const hasEmptySequences = manifest && !manifest.error && 
+    ((manifest.sequences && manifest.sequences.length === 0) || 
+     (manifest.items && manifest.items.length === 0) ||
+     (!manifest.sequences && !manifest.items));
+
+  if (error || manifest?.error || images.length === 0 || hasEmptySequences) {
+    const isEmptyManifest = hasEmptySequences && !manifest?.error;
+    
     return (
       <Card className="bg-background/95 backdrop-blur border-accent/20 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -201,7 +209,14 @@ export function IIIFManuscriptViewer({
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <ImageIcon className="w-12 h-12 text-muted-foreground/50 mb-3" />
           <p className="text-sm text-muted-foreground mb-2">
-            {manifest?.error || 'IIIF images not available for this manuscript'}
+            {isEmptyManifest 
+              ? 'This manuscript record exists but the images have not been digitized yet.'
+              : (manifest?.error || 'IIIF images not available for this manuscript')}
+          </p>
+          <p className="text-xs text-muted-foreground/70 mb-3">
+            {isEmptyManifest 
+              ? 'Try viewing on the NLI website for more information.'
+              : 'The manuscript may be available on the NLI website.'}
           </p>
           {viewerUrl && (
             <a
